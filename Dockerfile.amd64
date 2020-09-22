@@ -15,7 +15,7 @@ ENV USER_ID="99" \
     LANGUAGE="en_US.UTF-8" \
     LANG="en_US.UTF-8" \
     LC_ALL="en_US.UTF-8" \
-    CLEANUP="/tmp/* /var/tmp/* /var/log/* /var/lib/apt/lists/* /var/lib/{apt,dpkg,cache,log}/ /var/cache/apt/archives /usr/share/doc/ /usr/share/man/ /usr/share/locale/ /root/.cpan /root/.cpanm"
+    CLEANUP="/tmp/* /var/tmp/* /var/log/* /var/lib/apt/lists/* /var/lib/{apt,dpkg,cache,log}/ /var/cache/apt/archives /usr/share/doc/ /usr/share/man/ /usr/share/locale/ "
 
 COPY root/entrypoint /usr/local/sbin/entrypoint
 COPY root/solaranzeige.process /usr/local/bin/solaranzeige.process
@@ -43,14 +43,14 @@ RUN apt-get -qy update \
     && apt-get dist-upgrade -qy \
     ### install solaranzeige dependencies
     && apt-get install -qy ${DEPENDENCIES} \
-    && wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add - /
-    && echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list /
-    && wget -qO- https://repos.influxdata.com/influxdb.key | sudo apt-key add - /
-    && echo "deb https://repos.influxdata.com/debian buster stable" | sudo tee /etc/apt/sources.list.d/influxdb.list /
-    && apt-get update /
-    && apt install -y influxdb grafana /
+    && wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add - \
+    && echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list \
+    && wget -qO- https://repos.influxdata.com/influxdb.key | sudo apt-key add - \
+    && echo "deb https://repos.influxdata.com/debian buster stable" | sudo tee /etc/apt/sources.list.d/influxdb.list \
+    && apt-get update \
+    && apt install -y influxdb grafana \
     ### configure system
-    && a2enmod php7.3
+    && a2enmod php7.3 \
     ### create necessary files/directories
     && mkdir -p /solaranzeige \
     ### alter permissions
