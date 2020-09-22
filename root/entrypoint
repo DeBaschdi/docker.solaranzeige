@@ -40,4 +40,4 @@ chown -R ${USER_ID}:${GROUP_ID} /var/www
 chmod -R 775 /solaranzeige
 chmod -R 775 /var/www
 
-su -s /bin/bash -c "TERM=xterm /usr/local/bin/telerising.process" ${USERNAME}
+su -s /bin/bash -c "TERM=xterm /usr/local/bin/solaranzeige.process" ${USERNAME}

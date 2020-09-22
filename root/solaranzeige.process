@@ -6,6 +6,6 @@ echo "If u Like my Work, please Donate https://paypal.me/DeBaschdi Thank You ! :
 echo ""
 echo "Running Solaranzeige"
 echo ""
-cd /solaranzeige && bash
+cd /solaranzeige && /bin/bash
 
 cd ${PWD}
