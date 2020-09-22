@@ -1,0 +1,43 @@
+#!/bin/bash
+set -e
+set -f
+
+USERNAME="solaranzeige"
+
+if [[ -z "${TIMEZONE}" ]]; then
+  TIMEZONE='Europe/Berlin'
+fi
+
+if [[ -z "${GROUP_ID}" ]]; then
+  GROUP_ID='100'
+fi
+
+if [[ -z "${USER_ID}" ]]; then
+  USER_ID='99'
+fi
+
+if [[ -z "${UPDATE}" ]]; then
+  UPDATE='yes'
+fi
+
+
+if [[ ! -f /var/www/html/user.config.php ]] || [[ "${UPDATE}" = "yes" ]]; then
+  /usr/local/bin/solaranzeige.update
+fi
+
+ln -fs /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
+dpkg-reconfigure -f noninteractive tzdata
+
+echo "${USERNAME}:x:${USER_ID}:${GROUP_ID}:$USERNAME}:/:/sbin/nologin" >> /etc/passwd
+echo "${USERNAME}:!::0:::::" >> /etc/shadow
+
+if ! getent group ${GROUP_ID}; then
+  echo "${USERNAME}:x:${GROUP_ID}:" >> /etc/group
+fi
+
+chown -R ${USER_ID}:${GROUP_ID} /solaranzeige
+chown -R ${USER_ID}:${GROUP_ID} /var/www
+chmod -R 775 /solaranzeige
+chmod -R 775 /var/www
+
+su -s /bin/bash -c "TERM=xterm /usr/local/bin/telerising.process" ${USERNAME}

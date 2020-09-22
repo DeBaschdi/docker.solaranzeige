@@ -1,0 +1,11 @@
+#!/bin/bash
+
+PWD=$(pwd)
+echo ""
+echo "If u Like my Work, please Donate https://paypal.me/DeBaschdi Thank You ! :)"
+echo ""
+echo "Running Solaranzeige"
+echo ""
+cd /solaranzeige && bash
+
+cd ${PWD}

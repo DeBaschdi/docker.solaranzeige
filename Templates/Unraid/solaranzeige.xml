@@ -1,0 +1,166 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Telerising-Zattoo</Name>
+  <Repository>takealug/telerising-api:amd64</Repository>
+  <Registry>https://hub.docker.com/r/takealug/telerising-api</Registry>
+  <Network>host</Network>
+  <MyIP/>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support/>
+  <Project/>
+  <Overview>Get advanced access to Zattoo internet streams</Overview>
+  <Category/>
+  <WebUI/>
+  <TemplateURL/>
+  <Icon>https://findicons.com/files/icons/2461/spiffy/256/zattoo.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled>1584932177</DateInstalled>
+  <DonateText/>
+  <DonateLink/>
+  <Description>Get advanced access to Zattoo internet streams</Description>
+  <Networking>
+    <Mode>host</Mode>
+    <Publish>
+      <Port>
+        <HostPort>8180</HostPort>
+        <ContainerPort>8180</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+    </Publish>
+  </Networking>
+  <Data>
+    <Volume>
+      <HostDir>/mnt/cache/docker/appdata/telerising-zattoo</HostDir>
+      <ContainerDir>/telerising</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+  </Data>
+  <Environment>
+    <Variable>
+      <Value>99</Value>
+      <Name>USER_ID</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>100</Value>
+      <Name>GROUP_ID</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>yes</Value>
+      <Name>UPDATE</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>zattoo.com</Value>
+      <Name>PROVIDER</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>username@example.com</Value>
+      <Name>LOGIN</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>mypassword123</Value>
+      <Name>PASSWORD</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>1und1-fra1902-1</Value>
+      <Name>SERVER</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>/usr/bin/ffmpeg</Value>
+      <Name>FFMPEG_HOST_LOCATION</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>0</Value>
+      <Name>SSL_MODE</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>6275</Value>
+      <Name>YOUTH_PROTECTION_PIN</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>br0</Value>
+      <Name>NETWORK_DEVICE</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>hls5</Value>
+      <Name>PLATFORM</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>8000</Value>
+      <Name>BW</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>1</Value>
+      <Name>PROFILE</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>false</Value>
+      <Name>AUDIO2</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>false</Value>
+      <Name>DOLBY</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>false</Value>
+      <Name>IGNORE_MAXRATE</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>fatal</Value>
+      <Name>FFMPEG_LOGLEVEL</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>true</Value>
+      <Name>ONDEMAND</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>8180</Value>
+      <Name>PORT</Name>
+      <Mode/>
+    </Variable>
+  </Environment>
+  <Labels/>
+  <Config Name="Telerising" Target="/telerising" Default="" Mode="rw" Description="Container Path: /telerising" Type="Path" Display="always" Required="false" Mask="false">/mnt/cache/docker/appdata/telerising-zattoo</Config>
+  <Config Name="USER_ID" Target="USER_ID" Default="" Mode="" Description="Container Variable: USER_ID" Type="Variable" Display="always" Required="false" Mask="false">99</Config>
+  <Config Name="GROUP_ID" Target="GROUP_ID" Default="" Mode="" Description="Container Variable: GROUP_ID" Type="Variable" Display="always" Required="false" Mask="false">100</Config>
+  <Config Name="AUTO-UPDATE on restart" Target="UPDATE" Default="" Mode="" Description="Container Variable: UPDATE" Type="Variable" Display="always" Required="false" Mask="false">yes</Config>
+  <Config Name="PROVIDER / RESELLER" Target="PROVIDER" Default="" Mode="" Description="Container Variable: PROVIDER" Type="Variable" Display="always" Required="false" Mask="false">zattoo.com</Config>
+  <Config Name="LOGIN" Target="LOGIN" Default="" Mode="" Description="Container Variable: LOGIN" Type="Variable" Display="always" Required="false" Mask="false">username@example.com</Config>
+  <Config Name="PASSWORD" Target="PASSWORD" Default="" Mode="" Description="Container Variable: PASSWORD" Type="Variable" Display="always" Required="false" Mask="false">mypassword123</Config>
+  <Config Name="SERVER" Target="SERVER" Default="" Mode="" Description="Container Variable: SERVER" Type="Variable" Display="always" Required="false" Mask="false">1und1-fra1902-1</Config>
+  <Config Name="FFMPEG_HOST_LOCATION" Target="FFMPEG_HOST_LOCATION" Default="" Mode="" Description="Container Variable: FFMPEG_HOST_LOCATION" Type="Variable" Display="always" Required="false" Mask="false">/usr/bin/ffmpeg</Config>
+  <Config Name="SSL_MODE" Target="SSL_MODE" Default="" Mode="" Description="Container Variable: SSL_MODE" Type="Variable" Display="always" Required="false" Mask="false">0</Config>
+  <Config Name="YOUTH PROTECTION PIN" Target="YOUTH_PROTECTION_PIN" Default="" Mode="" Description="Container Variable: YOUTH_PROTECTION_PIN" Type="Variable" Display="always" Required="false" Mask="false">6275</Config>
+  <Config Name="Interface" Target="NETWORK_DEVICE" Default="" Mode="" Description="Container Variable: NETWORK_DEVICE" Type="Variable" Display="always" Required="false" Mask="false">br0</Config>
+  <Config Name="Default platform" Target="PLATFORM" Default="" Mode="" Description="Container Variable: PLATFORM" Type="Variable" Display="always" Required="false" Mask="false">hls5</Config>
+  <Config Name="Default bw" Target="BW" Default="" Mode="" Description="Container Variable: BW" Type="Variable" Display="always" Required="false" Mask="false">8000</Config>
+  <Config Name="Default profile" Target="PROFILE" Default="" Mode="" Description="Container Variable: PROFILE" Type="Variable" Display="always" Required="false" Mask="false">1</Config>
+  <Config Name="Default audio2" Target="AUDIO2" Default="" Mode="" Description="Container Variable: AUDIO2" Type="Variable" Display="always" Required="false" Mask="false">false</Config>
+  <Config Name="Default dolby" Target="DOLBY" Default="" Mode="" Description="Container Variable: DOLBY" Type="Variable" Display="always" Required="false" Mask="false">false</Config>
+  <Config Name="Default ignore_maxrate" Target="IGNORE_MAXRATE" Default="" Mode="" Description="Container Variable: IGNORE_MAXRATE" Type="Variable" Display="always" Required="false" Mask="false">false</Config>
+  <Config Name="Default loglevel" Target="FFMPEG_LOGLEVEL" Default="" Mode="" Description="Container Variable: FFMPEG_LOGLEVEL" Type="Variable" Display="always" Required="false" Mask="false">fatal</Config>
+  <Config Name="Default ondemand" Target="ONDEMAND" Default="" Mode="" Description="Container Variable: ONDEMAND" Type="Variable" Display="always" Required="false" Mask="false">true</Config>
+  <Config Name="PORT" Target="PORT" Default="" Mode="" Description="Container Variable: PORT" Type="Variable" Display="always" Required="false" Mask="false">8180</Config>
+  <Config Name="Host Port 1" Target="8180" Default="" Mode="tcp" Description="Container Port: 8180" Type="Port" Display="always" Required="false" Mask="false">8180</Config>
+</Container>
