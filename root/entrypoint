@@ -41,3 +41,4 @@ chmod -R 775 /solaranzeige
 chmod -R 775 /var/www
 
 su -s /bin/bash -c "TERM=xterm /usr/local/bin/solaranzeige.process" ${USERNAME}
+
