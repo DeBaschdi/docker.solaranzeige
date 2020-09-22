@@ -4,7 +4,7 @@ LABEL maintainer="Bastian Kleinschmidt <debaschdi@googlemail.com>" \
       org.label-schema.docker.dockerfile="/Dockerfile" \
       org.label-schema.name="docker.solaranzeige"
 
-ARG DEPENDENCIES="gnupg2 apt-transport-https ca-certificates software-properties-common apache2 sed iproute2 curl wget git net-tools inetutils-ping mosquitto mosquitto-clients php-common php-pear php-ssh2 php-xml php7.3 php7.3-cgi php7.3-cli php7.3-common php7.3-curl php7.3-dev php7.3-gd php7.3-json php7.3-opcache php7.3-readline php7.3-sqlite3 php7.3-xml libapache2-mod-php"
+ARG DEPENDENCIES="gnupg2 apt-transport-https ca-certificates dos2unix software-properties-common apache2 sed iproute2 curl wget git net-tools inetutils-ping mosquitto mosquitto-clients php-common php-pear php-ssh2 php-xml php7.3 php7.3-cgi php7.3-cli php7.3-common php7.3-curl php7.3-dev php7.3-gd php7.3-json php7.3-opcache php7.3-readline php7.3-sqlite3 php7.3-xml libapache2-mod-php"
 
 ENV USER_ID="99" \
     GROUP_ID="100" \
@@ -20,6 +20,10 @@ ENV USER_ID="99" \
 COPY root/entrypoint /usr/local/sbin/entrypoint
 COPY root/solaranzeige.process /usr/local/bin/solaranzeige.process
 COPY root/solaranzeige.update /usr/local/bin/solaranzeige.update
+
+RUN dos2unix /usr/local/sbin/entrypoint
+RUN dos2unix /usr/local/bin/solaranzeige.process
+RUN dos2unix /usr/local/bin/solaranzeige.update
 
 RUN apt-get -qy update \
     ### tweak some apt & dpkg settngs
