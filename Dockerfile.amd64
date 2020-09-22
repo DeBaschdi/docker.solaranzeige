@@ -20,7 +20,6 @@ ENV USER_ID="99" \
 COPY root/entrypoint /usr/local/sbin/entrypoint
 COPY root/solaranzeige.process /usr/local/bin/solaranzeige.process
 COPY root/solaranzeige.update /usr/local/bin/solaranzeige.update
-COPY root/packages.cleanup /usr/local/sbin/packages.cleanup
 
 RUN apt-get -qy update \
     ### tweak some apt & dpkg settngs
@@ -57,9 +56,11 @@ RUN apt-get -qy update \
     && chmod +x /usr/local/sbin/entrypoint \
     && chmod +x /usr/local/bin/solaranzeige.process \
     && chmod +x /usr/local/bin/solaranzeige.update \
-    && chmod +x /usr/local/sbin/packages.cleanup \
     ### cleanup
-    && /usr/local/sbin/packages.cleanup
+    && apt-get -qy autoclean \
+    && apt-get -qy clean \
+    && apt-get -qy autoremove --purge \
+    && rm -rf ${CLEANUP}
 
 ENTRYPOINT [ "/usr/local/sbin/entrypoint" ]
 
