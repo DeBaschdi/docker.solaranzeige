@@ -4,7 +4,8 @@ LABEL maintainer="Bastian Kleinschmidt <debaschdi@googlemail.com>" \
       org.label-schema.docker.dockerfile="/Dockerfile" \
       org.label-schema.name="docker.solaranzeige"
 
-ARG DEPENDENCIES="sudo gnupg2 apt-transport-https ca-certificates software-properties-common apache2 sed iproute2 curl wget git net-tools inetutils-ping mosquitto mosquitto-clients php-common php-pear php5-dev libmosquitto-dev php-ssh2 php-xml php7.3 php7.3-cgi php7.3-cli php7.3-common php7.3-curl php7.3-dev php7.3-gd php7.3-json php7.3-opcache php7.3-readline php7.3-sqlite3 php7.3-xml libapache2-mod-php"
+ARG BUILD_DEPENDENCIES="build-essential make"
+ARG DEPENDENCIES="sudo make gnupg2 apt-transport-https ca-certificates software-properties-common apache2 sed iproute2 curl wget git net-tools inetutils-ping mosquitto mosquitto-clients php-common php-pear libmosquitto-dev php-ssh2 php-xml php7.3 php7.3-cgi php7.3-cli php7.3-common php7.3-curl php7.3-dev php7.3-gd php7.3-json php7.3-opcache php7.3-readline php7.3-sqlite3 php7.3-xml libapache2-mod-php"
 
 ENV USER_ID="99" \
     GROUP_ID="100" \
@@ -20,6 +21,7 @@ ENV USER_ID="99" \
 COPY root/entrypoint /usr/local/sbin/entrypoint
 COPY root/solaranzeige.process /usr/local/bin/solaranzeige.process
 COPY root/solaranzeige.update /usr/local/bin/solaranzeige.update
+
 
 RUN apt-get -qy update \
     ### tweak some apt & dpkg settngs
@@ -41,7 +43,7 @@ RUN apt-get -qy update \
     ### run dist-upgrade
     && apt-get dist-upgrade -qy \
     ### install solaranzeige dependencies
-    && apt-get install -qy ${DEPENDENCIES} \
+    && apt-get install -qy ${BUILD_DEPENDENCIES} ${DEPENDENCIES} \
     && curl -fsSL  https://packages.grafana.com/gpg.key | apt-key add - \
     && echo "deb https://packages.grafana.com/oss/deb stable main" | tee -a /etc/apt/sources.list.d/grafana.list \
     && curl -fsSL  https://repos.influxdata.com/influxdb.key | apt-key add - \
@@ -53,13 +55,17 @@ RUN apt-get -qy update \
     ### configure system
     && phpenmod mosquitto \
     && a2enmod php7.3 \
+    && sed -i 's/\/var\/log/\/var\/www\/log/g' /etc/apache2/envvars \
+    && sed -i 's/ulimit/#ulimit/g' /etc/init.d/influxdb \
     ### create necessary files/directories
     && mkdir -p /solaranzeige \
+    && mkdir -p /var/www/log/apache2/ \
     ### alter permissions
     && chmod +x /usr/local/sbin/entrypoint \
     && chmod +x /usr/local/bin/solaranzeige.process \
     && chmod +x /usr/local/bin/solaranzeige.update \
     ### cleanup
+    && apt-get remove --purge -qy ${BUILD_DEPENDENCIES} \
     && apt-get -qy autoclean \
     && apt-get -qy clean \
     && apt-get -qy autoremove --purge \
@@ -69,6 +75,9 @@ COPY root/solaranzeige/setup /solaranzeige/setup
 COPY root/solaranzeige/splash.png /solaranzeige/splash.png
 COPY root/solaranzeige/statusmail /solaranzeige/statusmail
 COPY root/solaranzeige/support /solaranzeige/support
+
+RUN chmod +x /solaranzeige/setup \
+    && chmod +x /solaranzeige/support
 
 ENTRYPOINT [ "/usr/local/sbin/entrypoint" ]
 
