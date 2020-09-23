@@ -2,7 +2,7 @@
 set -e
 set -f
 
-USERNAME="solaranzeige"
+USERNAME="root"
 
 if [[ -z "${TIMEZONE}" ]]; then
   TIMEZONE='Europe/Berlin'
@@ -40,4 +40,4 @@ chown -R ${USER_ID}:${GROUP_ID} /var/www
 chmod -R 775 /solaranzeige
 chmod -R 775 /var/www
 
-su -s /bin/bash -c "TERM=xterm /usr/local/bin/solaranzeige.process" ${USERNAME}
+su -s /bin/bash -c "TERM=xterm /usr/local/bin/solaranzeige.process"

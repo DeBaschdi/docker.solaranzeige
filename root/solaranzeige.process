@@ -11,6 +11,4 @@ service influxdb start
 service grafana-server start
 service apache2 start
 
-tail -f /usr/local/bin/solaranzeige.process
-
-cd ${PWD}
+tail -f /var/www/log/solaranzeige.log

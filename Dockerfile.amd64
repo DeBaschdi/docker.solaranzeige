@@ -60,6 +60,7 @@ RUN apt-get -qy update \
     ### create necessary files/directories
     && mkdir -p /solaranzeige \
     && mkdir -p /var/www/log/apache2/ \
+    && touch /var/www/log/solaranzeige.log \
     ### alter permissions
     && chmod +x /usr/local/sbin/entrypoint \
     && chmod +x /usr/local/bin/solaranzeige.process \
