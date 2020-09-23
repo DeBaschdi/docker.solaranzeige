@@ -1,0 +1,99 @@
+#!/usr/bin/php
+<?php
+/******************************************************************************
+//  Mit diesem Script wird die Konfiguration des Rechners als eMail
+//  an die Adresse mail@solaranzeige.de  versendet.
+//
+******************************************************************************/
+$Pfad = "/var/www/html";
+require($Pfad."/user.config.php");
+
+
+$USB_Ausgabe = explode("\n\n",shell_exec ( "hwinfo --usb --partition"));
+
+
+$Message  = "\nKundenobjekt: ".$Objekt."\n\n";
+
+$Message .= "motd:\n";
+$Message .= "-------------\n";
+$Message .= utf8_decode(file_get_contents( "/etc/motd" ));
+$Message .= "\n\n";
+
+for ($i=0; $i < count($USB_Ausgabe); $i++) {
+  $Message .= $USB_Ausgabe[$i]."\n\n";
+}
+
+$Message .= "\nuser.config.php\n";
+$Message .= "---------------------\n";
+$Message .= utf8_decode(file_get_contents( "/var/www/html/user.config.php" ));
+$Message .= "\n\n";
+
+$Message .= "Netzwerk:\n";
+$Message .= "-----------\n";
+$Message .= utf8_decode(file_get_contents( "/etc/network/interfaces" ));
+$Message .= "\n\n";
+
+$Message .= "befehl.ini.php:\n";
+$Message .= "------------------\n";
+$Message .= utf8_decode(file_get_contents( "/var/www/html/befehl.ini.php" ));
+$Message .= "\n\n";
+
+$Message .= "update.log:\n";
+$Message .= "------------------\n";
+$Message .= utf8_decode(file_get_contents( "/var/www/log/update.log" ));
+$Message .= "\n\n";
+
+
+$Message .= "syslog:\n";
+$Message .= "-------------\n";
+$Message .= utf8_decode(splitFile( "/var/log/syslog"));
+$Message .= "\n\n";
+
+$Message .= "solaranzeige.log:\n";
+$Message .= "-------------\n";
+$Message .= utf8_decode(splitFile("/var/www/log/solaranzeige.log"));
+$Message .= "\n\n";
+
+echo "\nAlle Daten gesammelt.\n\n";
+
+$rc = mail("mail@solaranzeige.de","Statusreport: ".$Objekt,$Message,"from: pi@raspberry.solaranzeige.de");
+if ($rc == 1) {
+  echo "\neMail wurde an mail@solaranzeige.de versendet.\n\n";
+}
+
+
+
+
+function splitFile($Filename) {
+  // Es werden die letzten 500 Zeilen zurück gegeben.
+  //
+  $LastLines = "";
+  $file = new SplFileObject($Filename);
+  $file->seek(PHP_INT_MAX); // cheap trick to seek to EoF
+  $total_lines = $file->key(); // last line number
+  if ($total_lines <= 1000) {
+    $lines = $total_lines;
+    // output the last twenty lines
+    $reader = new LimitIterator($file, 0, $lines );
+    foreach ($reader as $line) {
+      $LastLines .= $line; // includes newlines
+    }
+  }
+  else  {
+    $lines = ($total_lines - 1000);
+    // output the last twenty lines
+    $reader = new LimitIterator($file, $lines );
+    foreach ($reader as $line) {
+      $LastLines .= $line; // includes newlines
+    }
+
+  }
+
+
+return $LastLines;
+
+}
+
+
+
+?>

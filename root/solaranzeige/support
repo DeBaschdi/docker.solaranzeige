@@ -1,0 +1,13 @@
+#!/bin/bash
+# Reverse ssh Tunnel nach familie-kunz aufbauen
+
+# Warten bis der dhcp Server die Adresse gesendet hat.
+
+sudo /usr/bin/autossh -p9853 -fNC -o "ServerAliveInterval 60" -o "ServerAliveCountMax 3" -R 10000:localhost:22 solaranzeige@familie-kunz.net
+
+
+echo " "
+echo "Remote Support jetzt möglich."
+echo "Gültig bis zum nächsten Reboot."
+echo "-------------------------------"
+echo " "

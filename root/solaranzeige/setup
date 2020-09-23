@@ -1,0 +1,86 @@
+#!/bin/bash
+# Die Konfiguration wird hier aufgerufen.
+# Dieser Script wird nur einmal nach der installation benötigt.
+#
+
+if [ "$1" == "-f" ]; then
+
+  echo " "
+
+ elif [ -e /var/www/html/user.config.php ]; then
+
+  echo " "
+  echo "setup ist schon gemacht -> EXIT"
+  echo "-------------------------------------------------------------"
+  echo " "
+  echo "...nochmaliges setup erzwingen, dann  'setup -f'  eingeben."
+  echo "Damit werden aber alle Einstellungen auf Werkseinstellung zurück gesetzt."
+  echo " "
+  exit
+
+ else
+#  Zur Zeit ausgeschaltet
+#  sudo resize2fs  /dev/mmcblk0p2
+  echo " "
+fi
+
+
+clear
+
+
+echo " "
+echo "Jetzt kann die neueste Version eingespielt werden."
+echo "Wenn gewünscht, bitte 2 x Weiter eingeben."
+echo "-----------------------------------------------------------"
+echo " "
+echo " "
+sudo update
+
+echo " "
+echo "Grafana Plugin's werden auf neuere Versionen geprüft."
+echo "-----------------------------------------------------------"
+echo " "
+
+sudo grafana-cli plugins update-all
+
+sudo cp /var/www/html/user.config.neu.php  /var/www/html/user.config.php
+
+sudo chown www-data:www-data /var/www/log/solaranzeige.log
+
+sudo mcedit /var/www/html/user.config.php
+
+echo " "
+echo "Wenn keine Internetanbindung vorliegt,"
+echo "dann bitte noch das Datum eingeben..."
+echo "in folgender Form: 'MMTThhmmJJ'"
+echo "(M=Monat, T=Tag, h=Stunde,m=Minute, JJ=Jahr)"
+echo "Beispiel: 2.7.2016 um 10:33 ==> 0702103316"
+echo ""
+read -p "> " datum
+
+sudo date "$datum"
+
+clear
+
+
+echo " "
+echo "Einen Moment bitte, es dauert ca. 30 Sekunden dann ist die"
+echo "Konfiguration abgeschlossen."
+echo "Falls noch Fehler vorhanden sind oder die Konfiguration"
+echo "noch geändert werden soll, dann bitte im Forum nachlesen"
+echo "wie es gemacht wird."
+echo "www.solaranzeige.de"
+echo "-----------------------------------------------------------"
+sudo /var/www/html/demo_daten_erzeugen.php
+echo " "
+read -p " Bitte [EINGABE] drücken. "
+
+echo " "
+echo "Der Raspberry wird jetzt neu gestartet. "
+
+sudo reboot
+
+exit 0
+
+
+
