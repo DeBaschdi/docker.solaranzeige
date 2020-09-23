@@ -75,9 +75,10 @@ COPY root/solaranzeige/setup /solaranzeige/setup
 COPY root/solaranzeige/splash.png /solaranzeige/splash.png
 COPY root/solaranzeige/statusmail /solaranzeige/statusmail
 COPY root/solaranzeige/support /solaranzeige/support
-
+COPY root/update /usr/local/sbin/update
 RUN chmod +x /solaranzeige/setup \
-    && chmod +x /solaranzeige/support
+    && chmod +x /solaranzeige/support \
+    && chmod +x /usr/local/sbin/update
 
 ENTRYPOINT [ "/usr/local/sbin/entrypoint" ]
 

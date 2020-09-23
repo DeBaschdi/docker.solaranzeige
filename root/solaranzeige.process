@@ -6,6 +6,11 @@ echo "If u Like my Work, please Donate https://paypal.me/DeBaschdi Thank You ! :
 echo ""
 echo "Running Solaranzeige"
 echo ""
+
+service influxdb start
+service grafana-server start
+service apache2 start
+
 tail -f /usr/local/bin/solaranzeige.process
 
 cd ${PWD}
