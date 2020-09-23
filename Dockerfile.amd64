@@ -84,5 +84,7 @@ ENTRYPOINT [ "/usr/local/sbin/entrypoint" ]
 
 VOLUME /solaranzeige
 VOLUME /var/www
+VOLUME /var/lib/influxdb
+
 EXPOSE 3000
 
