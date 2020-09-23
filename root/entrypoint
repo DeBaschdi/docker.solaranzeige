@@ -35,6 +35,9 @@ if ! getent group ${GROUP_ID}; then
   echo "${USERNAME}:x:${GROUP_ID}:" >> /etc/group
 fi
 
+rm /var/www/log/solaranzeige.log
+touch /var/www/log/solaranzeige.log
+
 chown -R ${USER_ID}:${GROUP_ID} /solaranzeige
 chown -R ${USER_ID}:${GROUP_ID} /var/www
 chmod -R 775 /solaranzeige
