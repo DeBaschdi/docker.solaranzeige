@@ -21,6 +21,7 @@ ENV USER_ID="99" \
 COPY root/entrypoint /usr/local/sbin/entrypoint
 COPY root/solaranzeige.process /usr/local/bin/solaranzeige.process
 COPY root/solaranzeige.update /usr/local/bin/solaranzeige.update
+COPY root/solaranzeige.setup /usr/local/bin/solaranzeige.setup
 
 RUN apt-get -qy update \
     ### tweak some apt & dpkg settngs
@@ -63,6 +64,7 @@ RUN apt-get -qy update \
     && chmod +x /usr/local/sbin/entrypoint \
     && chmod +x /usr/local/bin/solaranzeige.process \
     && chmod +x /usr/local/bin/solaranzeige.update \
+    && chmod +x /usr/local/bin/solaranzeige.setup \
     ### cleanup
     && apt-get remove --purge -qy ${BUILD_DEPENDENCIES} \
     && apt-get -qy autoclean \
@@ -70,16 +72,10 @@ RUN apt-get -qy update \
     && apt-get -qy autoremove --purge \
     && rm -rf ${CLEANUP}
 
-COPY root/solaranzeige/setup /solaranzeige/setup
-COPY root/solaranzeige/splash.png /solaranzeige/splash.png
-COPY root/solaranzeige/statusmail /solaranzeige/statusmail
-COPY root/solaranzeige/support /solaranzeige/support
 COPY root/update /usr/local/sbin/update
 COPY root/solaranzeige_cron /etc/cron.d/solaranzeige_cron
 
-RUN chmod +x /solaranzeige/setup \
-    && chmod +x /solaranzeige/support \
-    && chmod +x /usr/local/sbin/update \
+RUN chmod +x /usr/local/sbin/update \
     && chmod 0644 /etc/cron.d/solaranzeige_cron \
     && crontab /etc/cron.d/solaranzeige_cron
 

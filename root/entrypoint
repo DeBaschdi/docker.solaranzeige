@@ -17,11 +17,14 @@ if [[ -z "${USER_ID}" ]]; then
 fi
 
 if [[ -z "${UPDATE}" ]]; then
-  UPDATE='yes'
+  UPDATE='no'
 fi
 
+if [[ ! -f /var/www/html/user.config.php ]]; then
+  /usr/local/bin/solaranzeige.setup
+fi
 
-if [[ ! -f /var/www/html/user.config.php ]] || [[ "${UPDATE}" = "yes" ]]; then
+if [[ "${UPDATE}" = "yes" ]]; then
   /usr/local/bin/solaranzeige.update
 fi
 
