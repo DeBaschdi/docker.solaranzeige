@@ -75,7 +75,7 @@ COPY root/solaranzeige/splash.png /solaranzeige/splash.png
 COPY root/solaranzeige/statusmail /solaranzeige/statusmail
 COPY root/solaranzeige/support /solaranzeige/support
 COPY root/update /usr/local/sbin/update
-COPY root/solaranzeige_cron /etc/cron.d/solaranzeige.update
+COPY root/solaranzeige_cron /etc/cron.d/solaranzeige_cron
 
 RUN chmod +x /solaranzeige/setup \
     && chmod +x /solaranzeige/support \

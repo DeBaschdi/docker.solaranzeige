@@ -6,6 +6,7 @@ service mosquitto start
 service influxdb start
 service grafana-server start
 service apache2 start
+service cron start
 
 echo ""
 echo "If u Like my Work, please Donate https://paypal.me/DeBaschdi Thank You ! :)"
