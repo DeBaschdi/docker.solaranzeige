@@ -60,7 +60,6 @@ RUN apt-get -qy update \
     && mkdir -p /tmp/git \
     && mkdir -p /solaranzeige \
     && mkdir -p /var/www/log/apache2 \
-    && touch /var/www/log/solaranzeige.log \
     && phpenmod mosquitto \
     && a2enmod php7.3 \
     && sed -i 's/\/var\/log/\/var\/www\/log/g' /etc/apache2/envvars \

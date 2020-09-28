@@ -5,9 +5,14 @@ echo "##################################"
 echo ""
 
 echo "downloading Main Program..."
-#curl -S https://solaranzeige.de/phpBB3/download/file.php?id=1199 >/var/www/html/wallbox.steuerung.ini
-#curl -S https://solaranzeige.de/phpBB3/download/file.php?id=1198 >/var/www/html/meldungen_senden.php
-#curl -S https://solaranzeige.de/phpBB3/download/file.php?id=1196 >/var/www/html/befehle.ini.php
+mkdir -p /tmp/git &>/dev/null
+if [[ ! -f /var/www/log/solaranzeige.log ]]; then
+  touch /var/www/log/solaranzeige.log
+fi
+
+if [[ ! -f /var/www/log/update.log ]]; then
+  touch /var/www/log/update.log
+fi
 
 cd /tmp/git && git clone https://github.com/DeBaschdi/solar_config.git
 cp -R /tmp/git/solar_config/html /var/www

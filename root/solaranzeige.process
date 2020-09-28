@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [[ ! -f /var/www/log/solaranzeige.log ]]; then
+  touch /var/www/log/solaranzeige.log
+fi
+
 PWD=$(pwd)
 
 service mosquitto start

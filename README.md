@@ -16,6 +16,7 @@ docker run \
   -e GROUP_ID="100" \
   -e TIMEZONE="Europe/Berlin" \
   -e UPDATE="yes" \
+  -p 3000:3000 \
   -v {SOLARANZEIGE_STORAGE}:/solaranzeige \
   -v {INFLUXDB_STORAGE}:/var/lib/influxdb \
   -v {GRAFANA_STORAGE}:/var/lib/grafana \
@@ -34,6 +35,7 @@ The available parameters in detail:
 | `USER_ID` | yes | [integer] | 99 | UID to run Solaranzeige as |
 | `GROUP_ID` | yes | [integer] | 100 | GID to run Solaranzeige as |
 | `TIMEZONE` | yes | [string] | Europe/Berlin | Timezone for the container |
+| `-p` | yes | [integer] | 3000:3000 | Map Grafana Listenport inside this Container to Host Device Listen Port (Bridge Mode) |
 | `UPDATE` | yes | yes, no | yes | Turn On / Off automatic Update for Solaranzeige each restart inside this Docker |
 
 Frequently used volumes:
