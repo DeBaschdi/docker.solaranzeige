@@ -4,13 +4,6 @@ echo "# Initial Setup for Solaranzeige #"
 echo "##################################"
 echo ""
 
-echo "creating required folders..."
-mkdir /var/www/html &>/dev/null
-mkdir /var/www/html/phpinc &>/dev/null
-mkdir /var/www/log &>/dev/null
-mkdir /var/www/pipe &>/dev/null
-mkdir /tmp/git &>/dev/null
-
 echo "downloading Main Program..."
 #curl -S https://solaranzeige.de/phpBB3/download/file.php?id=1199 >/var/www/html/wallbox.steuerung.ini
 #curl -S https://solaranzeige.de/phpBB3/download/file.php?id=1198 >/var/www/html/meldungen_senden.php
