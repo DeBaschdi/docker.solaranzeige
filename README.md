@@ -42,10 +42,10 @@ Frequently used volumes:
  
 | Volume | Optional | Description |
 | ---- | --- | --- |
-| `SOLARANZEIGE_STORAGE` | no | The directory to persist /solaranzeige to |
-| `INFLUXDB_STORAGE` | yes | The directory to to persist /var/lib/influxdb to |
-| `GRAFANA_STORAGE` | yes | The directory to to persist /var/lib/grafana to |
-| `WWW_STORAGE` | yes | The directory to to persist /var/www to |
+| `SOLARANZEIGE_STORAGE` | yes | The directory to persist /solaranzeige to |
+| `INFLUXDB_STORAGE` | no | The directory to to persist /var/lib/influxdb to |
+| `GRAFANA_STORAGE` | no | The directory to to persist /var/lib/grafana to |
+| `WWW_STORAGE` | no | The directory to to persist /var/www to |
 
 When passing volumes please replace the name including the surrounding curly brackets with existing absolute paths with correct permissions.
 
