@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Solaranzeige</Name>
+  <Repository>takealug/solaranzeige:amd64</Repository>
+  <Registry>https://hub.docker.com/repository/docker/takealug/solaranzeige</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support/>
+  <Project/>
+  <Overview/>
+  <Category/>
+  <WebUI>http://[IP]:[PORT:3000]</WebUI>
+  <TemplateURL/>
+  <Icon>https://raw.githubusercontent.com/DeBaschdi/solar_config/master/solaranzeige/splash.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset>0,1</CPUset>
+  <DateInstalled>1601290561</DateInstalled>
+  <DonateText/>
+  <DonateLink/>
+  <Description/>
+  <Networking>
+    <Mode>bridge</Mode>
+    <Publish>
+      <Port>
+        <HostPort>3000</HostPort>
+        <ContainerPort>3000</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+    </Publish>
+  </Networking>
+  <Data>
+    <Volume>
+      <HostDir>/mnt/cache/docker/appdata/solaranzeige/solaranzeige</HostDir>
+      <ContainerDir>/solaranzeige</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+    <Volume>
+      <HostDir>/mnt/cache/docker/appdata/solaranzeige/www</HostDir>
+      <ContainerDir>/var/www</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+    <Volume>
+      <HostDir>/mnt/cache/docker/appdata/solaranzeige/influxdb</HostDir>
+      <ContainerDir>/var/lib/influxdb</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+    <Volume>
+      <HostDir>/mnt/cache/docker/appdata/solaranzeige/grafana/</HostDir>
+      <ContainerDir>/var/lib/grafana</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+  </Data>
+  <Environment>
+    <Variable>
+      <Value>yes</Value>
+      <Name>UPDATE</Name>
+      <Mode/>
+    </Variable>
+  </Environment>
+  <Labels/>
+  <Config Name="Grafana" Target="3000" Default="" Mode="tcp" Description="Container Port: 3000" Type="Port" Display="always" Required="false" Mask="false">3000</Config>
+  <Config Name="Solaranzeige" Target="/solaranzeige" Default="" Mode="rw" Description="Container Path: /solaranzeige" Type="Path" Display="always" Required="false" Mask="false">/mnt/cache/docker/appdata/solaranzeige/solaranzeige</Config>
+  <Config Name="www" Target="/var/www" Default="" Mode="rw" Description="Container Path: /var/www" Type="Path" Display="always" Required="false" Mask="false">/mnt/cache/docker/appdata/solaranzeige/www</Config>
+  <Config Name="influxdb" Target="/var/lib/influxdb" Default="" Mode="rw" Description="Container Path: /var/lib/influxdb" Type="Path" Display="always" Required="false" Mask="false">/mnt/cache/docker/appdata/solaranzeige/influxdb</Config>
+  <Config Name="grafana" Target="/var/lib/grafana" Default="" Mode="rw" Description="Container Path: /var/lib/grafana" Type="Path" Display="always" Required="false" Mask="false">/mnt/cache/docker/appdata/solaranzeige/grafana/</Config>
+  <Config Name="update" Target="UPDATE" Default="" Mode="" Description="Container Variable: UPDATE" Type="Variable" Display="always" Required="false" Mask="false">yes</Config>
+</Container>
