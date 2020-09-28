@@ -4,8 +4,15 @@ echo "# Initial Setup for Solaranzeige #"
 echo "##################################"
 echo ""
 
-echo "downloading Main Program..."
+echo "necessary files/directories"
 mkdir -p /tmp/git &>/dev/null
+mkdir -p /var/www/html &>/dev/null
+mkdir -p /var/www/html/phpinc &>/dev/null
+mkdir -p /var/www/log &>/dev/null
+mkdir -p /var/www/pipe &>/dev/null
+mkdir -p /solaranzeige &>/dev/null
+mkdir -p /var/www/log/apache2 &>/dev/null
+
 if [[ ! -f /var/www/log/solaranzeige.log ]]; then
   touch /var/www/log/solaranzeige.log
 fi
@@ -14,6 +21,8 @@ if [[ ! -f /var/www/log/update.log ]]; then
   touch /var/www/log/update.log
 fi
 
+echo ""
+echo "downloading Main Program..."
 cd /tmp/git && git clone https://github.com/DeBaschdi/solar_config.git
 cp -R /tmp/git/solar_config/html /var/www
 cp -R /tmp/git/solar_config/solaranzeige /
@@ -28,9 +37,11 @@ chmod +x solaranzeige/support
 
 cd /var/www/html && rm -rf /tmp/git
 
+echo ""
 echo "##############################################################################################"
 echo "# Initial Setup for Solaranzeige completed, please run /solaranzeige/setup for Configuration #"
 echo "# example : docker exec -ti Solaranzeige /solaranzeige/setup                                 #"
 echo "##############################################################################################"
+echo ""
 
 tail -f /var/www/log/solaranzeige.log

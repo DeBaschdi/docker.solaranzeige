@@ -36,7 +36,7 @@ The available parameters in detail:
 | `GROUP_ID` | yes | [integer] | 100 | GID to run Solaranzeige as |
 | `TIMEZONE` | yes | [string] | Europe/Berlin | Timezone for the container |
 | `-p` | yes | [integer] | 3000:3000 | Map Grafana Listenport inside this Container to Host Device Listen Port (Bridge Mode) |
-| `UPDATE` | yes | yes, no | yes | Turn On / Off automatic Update for Solaranzeige each restart inside this Docker |
+| `UPDATE` | yes | yes, no | no | Turn On / Off automatic Update for Solaranzeige each restart inside this Docker |
 
 Frequently used volumes:
  
@@ -57,11 +57,11 @@ When passing volumes please replace the name including the surrounding curly bra
 
 ## First Run / Initial Setup Solaranzeige
 Inside this Container you need to run /solaranzeige/setup 
-Connect to the Container e.g 
+connect to the Container e.g 
 ```
 docker exec -ti Solaranzeige /solaranzeige/setup
 ```
-> **Note:** For initial Setup instructions see :https://solaranzeige.de
+> **Note:** For initial Setup instructions see https://solaranzeige.de/phpBB3/viewtopic.php?f=5&t=305
 >> Please, after you finish your Initial Setup, restart this Container, and select your Grafana - Dashboard
 
 ## Support my work
