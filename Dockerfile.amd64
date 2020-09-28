@@ -65,7 +65,7 @@ RUN apt-get -qy update \
     ### alter permissions
     && chmod +x /usr/local/sbin/entrypoint \
     && chmod +x /usr/local/sbin/solaranzeige.process \
-    && chmod +x /usr/local/s/solaranzeige.update \
+    && chmod +x /usr/local/sbin/solaranzeige.update \
     && chmod +x /usr/local/sbin/solaranzeige.setup \
     ### cleanup
     && apt-get remove --purge -qy ${BUILD_DEPENDENCIES} \
