@@ -19,9 +19,9 @@ ENV USER_ID="99" \
     CLEANUP="/tmp/* /var/tmp/* /var/log/* /var/lib/apt/lists/* /var/lib/{apt,dpkg,cache,log}/ /var/cache/apt/archives /usr/share/doc/ /usr/share/man/ /usr/share/locale/ "
 
 COPY root/entrypoint /usr/local/sbin/entrypoint
-COPY root/solaranzeige.process /usr/local/bin/solaranzeige.process
-COPY root/solaranzeige.update /usr/local/bin/solaranzeige.update
-COPY root/solaranzeige.setup /usr/local/bin/solaranzeige.setup
+COPY root/solaranzeige.process /usr/local/sbin/solaranzeige.process
+COPY root/solaranzeige.update /usr/local/sbin/solaranzeige.update
+COPY root/solaranzeige.setup /usr/local/sbin/solaranzeige.setup
 
 RUN apt-get -qy update \
     ### tweak some apt & dpkg settngs
@@ -56,15 +56,17 @@ RUN apt-get -qy update \
     && phpenmod mosquitto \
     && a2enmod php7.3 \
     && sed -i 's/\/var\/log/\/var\/www\/log/g' /etc/apache2/envvars \
+    && sed -i 's/\/var\/log/\/var\/www\/log/g' /etc/default/grafana-server \
     && sed -i 's/ulimit/#ulimit/g' /etc/init.d/influxdb \
+    && echo "STDERR=/var/www/log/influxdb.log" > /etc/default/influxdb \
     ### create necessary files/directories
     && mkdir -p /solaranzeige \
     && mkdir -p /var/www/log/apache2/ \
     ### alter permissions
     && chmod +x /usr/local/sbin/entrypoint \
-    && chmod +x /usr/local/bin/solaranzeige.process \
-    && chmod +x /usr/local/bin/solaranzeige.update \
-    && chmod +x /usr/local/bin/solaranzeige.setup \
+    && chmod +x /usr/local/sbin/solaranzeige.process \
+    && chmod +x /usr/local/s/solaranzeige.update \
+    && chmod +x /usr/local/sbin/solaranzeige.setup \
     ### cleanup
     && apt-get remove --purge -qy ${BUILD_DEPENDENCIES} \
     && apt-get -qy autoclean \
@@ -73,9 +75,11 @@ RUN apt-get -qy update \
     && rm -rf ${CLEANUP}
 
 COPY root/update /usr/local/sbin/update
+COPY root/truncate_log /usr/local/sbin/truncate_log
 COPY root/solaranzeige_cron /etc/cron.d/solaranzeige_cron
 
 RUN chmod +x /usr/local/sbin/update \
+    && chmod +x /usr/local/sbin/truncate_log \
     && chmod 0644 /etc/cron.d/solaranzeige_cron \
     && crontab /etc/cron.d/solaranzeige_cron
 
@@ -84,6 +88,7 @@ ENTRYPOINT [ "/usr/local/sbin/entrypoint" ]
 VOLUME /solaranzeige
 VOLUME /var/www
 VOLUME /var/lib/influxdb
+VOLUME /var/lib/grafana
 
 EXPOSE 3000
 

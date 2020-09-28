@@ -178,7 +178,7 @@ log_schreiben("---------------------------------------------------","   ",6);
 
 echo "\nSolaranzeige Update ist beendet. Normalerweise ist kein 'reboot'  nötig,\n";
 echo "außer das Problem lag in der Verbindung zum Regler / Wechselrichter.\n";
-echo "In diesem Fall muss ein Reboot gemacht werden: 'sudo reboot'\n";
+echo "In diesem Fall muss der Docker neu gestartet werden.\n";
 echo "Dieser Update war nicht für das Betriebssystem, InfuxDB und auch nicht für Grafana.\n\n";
 
 exit;

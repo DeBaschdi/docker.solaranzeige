@@ -21,11 +21,11 @@ if [[ -z "${UPDATE}" ]]; then
 fi
 
 if [[ ! -f /var/www/html/user.config.php ]]; then
-  /usr/local/bin/solaranzeige.setup
+  /usr/local/sbin/solaranzeige.setup
 fi
 
 if [[ "${UPDATE}" = "yes" ]]; then
-  /usr/local/bin/solaranzeige.update
+  /usr/local/sbin/solaranzeige.update
 fi
 
 ln -fs /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
@@ -46,4 +46,4 @@ chown -R ${USER_ID}:${GROUP_ID} /var/www
 chmod -R 775 /solaranzeige
 chmod -R 775 /var/www
 
-su -s /bin/bash -c "TERM=xterm /usr/local/bin/solaranzeige.process"
+su -s /bin/bash -c "TERM=xterm /usr/local/sbin/solaranzeige.process"

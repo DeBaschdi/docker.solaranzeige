@@ -1,0 +1,7 @@
+#!/bin/bash
+find /var/www/log -type f -name "*" -exec truncate -s 0 {} +
+echo " " >> /var/www/log/solaranzeige.log
+echo "###############################" >> /var/www/log/solaranzeige.log
+echo "# Truncate all Logfiles to 0Byte #" >> /var/www/log/solaranzeige.log
+echo "###############################" >> /var/www/log/solaranzeige.log
+echo " " >> /var/www/log/solaranzeige.log
