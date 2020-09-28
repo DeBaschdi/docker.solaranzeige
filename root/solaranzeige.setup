@@ -16,7 +16,7 @@ echo "downloading Main Program..."
 #curl -S https://solaranzeige.de/phpBB3/download/file.php?id=1196 >/var/www/html/befehle.ini.php
 
 cd /tmp/git && git clone https://github.com/DeBaschdi/solar_config.git
-cp -R /tmp/git/solar_config/html /var/www/html
+cp -R /tmp/git/solar_config/html /var/www
 cp -R /tmp/git/solar_config/solaranzeige /
 cp -R /tmp/git/solar_config/influxdb /var/lib
 cp -R /tmp/git/solar_config/grafana /var/lib
