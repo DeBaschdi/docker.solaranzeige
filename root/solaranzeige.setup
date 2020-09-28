@@ -6,6 +6,7 @@ echo ""
 
 echo "creating required folders..."
 mkdir /var/www/html &>/dev/null
+mkdir /var/www/html/phpinc &>/dev/null
 mkdir /var/www/log &>/dev/null
 mkdir /var/www/pipe &>/dev/null
 mkdir /tmp/git &>/dev/null
