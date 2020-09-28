@@ -29,6 +29,11 @@ cp -R /tmp/git/solar_config/solaranzeige /
 cp -R /tmp/git/solar_config/influxdb /var/lib
 cp -R /tmp/git/solar_config/grafana /var/lib
 
+chmod -R 777 /solaranzeige
+chmod -R 777 /var/www
+chmod -R 777 /var/lib/influxdb
+chmod -R 777 /var/lib/grafana
+
 su -s /bin/bash -c "TERM=xterm /usr/local/sbin/solaranzeige.update"
 
 chmod +x /solaranzeige/setup
