@@ -52,17 +52,21 @@ RUN apt-get -qy update \
     && apt install -y influxdb grafana \
     && pecl install Mosquitto-alpha \
     && echo "phpenmod mosquitto" | tee -a /etc/php/7.3/mods-available/mosquitto.ini \
-    ### configure system
+    ### configure system / create necessary files/directories
+    && mkdir -p /var/www/html \
+    && mkdir -p /var/www/html/phpinc \
+    && mkdir -p /var/www/log \
+    && mkdir -p /var/www/pipe \
+    && mkdir -p /tmp/git \
+    && mkdir -p /solaranzeige \
+    && mkdir -p /var/www/log/apache2 \
+    && touch -p /var/www/log/solaranzeige.log \
     && phpenmod mosquitto \
     && a2enmod php7.3 \
     && sed -i 's/\/var\/log/\/var\/www\/log/g' /etc/apache2/envvars \
     && sed -i 's/\/var\/log/\/var\/www\/log/g' /etc/default/grafana-server \
     && sed -i 's/ulimit/#ulimit/g' /etc/init.d/influxdb \
     && echo "STDERR=/var/www/log/influxdb.log" > /etc/default/influxdb \
-    && touch /var/www/log/solaranzeige.log \
-    ### create necessary files/directories
-    && mkdir -p /solaranzeige \
-    && mkdir -p /var/www/log/apache2/ \
     ### alter permissions
     && chmod +x /usr/local/sbin/entrypoint \
     && chmod +x /usr/local/sbin/solaranzeige.process \
