@@ -15,12 +15,13 @@ echo "downloading Main Program..."
 #curl -S https://solaranzeige.de/phpBB3/download/file.php?id=1198 >/var/www/html/meldungen_senden.php
 #curl -S https://solaranzeige.de/phpBB3/download/file.php?id=1196 >/var/www/html/befehle.ini.php
 
-su -s /bin/bash -c "TERM=xterm /usr/local/sbin/solaranzeige.update"
 cd /tmp/git && git clone https://github.com/DeBaschdi/solar_config.git
 cp -R /tmp/git/solar_config/html /var/www/html
 cp -R /tmp/git/solar_config/solaranzeige /
 cp -R /tmp/git/solar_config/influxdb /var/lib
 cp -R /tmp/git/solar_config/grafana /var/lib
+
+su -s /bin/bash -c "TERM=xterm /usr/local/sbin/solaranzeige.update"
 
 chmod +x /solaranzeige/setup
 chmod +x /solaranzeige/statusmail

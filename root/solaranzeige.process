@@ -8,6 +8,7 @@ service grafana-server start
 service apache2 start
 service cron start
 
+echo ""
 echo "###############################################################################"
 echo "# If u Like my Work, please Donate https://paypal.me/DeBaschdi Thank You ! :) #"
 echo "###############################################################################"
@@ -16,5 +17,5 @@ echo "########################"
 echo "# Image Version 0.0.1  #"
 echo "# Running Solaranzeige #"
 echo "########################"
-
+echo ""
 tail -f /var/www/log/solaranzeige.log
