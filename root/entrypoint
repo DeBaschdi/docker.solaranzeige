@@ -32,8 +32,10 @@ fi
 
 chown -R ${USER_ID}:${GROUP_ID} /solaranzeige
 chown -R ${USER_ID}:${GROUP_ID} /var/www
-chmod -R 775 /solaranzeige
-chmod -R 775 /var/www
+chmod -R 777 /solaranzeige
+chmod -R 777 /var/www
+chmod -R 777 /var/lib/influxdb
+chmod -R 777 /var/lib/grafana
 
 if [[ ! -f /var/www/html/user.config.php ]]; then
   /usr/local/sbin/solaranzeige.setup

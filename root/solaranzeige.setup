@@ -4,7 +4,7 @@ echo "# Initial Setup for Solaranzeige #"
 echo "##################################"
 echo ""
 
-echo "necessary files/directories"
+echo "create necessary files/directories..."
 mkdir -p /tmp/git &>/dev/null
 mkdir -p /var/www/html &>/dev/null
 mkdir -p /var/www/html/phpinc &>/dev/null
@@ -33,7 +33,7 @@ su -s /bin/bash -c "TERM=xterm /usr/local/sbin/solaranzeige.update"
 
 chmod +x /solaranzeige/setup
 chmod +x /solaranzeige/statusmail
-chmod +x solaranzeige/support
+chmod +x /solaranzeige/support
 
 cd /var/www/html && rm -rf /tmp/git
 
