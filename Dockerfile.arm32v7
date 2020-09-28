@@ -45,9 +45,14 @@ RUN apt-get -qy update \
     && apt-get dist-upgrade -qy \
     ### install solaranzeige dependencies
     && apt-get install -qy ${BUILD_DEPENDENCIES} ${DEPENDENCIES} \
-    && curl -fsSL  https://packages.grafana.com/gpg.key | apt-key add - \
+    && mkdir /usr/share/ca-certificates/extra
+
+COPY root/cacert.crt /usr/share/ca-certificates/extra
+
+RUN dpkg-reconfigure ca-certificates \
+    && curl --cacert /usr/share/ca-certificates/extra/cacert.crt -fsSL  https://packages.grafana.com/gpg.key | apt-key add - \
     && echo "deb https://packages.grafana.com/oss/deb stable main" | tee -a /etc/apt/sources.list.d/grafana.list \
-    && curl -fsSL  https://repos.influxdata.com/influxdb.key | apt-key add - \
+    && curl --cacert /usr/share/ca-certificates/extra/cacert.crt -fsSL  https://repos.influxdata.com/influxdb.key | apt-key add - \
     && echo "deb https://repos.influxdata.com/debian buster stable" | tee -a /etc/apt/sources.list.d/influxdb.list \
     && apt-get update \
     && apt install -y influxdb grafana \

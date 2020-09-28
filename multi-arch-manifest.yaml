@@ -4,3 +4,13 @@ manifests:
     platform:
       architecture: amd64
       os: linux
+  - image: takealug/solaranzeige:arm32v7
+    platform:
+      architecture: arm
+      os: linux
+      variant: v7
+  - image: takealug/solaranzeige:arm64v8
+    platform:
+      architecture: arm
+      os: linux
+      variant: v8
