@@ -43,6 +43,11 @@ chmod +x /solaranzeige/support
 cd /var/www/html && rm -rf /tmp/git
 
 echo ""
+echo "Installing Grafana Plugins..."
+grafana-cli plugins install fetzerch-sunandmoon-datasource
+grafana-cli plugins install briangann-gauge-panel
+
+echo ""
 echo "##############################################################################################"
 echo "# Initial Setup for Solaranzeige completed, please run /solaranzeige/setup for Configuration #"
 echo "# example : docker exec -ti Solaranzeige /solaranzeige/setup                                 #"
