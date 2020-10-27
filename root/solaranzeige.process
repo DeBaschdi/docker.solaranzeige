@@ -5,13 +5,13 @@ if [[ ! -f /var/www/log/solaranzeige.log ]]; then
 fi
 
 if [[ ! -f /solaranzeige/solaranzeige_cron ]]; then
-  copy /etc/cron.d/solaranzeige_cron /solaranzeige/solaranzeige_cron
+  cp /etc/cron.d/solaranzeige_cron /solaranzeige/solaranzeige_cron
 fi
 
 PWD=$(pwd)
 echo ""
 echo "Setup Crontab..."
-copy /solaranzeige/solaranzeige_cron /etc/cron.d/solaranzeige_cron
+cp /solaranzeige/solaranzeige_cron /etc/cron.d/solaranzeige_cron
 chmod 0644 /etc/cron.d/solaranzeige_cron
 crontab /etc/cron.d/solaranzeige_cron
 echo ""
