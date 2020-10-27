@@ -4,8 +4,19 @@ if [[ ! -f /var/www/log/solaranzeige.log ]]; then
   touch /var/www/log/solaranzeige.log
 fi
 
-PWD=$(pwd)
+if [[ ! -f /solaranzeige/solaranzeige_cron ]]; then
+  copy /etc/cron.d/solaranzeige_cron /solaranzeige/solaranzeige_cron
+fi
 
+PWD=$(pwd)
+echo ""
+echo "Setup Crontab..."
+copy /solaranzeige/solaranzeige_cron /etc/cron.d/solaranzeige_cron
+chmod 0644 /etc/cron.d/solaranzeige_cron
+crontab /etc/cron.d/solaranzeige_cron
+echo ""
+
+echo "Starting Services..."
 service mosquitto start
 service influxdb start
 service grafana-server start
@@ -18,7 +29,7 @@ echo "# If u Like my Work, please Donate https://paypal.me/DeBaschdi Thank You !
 echo "###############################################################################"
 echo ""
 echo "########################"
-echo "# Image Version 0.0.3  #"
+echo "# Image Version 0.0.4  #"
 echo "# Running Solaranzeige #"
 echo "########################"
 echo ""

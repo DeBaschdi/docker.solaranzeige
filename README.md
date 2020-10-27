@@ -42,7 +42,7 @@ Frequently used volumes:
  
 | Volume | Optional | Description |
 | ---- | --- | --- |
-| `SOLARANZEIGE_STORAGE` | yes | The directory to persist /solaranzeige to |
+| `SOLARANZEIGE_STORAGE` | no | The directory to persist /solaranzeige with Crontab Settings to |
 | `INFLUXDB_STORAGE` | no | The directory to to persist /var/lib/influxdb to |
 | `GRAFANA_STORAGE` | no | The directory to to persist /var/lib/grafana to |
 | `WWW_STORAGE` | no | The directory to to persist /var/www to |
@@ -63,6 +63,9 @@ docker exec -ti Solaranzeige /solaranzeige/setup
 ```
 > **Note:** For initial Setup instructions see https://solaranzeige.de/phpBB3/viewtopic.php?f=5&t=305
 >> Please, after you finish your Initial Setup, restart this Container, and select your Grafana - Dashboard
+
+## Modify Crontab Settings (Needed for Wallbox or Multi controller Configuration)
+Just edit your Persist {SOLARANZEIGE_STORAGE}/solaranzeige_cron File and restart your Container
 
 ## Support my work
 If you like my Work, please [![Paypal Donation Page](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://paypal.me/DeBaschdi) - thank you! :-)
