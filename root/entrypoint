@@ -37,7 +37,7 @@ chmod -R 777 /var/www
 chmod -R 777 /var/lib/influxdb
 chmod -R 777 /var/lib/grafana
 
-if [[ ! -f /var/www/html/user.config.php ]] || [[ ! -f /var/www/html/1.user.config.php ]] || [[ ! -f /var/www/html/2.user.config.php ]] || [[ ! -f /var/www/html/3.user.config.php ]] || [[ ! -f /var/www/html/4.user.config.php ]] || [[ ! -f /var/www/html/5.user.config.php ]] || [[ ! -f /var/www/html/6.user.config.php ]]; then
+if [[ ! -f /var/www/html/user.config.php ]]; then
   /usr/local/sbin/solaranzeige.setup
 fi
 
