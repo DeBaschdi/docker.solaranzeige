@@ -66,6 +66,7 @@ docker exec -ti Solaranzeige /solaranzeige/setup
 
 ## Modify Crontab Settings (Needed for Wallbox or Multi controller Configuration)
 Just edit your Persist {SOLARANZEIGE_STORAGE}/solaranzeige_cron File and restart your Container
+dont forget to add an empty Newline at the End of this File.
 
 ## Support my work
 If you like my Work, please [![Paypal Donation Page](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://paypal.me/DeBaschdi) - thank you! :-)
