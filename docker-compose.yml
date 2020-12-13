@@ -6,10 +6,10 @@ services:
     environment:
       - PUID=99
       - PGID=100
-      - TZ=Europe/Berlin
-      - UPDATE="no"
-      - MOSQUITTO="yes"
-      - INFLUXDB="yes"
+      - TIMEZONE=Europe/Berlin
+      - UPDATE=no
+      - MOSQUITTO=yes
+      - INFLUXDB=yes
     volumes:
       - /home/dockeruser/solaranzeige/data/solaranzeige:/solaranzeige
       - /home/dockeruser/solaranzeige/data/influx:/var/lib/influxdb
