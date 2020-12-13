@@ -58,10 +58,11 @@ RUN dpkg-reconfigure ca-certificates \
     && echo "deb https://repo.mosquitto.org/debian buster main" | tee -a /etc/apt/sources.list.d/mosquitto.list \
     && apt-get update \
     ### install solaranzeige dependencies
-    && apt install -y influxdb grafana mosquitto mosquitto-clients libmosquitto-dev \
+    && apt install -y influxdb grafana mosquitto mosquitto-clients libmosquitto-dev python3-bs4 python3-requests \
     && pecl install Mosquitto-alpha \
     && echo "extension=mosquitto.so" | tee -a /etc/php/7.3/mods-available/mosquitto.ini \
     ### configure system
+    && update-ca-certificates --fresh \
     && phpenmod mosquitto \
     && a2enmod php7.3 \
     && sed -i 's/\/var\/log/\/var\/www\/log/g' /etc/apache2/envvars \

@@ -16,6 +16,8 @@ docker run \
   -e GROUP_ID="100" \
   -e TIMEZONE="Europe/Berlin" \
   -e UPDATE="yes" \
+  -e MOSQUITO="yes" \
+  -e INFLUXDB="yes" \
   -p 3000:3000 \
   -v {SOLARANZEIGE_STORAGE}:/solaranzeige \
   -v {INFLUXDB_STORAGE}:/var/lib/influxdb \
@@ -37,6 +39,8 @@ The available parameters in detail:
 | `TIMEZONE` | yes | [string] | Europe/Berlin | Timezone for the container |
 | `-p` | yes | [integer] | 3000:3000 | Map Grafana Listenport inside this Container to Host Device Listen Port (Bridge Mode) |
 | `UPDATE` | yes | yes, no | no | Turn On / Off automatic Update for Solaranzeige each restart inside this Docker |
+| `MOSQUITTO` | yes | yes, no | yes | Turn On / Off mosquitto service inside this Container |
+| `INFLUXDB` | yes | yes, no | yes | Turn On / Off influxdb service inside this Container |
 
 Frequently used volumes:
  

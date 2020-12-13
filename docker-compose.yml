@@ -1,0 +1,20 @@
+version: "2"
+services:
+  solaranzeige:
+    image: takealug/solaranzeige:latest
+    container_name: Solaranzeige
+    environment:
+      - PUID=99
+      - PGID=100
+      - TZ=Europe/Berlin
+      - UPDATE="no"
+      - MOSQUITTO="yes"
+      - INFLUXDB="yes"
+    volumes:
+      - /home/dockeruser/solaranzeige/data/solaranzeige:/solaranzeige
+      - /home/dockeruser/solaranzeige/data/influx:/var/lib/influxdb
+      - /home/dockeruser/solaranzeige/data/grafana:/var/lib/grafana
+      - /home/dockeruser/solaranzeige/data/www:/var/www
+    ports:
+      - 3000:3000
+    restart: unless-stopped

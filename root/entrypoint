@@ -20,6 +20,14 @@ if [[ -z "${UPDATE}" ]]; then
   UPDATE='no'
 fi
 
+if [[ -z "${MOSQUITTO}" ]]; then
+  MOSQUITTO='yes'
+fi
+
+if [[ -z "${INFLUXDB}" ]]; then
+  INFLUXDB='yes'
+fi
+
 ln -fs /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
 dpkg-reconfigure -f noninteractive tzdata
 
