@@ -16,7 +16,7 @@ docker run \
   -e GROUP_ID="100" \
   -e TIMEZONE="Europe/Berlin" \
   -e UPDATE="yes" \
-  -e MOSQUITO="yes" \
+  -e MOSQUITTO="yes" \
   -e INFLUXDB="yes" \
   -p 3000:3000 \
   -v {SOLARANZEIGE_STORAGE}:/solaranzeige \
