@@ -52,7 +52,7 @@ RUN apt-get -qy update \
     && echo "deb https://repo.mosquitto.org/debian buster main" | tee -a /etc/apt/sources.list.d/mosquitto.list \
     && apt-get update \
     ### install solaranzeige dependencies
-    && apt install -y influxdb grafana mosquitto mosquitto-clients libmosquitto-dev python3-bs4 python3-requests\
+    && apt install -y influxdb grafana mosquitto mosquitto-clients libmosquitto-dev python3-bs4 python3-requests python3-pandas \
     && pecl install Mosquitto-alpha \
     && echo "extension=mosquitto.so" | tee -a /etc/php/7.3/mods-available/mosquitto.ini \
     ### configure system
