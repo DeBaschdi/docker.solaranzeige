@@ -17,4 +17,5 @@ services:
       - /home/dockeruser/solaranzeige/data/www:/var/www
     ports:
       - 3000:3000
+      - 1883:1883
     restart: unless-stopped

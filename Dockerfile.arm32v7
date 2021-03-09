@@ -101,4 +101,5 @@ VOLUME /var/lib/influxdb
 VOLUME /var/lib/grafana
 
 EXPOSE 3000
+EXPOSE 1883
 

@@ -19,6 +19,7 @@ docker run \
   -e MOSQUITTO="yes" \
   -e INFLUXDB="yes" \
   -p 3000:3000 \
+  -p 1883:1883 \
   -v {SOLARANZEIGE_STORAGE}:/solaranzeige \
   -v {INFLUXDB_STORAGE}:/var/lib/influxdb \
   -v {GRAFANA_STORAGE}:/var/lib/grafana \
@@ -37,7 +38,8 @@ The available parameters in detail:
 | `USER_ID` | yes | [integer] | 99 | UID to run Solaranzeige as |
 | `GROUP_ID` | yes | [integer] | 100 | GID to run Solaranzeige as |
 | `TIMEZONE` | yes | [string] | Europe/Berlin | Timezone for the container |
-| `-p` | yes | [integer] | 3000:3000 | Map Grafana Listenport inside this Container to Host Device Listen Port (Bridge Mode) |
+| `-p` | no | [integer] | 3000:3000 | Map Grafana Listenport inside this Container to Host Device Listen Port (Bridge Mode) |
+| `-p` | no | [integer] | 1883:1883 | Map Mosquitto Listenport inside this Container to Host Device Listen Port (Bridge Mode) |
 | `UPDATE` | yes | yes, no | no | Turn On / Off automatic Update for Solaranzeige each restart inside this Docker |
 | `MOSQUITTO` | yes | yes, no | yes | Turn On / Off mosquitto service inside this Container |
 | `INFLUXDB` | yes | yes, no | yes | Turn On / Off influxdb service inside this Container |
