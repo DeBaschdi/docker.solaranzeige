@@ -1,11 +1,11 @@
-FROM arm32v7/debian:buster-slim AS build
+FROM arm32v7/debian:bullseye-slim AS build
 
 LABEL maintainer="Bastian Kleinschmidt <debaschdi@googlemail.com>" \
       org.label-schema.docker.dockerfile="/Dockerfile" \
       org.label-schema.name="docker.solaranzeige"
 
 ARG BUILD_DEPENDENCIES="build-essential make"
-ARG DEPENDENCIES="sudo gnupg2 apt-transport-https ca-certificates cron software-properties-common mcedit apache2 sed iproute2 curl wget git net-tools inetutils-ping php-common php-pear php-ssh2 php-xml php7.3 php7.3-cgi php7.3-cli php7.3-common php7.3-curl php7.3-dev php7.3-gd php7.3-json php7.3-opcache php7.3-readline php7.3-sqlite3 php7.3-xml libapache2-mod-php"
+ARG DEPENDENCIES="sudo gnupg2 apt-transport-https ca-certificates cron software-properties-common mcedit apache2 sed iproute2 curl wget git net-tools inetutils-ping sqlite3 php-common php-pear php-ssh2 php-xml php7.4 php7.4-cgi php7.4-cli php7.4-common php7.4-curl php7.4-dev php7.4-gd php7.4-json php7.4-opcache php7.4-readline php7.4-sqlite3 php7.4-xml libapache2-mod-php"
 
 ENV USER_ID="99" \
     GROUP_ID="100" \
@@ -21,7 +21,9 @@ ENV USER_ID="99" \
 COPY root/entrypoint /usr/local/sbin/entrypoint
 COPY root/solaranzeige.process /usr/local/sbin/solaranzeige.process
 COPY root/solaranzeige.update /usr/local/sbin/solaranzeige.update
+COPY root/steuerung.update /usr/local/sbin/steuerung.update
 COPY root/solaranzeige.setup /usr/local/sbin/solaranzeige.setup
+COPY root/pvforecast.update /usr/local/sbin/pvforecast.update
 COPY root/qemu-arm-static /usr/bin/
 
 RUN apt-get -qy update \
@@ -58,13 +60,20 @@ RUN dpkg-reconfigure ca-certificates \
     && echo "deb https://repo.mosquitto.org/debian buster main" | tee -a /etc/apt/sources.list.d/mosquitto.list \
     && apt-get update \
     ### install solaranzeige dependencies
-    && apt install -y influxdb grafana mosquitto mosquitto-clients libmosquitto-dev python3-bs4 python3-requests python3-pandas \
+    && apt install -y influxdb grafana mosquitto mosquitto-clients libmosquitto-dev \
     && pecl install Mosquitto-alpha \
-    && echo "extension=mosquitto.so" | tee -a /etc/php/7.3/mods-available/mosquitto.ini \
+    && echo "extension=mosquitto.so" | tee -a /etc/php/7.4/mods-available/mosquitto.ini \
+    ### install PVForecast depedencies
+    && apt-get install -qy python3-pip python3-elementpath python3-protobuf netcdf-bin python3-bs4 python3-requests python3-numpy python3-pandas python3-h5py python3-tables python3-netcdf4 python3-scipy python3-influxdb python3-setuptools python3-astral python3-wheel python3-wrapt python3-yaml python3-isodate \
+    && python3 -m pip install pip --upgrade \
+    && python3 -m pip install pysolcast \
+    && python3 -m pip install astral --upgrade \
+    && python3 -m pip install siphon --upgrade \
+    && python3 -m pip install pvlib \
     ### configure system
     && update-ca-certificates --fresh \
     && phpenmod mosquitto \
-    && a2enmod php7.3 \
+    && a2enmod php7.4 \
     && sed -i 's/\/var\/log/\/var\/www\/log/g' /etc/apache2/envvars \
     && sed -i 's/\/var\/log/\/var\/www\/log/g' /etc/default/grafana-server \
     && sed -i 's/ulimit/#ulimit/g' /etc/init.d/influxdb \
@@ -76,7 +85,9 @@ RUN dpkg-reconfigure ca-certificates \
     && chmod +x /usr/local/sbin/entrypoint \
     && chmod +x /usr/local/sbin/solaranzeige.process \
     && chmod +x /usr/local/sbin/solaranzeige.update \
+    && chmod +x /usr/local/sbin/steuerung.update \
     && chmod +x /usr/local/sbin/solaranzeige.setup \
+    && chmod +x /usr/local/sbin/pvforecast.update \
     ### cleanup
     && apt-get remove --purge -qy ${BUILD_DEPENDENCIES} \
     && apt-get -qy autoclean \
@@ -96,10 +107,12 @@ RUN chmod +x /usr/local/sbin/update \
 ENTRYPOINT [ "/usr/local/sbin/entrypoint" ]
 
 VOLUME /solaranzeige
+VOLUME /pvforecast
 VOLUME /var/www
 VOLUME /var/lib/influxdb
 VOLUME /var/lib/grafana
 
 EXPOSE 3000
+EXPOSE 80
 EXPOSE 1883
 

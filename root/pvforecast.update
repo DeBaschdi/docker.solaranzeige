@@ -1,0 +1,16 @@
+#!/bin/bash
+mkdir -p /tmp/git &>/dev/null
+cd /tmp/git && git clone https://github.com/StefaE/PVForecast.git
+cp -TRv /tmp/git/PVForecast/PVForecast/ /pvforecast/PVForecast/
+cp /tmp/git/PVForecast/*.py /pvforecast/
+
+if [[ ! -f /pvforecast/solcast_light_config.ini ]]; then
+  cp /tmp/git/PVForecast/solcast_light_config.ini /pvforecast/solcast_light_config.ini
+fi
+
+if [[ ! -f /pvforecast/config.ini ]]; then
+  cp /tmp/git/PVForecast/config.ini /pvforecast/config.ini
+fi
+
+cd /var/www/html && rm -rf /tmp/git
+

@@ -12,10 +12,12 @@ services:
       - INFLUXDB=yes
     volumes:
       - /home/dockeruser/solaranzeige/data/solaranzeige:/solaranzeige
+      - /home/dockeruser/solaranzeige/data/pvforecast:/pvforecast
       - /home/dockeruser/solaranzeige/data/influx:/var/lib/influxdb
       - /home/dockeruser/solaranzeige/data/grafana:/var/lib/grafana
       - /home/dockeruser/solaranzeige/data/www:/var/www
     ports:
       - 3000:3000
       - 1883:1883
+      - 8080:80
     restart: unless-stopped

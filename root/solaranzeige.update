@@ -19,11 +19,11 @@ $Dir = "/Multi/";
 $remoteDir = $Dir;
 $localDir = "/var/www/html/phpinc/";
 
-echo "\nUpdate wird gestartet .....";
+echo "\nUpdate der Solaranzeige wird gestartet .....";
 echo "\n\n";
 
 log_schreiben(" ","   ",6);
-log_schreiben("Update wird durchgeführt.","   ",6);
+log_schreiben("Update der Solaranzeige wird durchgeführt.","   ",6);
 if (!function_exists("ssh2_connect")) {
     log_schreiben("Funktion ssh2_connect nicht vorhanden.","   ",6);
     exit;
@@ -187,3 +187,4 @@ function log_schreiben($LogMeldung,$Titel="   ",$Loglevel=5,$UTF8=0){
     }
 }
 ?>
+

@@ -1,8 +1,11 @@
-@reboot            /var/www/html/usb_init.php                  >/dev/null
+@reboot             /var/www/html/usb_init.php                  >/dev/null
 *     *  *  *  *    /var/www/html/regler_auslesen.php          >/dev/null
 *     *  *  *  *    /var/www/html/checkreboot.sh               >/dev/null
 1     0  *  *  *    /usr/local/sbin/truncate_log               >/dev/null
 20,50 *  *  *  *    /var/www/html/wetterdaten.php              >/dev/null
 *     *  *  *  *    /var/www/html/mqtt_prozess.php             >/dev/null
 55   23  *  *  *    /var/www/html/wartung.php                  >/dev/null
-#*     *  *  *  *    /var/www/html/wallbox_steuerung.php       >/dev/null
+#*     *  *  *  *   /var/www/html/wallbox_steuerung.php       >/dev/null
+#0      *  *  *  *   cd /pvforecast && /usr/bin/python3 SolCastLight.py &>> /var/www/log/solaranzeige.log
+#0      *  *  *  *   cd /pvforecast && /usr/bin/python3 PVForecasts.py &>> /var/www/log/solaranzeige.log
+

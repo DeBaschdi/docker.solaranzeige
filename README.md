@@ -20,9 +20,11 @@ docker run \
   -e INFLUXDB="yes" \
   -p 3000:3000 \
   -p 1883:1883 \
+  -p 8080:80 \
   -v {SOLARANZEIGE_STORAGE}:/solaranzeige \
   -v {INFLUXDB_STORAGE}:/var/lib/influxdb \
   -v {GRAFANA_STORAGE}:/var/lib/grafana \
+  -v {PVFORECAST_STORAGE}:/pvforecast \
   -v {WWW_STORAGE}:/var/www \
   --name=Solaranzeige \
   --restart unless-stopped \
@@ -40,6 +42,7 @@ The available parameters in detail:
 | `TIMEZONE` | yes | [string] | Europe/Berlin | Timezone for the container |
 | `-p` | no | [integer] | 3000:3000 | Map Grafana Listenport inside this Container to Host Device Listen Port (Bridge Mode) |
 | `-p` | no | [integer] | 1883:1883 | Map Mosquitto Listenport inside this Container to Host Device Listen Port (Bridge Mode) |
+| `-p` | no | [integer] | 80:8080 | Map Apache2 Listenport inside this Container to Host Device Listen Port (Bridge Mode) |
 | `UPDATE` | yes | yes, no | no | Turn On / Off automatic Update for Solaranzeige each restart inside this Docker |
 | `MOSQUITTO` | yes | yes, no | yes | Turn On / Off mosquitto service inside this Container |
 | `INFLUXDB` | yes | yes, no | yes | Turn On / Off influxdb service inside this Container |
@@ -51,6 +54,7 @@ Frequently used volumes:
 | `SOLARANZEIGE_STORAGE` | no | The directory to persist /solaranzeige with Crontab Settings to |
 | `INFLUXDB_STORAGE` | no | The directory to to persist /var/lib/influxdb to |
 | `GRAFANA_STORAGE` | no | The directory to to persist /var/lib/grafana to |
+| `PVFORECAST_STORAGE` | no | The directory to to persist /pvforecast to |
 | `WWW_STORAGE` | no | The directory to to persist /var/www to |
 
 When passing volumes please replace the name including the surrounding curly brackets with existing absolute paths with correct permissions.
@@ -59,6 +63,7 @@ When passing volumes please replace the name including the surrounding curly bra
 > **Note:** `INFLUXDB_STORAGE` persist the Database for Grafana. 
 > **Note:** `GRAFANA_STORAGE` persist Grafana settings and Dashboards. 
 > **Note:** `WWW_STORAGE` persist logfiles and all script-files from solaranzeige.de. 
+> **Note:** `PVFORECAST_STORAGE` persist PVForecast data from https://github.com/StefaE/PVForecast
 >
 
 ## First Run / Initial Setup Solaranzeige

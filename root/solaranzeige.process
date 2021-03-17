@@ -2,43 +2,47 @@
 
 if [[ ! -f /var/www/log/solaranzeige.log ]]; then
   touch /var/www/log/solaranzeige.log
+  chmod 777 /var/www/log/solaranzeige.log
 fi
 
 if [[ ! -f /solaranzeige/solaranzeige_cron ]]; then
   cp /etc/cron.d/solaranzeige_cron /solaranzeige/solaranzeige_cron
+  chmod 777 /solaranzeige/solaranzeige_cron
 fi
+
+solaranzeige_version=$(cat /etc/motd | awk 'END{print}')
 
 PWD=$(pwd)
 echo ""
 echo "Setup Crontab..."
 cp /solaranzeige/solaranzeige_cron /etc/cron.d/solaranzeige_cron
 chmod 0644 /etc/cron.d/solaranzeige_cron
-crontab /etc/cron.d/solaranzeige_cron
+crontab /etc/cron.d/solaranzeige_cron > /var/www/log/solaranzeige.log
 echo ""
 
-echo "Starting Services..."
+echo "Starting Services..." >> /var/www/log/solaranzeige.log
 if [[ "${MOSQUITTO}" = "yes" ]]; then
-  service mosquitto start
+  service mosquitto start >> /var/www/log/solaranzeige.log
 else
-  echo "Mosquitto is disabled..."
+  echo "Mosquitto is disabled..." >> /var/www/log/solaranzeige.log
 fi
 if [[ "${INFLUXDB}" = "yes" ]]; then
-  service influxdb start
+  service influxdb start >> /var/www/log/solaranzeige.log
 else
-  echo "Influxdb is disabled..."
+  echo "Influxdb is disabled..." >> /var/www/log/solaranzeige.log
 fi
-service grafana-server start
-service apache2 start
-service cron start
+service grafana-server start >> /var/www/log/solaranzeige.log
+service apache2 start >> /var/www/log/solaranzeige.log
+service cron start >> /var/www/log/solaranzeige.log
 
-echo ""
-echo "###############################################################################"
-echo "# If u Like my Work, please Donate https://paypal.me/DeBaschdi Thank You ! :) #"
-echo "###############################################################################"
-echo ""
-echo "########################"
-echo "# Image Version 0.0.8  #"
-echo "# Running Solaranzeige #"
-echo "########################"
-echo ""
+echo "" >> /var/www/log/solaranzeige.log
+echo "###############################################################################" >> /var/www/log/solaranzeige.log
+echo "# If u Like my Work, please Donate https://paypal.me/DeBaschdi Thank You ! :) #" >> /var/www/log/solaranzeige.log
+echo "###############################################################################" >> /var/www/log/solaranzeige.log
+echo "" >> /var/www/log/solaranzeige.log
+echo "#########################################################################" >> /var/www/log/solaranzeige.log
+echo "# Image Version 0.0.9                                                   #" >> /var/www/log/solaranzeige.log
+echo "# Running Solaranzeige $solaranzeige_version #" >> /var/www/log/solaranzeige.log
+echo "#########################################################################" >> /var/www/log/solaranzeige.log
+echo "" >> /var/www/log/solaranzeige.log
 tail -f /var/www/log/solaranzeige.log
