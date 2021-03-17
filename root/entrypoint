@@ -91,6 +91,7 @@ cp /solaranzeige/config/influxdb/influxdb.conf /etc/influxdb/ &>/dev/null
 cp /solaranzeige/config/mosquitto/mosquitto.conf /etc/mosquitto/ &>/dev/null
 
 #alter Premissions
+mkdir -p /run/mosquitto 
 chown -R ${USER_ID}:${GROUP_ID} /solaranzeige
 chown -R ${USER_ID}:${GROUP_ID} /var/www
 chown -R ${USER_ID}:${GROUP_ID} /pvforecast
