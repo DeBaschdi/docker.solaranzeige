@@ -17,7 +17,7 @@
   <ExtraParams/>
   <PostArgs/>
   <CPUset>0,1</CPUset>
-  <DateInstalled>1607838114</DateInstalled>
+  <DateInstalled>1616046899</DateInstalled>
   <DonateText/>
   <DonateLink/>
   <Description/>
@@ -27,6 +27,21 @@
       <Port>
         <HostPort>3000</HostPort>
         <ContainerPort>3000</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+      <Port>
+        <HostPort>8080</HostPort>
+        <ContainerPort>80</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+      <Port>
+        <HostPort>1883</HostPort>
+        <ContainerPort>1883</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+      <Port>
+        <HostPort>8086</HostPort>
+        <ContainerPort>8086</ContainerPort>
         <Protocol>tcp</Protocol>
       </Port>
     </Publish>
@@ -50,6 +65,11 @@
     <Volume>
       <HostDir>/mnt/cache/docker/appdata/solaranzeige/grafana/</HostDir>
       <ContainerDir>/var/lib/grafana</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+    <Volume>
+      <HostDir>/mnt/cache/docker/appdata/solaranzeige/pvforecast/</HostDir>
+      <ContainerDir>/pvforecast</ContainerDir>
       <Mode>rw</Mode>
     </Volume>
   </Data>
@@ -76,7 +96,7 @@
     </Variable>
   </Environment>
   <Labels/>
-  <Config Name="Grafana" Target="3000" Default="" Mode="tcp" Description="Container Port: 3000" Type="Port" Display="always" Required="false" Mask="false">3000</Config>
+  <Config Name="Grafana Port" Target="3000" Default="" Mode="tcp" Description="Container Port: 3000" Type="Port" Display="always" Required="false" Mask="false">3000</Config>
   <Config Name="Solaranzeige_Storage" Target="/solaranzeige" Default="" Mode="rw" Description="Container Path: /solaranzeige" Type="Path" Display="always" Required="false" Mask="false">/mnt/cache/docker/appdata/solaranzeige/solaranzeige</Config>
   <Config Name="www_Storage" Target="/var/www" Default="" Mode="rw" Description="Container Path: /var/www" Type="Path" Display="always" Required="false" Mask="false">/mnt/cache/docker/appdata/solaranzeige/www</Config>
   <Config Name="influxdb_Storage" Target="/var/lib/influxdb" Default="" Mode="rw" Description="Container Path: /var/lib/influxdb" Type="Path" Display="always" Required="false" Mask="false">/mnt/cache/docker/appdata/solaranzeige/influxdb</Config>
@@ -85,4 +105,8 @@
   <Config Name="TIMEZONE" Target="TIMEZONE" Default="" Mode="" Description="Container Variable: TIMEZONE" Type="Variable" Display="always" Required="false" Mask="false">Europe/Berlin</Config>
   <Config Name="Mosquitto Service" Target="MOSQUITTO" Default="" Mode="" Description="Container Variable: MOSQUITTO" Type="Variable" Display="always" Required="false" Mask="false">yes</Config>
   <Config Name="Influxdb Service" Target="INFLUXDB" Default="" Mode="" Description="Container Variable: INFLUXDB" Type="Variable" Display="always" Required="false" Mask="false">yes</Config>
+  <Config Name="Apache2 Port" Target="80" Default="" Mode="tcp" Description="Container Port: 80" Type="Port" Display="always" Required="false" Mask="false">8080</Config>
+  <Config Name="PVForecast" Target="/pvforecast" Default="" Mode="rw" Description="Container Path: /pvforecast" Type="Path" Display="always" Required="false" Mask="false">/mnt/cache/docker/appdata/solaranzeige/pvforecast/</Config>
+  <Config Name="Mosquitto Port" Target="1883" Default="" Mode="tcp" Description="Container Port: 1883" Type="Port" Display="always" Required="false" Mask="false">1883</Config>
+  <Config Name="Influx Port" Target="8086" Default="" Mode="tcp" Description="Container Port: 8086" Type="Port" Display="always" Required="false" Mask="false">8086</Config>
 </Container>

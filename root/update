@@ -215,3 +215,4 @@ function log_schreiben($LogMeldung,$Titel="   ",$Loglevel=5,$UTF8=0){
     }
 }
 ?>
+
