@@ -6,6 +6,5 @@
 *     *  *  *  *    /var/www/html/mqtt_prozess.php             >/dev/null
 55   23  *  *  *    /var/www/html/wartung.php                  >/dev/null
 #*     *  *  *  *   /var/www/html/wallbox_steuerung.php       >/dev/null
-#0      *  *  *  *   cd /pvforecast && /usr/bin/python3 SolCastLight.py &>> /var/www/log/solaranzeige.log
-#0      *  *  *  *   cd /pvforecast && /usr/bin/python3 PVForecasts.py &>> /var/www/log/solaranzeige.log
-
+#15,45  *  *  *  *  cd /pvforecast && /usr/bin/python3 SolCastLight.py >>/var/www/log/solaranzeige.log
+#15,45      *  *  *  *   cd /pvforecast && /usr/bin/python3 PVForecasts.py >>/var/www/log/solaranzeige.log
