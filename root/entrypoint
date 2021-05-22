@@ -70,7 +70,6 @@ if [[ ! -f /var/www/html/pheditor.php ]]; then
   mv /tmp/solaranzeige_cron /solaranzeige
   cd /var/www/html && rm -rf /tmp/git
   su -s /bin/bash -c "TERM=xterm /usr/local/sbin/solaranzeige.update"
-  su -s /bin/bash -c "TERM=xterm /usr/local/sbin/steuerung.update"
   su -s /bin/bash -c "TERM=xterm /usr/local/sbin/pvforecast.update"
   curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/html/index.php' > /var/www/html/index.php
   curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/html/pheditor.php' > /var/www/html/pheditor.php
@@ -79,7 +78,6 @@ fi
 
 if [[ "${UPDATE}" = "yes" ]]; then
   /usr/local/sbin/solaranzeige.update
-  /usr/local/sbin/steuerung.update
   /usr/local/sbin/pvforecast.update
   curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/html/index.php' > /var/www/html/index.php
 fi

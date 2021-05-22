@@ -21,7 +21,6 @@ ENV USER_ID="99" \
 COPY root/entrypoint /usr/local/sbin/entrypoint
 COPY root/solaranzeige.process /usr/local/sbin/solaranzeige.process
 COPY root/solaranzeige.update /usr/local/sbin/solaranzeige.update
-COPY root/steuerung.update /usr/local/sbin/steuerung.update
 COPY root/solaranzeige.setup /usr/local/sbin/solaranzeige.setup
 COPY root/pvforecast.update /usr/local/sbin/pvforecast.update
 COPY root/qemu-arm-static /usr/bin/
@@ -85,7 +84,6 @@ RUN dpkg-reconfigure ca-certificates \
     && chmod +x /usr/local/sbin/entrypoint \
     && chmod +x /usr/local/sbin/solaranzeige.process \
     && chmod +x /usr/local/sbin/solaranzeige.update \
-    && chmod +x /usr/local/sbin/steuerung.update \
     && chmod +x /usr/local/sbin/solaranzeige.setup \
     && chmod +x /usr/local/sbin/pvforecast.update \
     ### cleanup

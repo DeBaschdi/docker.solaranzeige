@@ -43,7 +43,6 @@ chmod -R 777 /pvforecast
 chmod -R 777 /run/mosquitto
 
 su -s /bin/bash -c "TERM=xterm /usr/local/sbin/solaranzeige.update"
-su -s /bin/bash -c "TERM=xterm /usr/local/sbin/steuerung.update"
 
 echo ""
 echo "Installing PVForecast..."
