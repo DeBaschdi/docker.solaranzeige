@@ -22,7 +22,7 @@ echo ""
 
 echo "Starting Services..." >> /var/www/log/solaranzeige.log
 if [[ "${MOSQUITTO}" = "yes" ]]; then
-  service mosquitto start >> /var/www/log/solaranzeige.log
+  mosquitto -c /etc/mosquitto/mosquitto.conf >> /var/www/log/solaranzeige.log &disown
 else
   echo "Mosquitto is disabled..." >> /var/www/log/solaranzeige.log
 fi
