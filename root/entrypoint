@@ -31,7 +31,7 @@ fi
 ln -fs /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
 dpkg-reconfigure -f noninteractive tzdata
 
-echo "${USERNAME}:x:${USER_ID}:${GROUP_ID}:$USERNAME}:/:/sbin/nologin" >> /etc/passwd
+echo "${USERNAME}:x:${USER_ID}:${GROUP_ID}:${USERNAME}:/:/sbin/nologin" >> /etc/passwd
 echo "${USERNAME}:!::0:::::" >> /etc/shadow
 
 if ! getent group ${GROUP_ID}; then

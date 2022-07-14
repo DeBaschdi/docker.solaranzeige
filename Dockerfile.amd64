@@ -76,6 +76,7 @@ RUN apt-get -qy update \
     ### install grafana plugins
     && grafana-cli plugins install fetzerch-sunandmoon-datasource \
     && grafana-cli plugins install briangann-gauge-panel \
+    && grafana-cli plugins install agenty-flowcharting-panel \
     ### alter permissions
     && chmod +x /usr/local/sbin/entrypoint \
     && chmod +x /usr/local/sbin/solaranzeige.process \
