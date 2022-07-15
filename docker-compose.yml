@@ -16,6 +16,9 @@ services:
       - /home/dockeruser/solaranzeige/data/influx:/var/lib/influxdb
       - /home/dockeruser/solaranzeige/data/grafana:/var/lib/grafana
       - /home/dockeruser/solaranzeige/data/www:/var/www
+    tmpfs:
+      - /var/log
+      - /tmp
     ports:
       - 3000:3000
       - 1883:1883
