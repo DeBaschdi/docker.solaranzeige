@@ -24,6 +24,7 @@ COPY root/entrypoint /usr/local/sbin/entrypoint
 COPY root/solaranzeige.process /usr/local/sbin/solaranzeige.process
 COPY root/solaranzeige.update /usr/local/sbin/solaranzeige.update
 COPY root/solaranzeige.setup /usr/local/sbin/solaranzeige.setup
+COPY root/steuerung.setup /usr/local/sbin/steuerung.setup
 COPY root/pvforecast.update /usr/local/sbin/pvforecast.update
 
 RUN apt-get -qy update \
@@ -82,6 +83,7 @@ RUN apt-get -qy update \
     && chmod +x /usr/local/sbin/solaranzeige.process \
     && chmod +x /usr/local/sbin/solaranzeige.update \
     && chmod +x /usr/local/sbin/solaranzeige.setup \
+    && chmod +x /usr/local/sbin/steuerung.setup \
     && chmod +x /usr/local/sbin/pvforecast.update \
     ### cleanup
     && apt-get remove --purge -qy ${BUILD_DEPENDENCIES} \

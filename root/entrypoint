@@ -47,6 +47,11 @@ if [[ ! -f /var/www/html/user.config.php ]]; then
 fi
 
 #Install Missing Files after possible Container Update
+if [[ ! -f /var/www/html/automation.web.php ]]; then
+  echo "Install Steuerung...."
+  /usr/local/sbin/steuerung.setup
+fi
+
 if [[ ! -f /var/www/html/pheditor.php ]]; then
   echo "create new files/directories..."
   if [[ -f /var/www/html/database ]]; then
