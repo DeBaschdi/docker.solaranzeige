@@ -7,7 +7,7 @@ LABEL maintainer="Bastian Kleinschmidt <debaschdi@googlemail.com>" \
 ARG BUILD_DEPENDENCIES="build-essential make"
 ARG DEPENDENCIES="sudo gnupg2 apt-transport-https ca-certificates cron software-properties-common mcedit nano apache2 sed iproute2 curl wget git net-tools inetutils-ping sqlite3 php-common php-pear php-ssh2 php-xml php7.3 php7.3-cgi php7.3-cli php7.3-common php7.3-curl php7.3-dev php7.3-gd php7.3-json php7.3-opcache php7.3-readline php7.3-sqlite3 php7.3-xml libapache2-mod-php"
 
-ENV LEGACY="legacy Build"
+ENV LEGACY="legacy Build" \
     USER_ID="99" \
     GROUP_ID="100" \
     TIMEZONE="Europe/Berlin" \
