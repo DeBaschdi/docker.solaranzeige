@@ -41,7 +41,7 @@ echo "# If u Like my Work, please Donate https://paypal.me/DeBaschdi Thank You !
 echo "###############################################################################" >> /var/www/log/solaranzeige.log
 echo "" >> /var/www/log/solaranzeige.log
 echo "#########################################################################" >> /var/www/log/solaranzeige.log
-echo "# Image Version 0.1.5 $LEGACY                                          #" >> /var/www/log/solaranzeige.log
+echo "# Image Version 0.1.6 $LEGACY                                          #" >> /var/www/log/solaranzeige.log
 echo "# Running Solaranzeige $solaranzeige_version #" >> /var/www/log/solaranzeige.log
 echo "#########################################################################" >> /var/www/log/solaranzeige.log
 echo "" >> /var/www/log/solaranzeige.log
