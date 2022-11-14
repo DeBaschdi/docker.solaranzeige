@@ -14,3 +14,7 @@ manifests:
       architecture: arm
       os: linux
       variant: v8
+  - image: takealug/solaranzeige:legacy
+    platform:
+      architecture: amd64
+      os: linux

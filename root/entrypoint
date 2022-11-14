@@ -4,6 +4,10 @@ set -f
 
 USERNAME="root"
 
+if [[ -z "${LEGACY}" ]]; then
+  LEGACY=' '
+fi
+
 if [[ -z "${TIMEZONE}" ]]; then
   TIMEZONE='Europe/Berlin'
 fi

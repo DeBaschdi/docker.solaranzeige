@@ -4,7 +4,7 @@
 ### Prerequisites
 You will need to have `docker` installed on your system and the user you want to run it needs to be in the `docker` group.
 
-> **Note:** The image is a multi-arch build providing variants for amd64, arm32v7 and arm64v8 - the correct variant for your architecture needs to be tagged e.g :amd64, :arm32v7, :arm64v8
+> **Note:** The image is a multi-arch build providing variants for amd64, arm32v7 and arm64v8 and also, an legacy amd64 Build for old Synology Kernels. - the correct variant for your architecture needs to be tagged e.g :amd64, :arm32v7, :arm64v8, :legacy
 
 ## Technical info for docker GUIs (e.g. Synology, UnRaid, OpenMediaVault)
 To learn how to manually start the container or about available parameters (you might need for your GUI used) see the following example:
@@ -78,6 +78,12 @@ docker exec -ti Solaranzeige /solaranzeige/setup
 ## Modify Crontab Settings (Needed for Wallbox or Multi controller Configuration)
 Just edit your Persist {SOLARANZEIGE_STORAGE}/solaranzeige_cron File and restart your Container
 dont forget to add an empty Newline at the End of this File.
+
+## Modify all Settings like Grafana / Influx ect vie Webbrowser 
+Open your Webbrowser and open Solaranzeiges "Quick Access" e.g. IP:8080 and use "File Editor" , standart passowrd is "solar" 
+after saving, please restart your Container to take effect.
+
+<img src="https://raw.githubusercontent.com/DeBaschdi/docker.solaranzeige/master/Templates/Unraid/pheditor.png" height="379" width="766">
 
 ## Support my work
 If you like my Work, please [![Paypal Donation Page](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://paypal.me/DeBaschdi) - thank you! :-)

@@ -1,13 +1,14 @@
-FROM amd64/debian:bullseye-slim AS build
+FROM amd64/debian:buster-slim AS build
 
 LABEL maintainer="Bastian Kleinschmidt <debaschdi@googlemail.com>" \
       org.label-schema.docker.dockerfile="/Dockerfile" \
       org.label-schema.name="docker.solaranzeige"
 
 ARG BUILD_DEPENDENCIES="build-essential make"
-ARG DEPENDENCIES="sudo gnupg2 apt-transport-https ca-certificates cron software-properties-common mcedit nano apache2 sed iproute2 curl wget git net-tools inetutils-ping sqlite3 php-common php-pear php-ssh2 php-xml php7.4 php7.4-cgi php7.4-cli php7.4-common php7.4-curl php7.4-dev php7.4-gd php7.4-json php7.4-opcache php7.4-readline php7.4-sqlite3 php7.4-xml libapache2-mod-php"
+ARG DEPENDENCIES="sudo gnupg2 apt-transport-https ca-certificates cron software-properties-common mcedit nano apache2 sed iproute2 curl wget git net-tools inetutils-ping sqlite3 php-common php-pear php-ssh2 php-xml php7.3 php7.3-cgi php7.3-cli php7.3-common php7.3-curl php7.3-dev php7.3-gd php7.3-json php7.3-opcache php7.3-readline php7.3-sqlite3 php7.3-xml libapache2-mod-php"
 
-ENV USER_ID="99" \
+ENV LEGACY="legacy Build"
+    USER_ID="99" \
     GROUP_ID="100" \
     TIMEZONE="Europe/Berlin" \
     UPDATE="yes" \
@@ -50,14 +51,14 @@ RUN apt-get -qy update \
     && curl -fsSL  https://packages.grafana.com/gpg.key | apt-key add - \
     && echo "deb https://packages.grafana.com/oss/deb stable main" | tee -a /etc/apt/sources.list.d/grafana.list \
     && curl -fsSL  https://repos.influxdata.com/influxdb.key | apt-key add - \
-    && echo "deb https://repos.influxdata.com/debian bullseye stable" | tee -a /etc/apt/sources.list.d/influxdb.list \
+    && echo "deb https://repos.influxdata.com/debian buster stable" | tee -a /etc/apt/sources.list.d/influxdb.list \
     && curl -fsSL  http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key | apt-key add - \
-    && echo "deb https://repo.mosquitto.org/debian bullseye main" | tee -a /etc/apt/sources.list.d/mosquitto.list \
+    && echo "deb https://repo.mosquitto.org/debian buster main" | tee -a /etc/apt/sources.list.d/mosquitto.list \
     && apt-get update \
     ### install solaranzeige dependencies
     && apt install -y influxdb grafana mosquitto mosquitto-clients libmosquitto-dev \
     && pecl install Mosquitto-alpha \
-    && echo "extension=mosquitto.so" | tee -a /etc/php/7.4/mods-available/mosquitto.ini \
+    && echo "extension=mosquitto.so" | tee -a /etc/php/7.3/mods-available/mosquitto.ini \
     ### install PVForecast depedencies
     && apt-get install -qy python3-pip python3-elementpath python3-protobuf netcdf-bin python3-bs4 python3-requests python3-numpy python3-pandas python3-h5py python3-tables python3-netcdf4 python3-scipy python3-influxdb python3-setuptools python3-astral python3-wheel python3-wrapt python3-yaml python3-isodate \
     && python3 -m pip install pip --upgrade \
@@ -68,7 +69,7 @@ RUN apt-get -qy update \
     ### configure system
     && update-ca-certificates --fresh \
     && phpenmod mosquitto \
-    && a2enmod php7.4 \
+    && a2enmod php7.3 \
     && sed -i 's/\/var\/log/\/var\/www\/log/g' /etc/apache2/envvars \
     && sed -i 's/\/var\/log/\/var\/www\/log/g' /etc/default/grafana-server \
     && sed -i 's/ulimit/#ulimit/g' /etc/init.d/influxdb \
@@ -110,4 +111,3 @@ VOLUME /var/lib/grafana
 EXPOSE 3000
 EXPOSE 80
 EXPOSE 1883
-
