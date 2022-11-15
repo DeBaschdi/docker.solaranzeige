@@ -111,4 +111,8 @@ chmod -R 777 /var/lib/influxdb
 chmod -R 777 /var/lib/grafana
 chmod -R 777 /run/mosquitto
 
+# Hack usb_init.php
+sed -i 's/file_get_contents("\/sys\/firmware\/devicetree\/base\/model")/"Docker Image 0.1.7"/g' /var/www/html/usb_init.php
+sed -i 's/Raspberry Modell kann eingetragen werden/Containerversion kann eingetragen werden/g' /var/www/html/usb_init.php
+
 su -s /bin/bash -c "TERM=xterm /usr/local/sbin/solaranzeige.process"

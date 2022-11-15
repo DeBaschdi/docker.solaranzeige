@@ -31,6 +31,7 @@ if [[ "${INFLUXDB}" = "yes" ]]; then
 else
   echo "Influxdb is disabled..." >> /var/www/log/solaranzeige.log
 fi
+
 service grafana-server start >> /var/www/log/solaranzeige.log
 service apache2 start >> /var/www/log/solaranzeige.log
 service cron start >> /var/www/log/solaranzeige.log
@@ -41,7 +42,7 @@ echo "# If u Like my Work, please Donate https://paypal.me/DeBaschdi Thank You !
 echo "###############################################################################" >> /var/www/log/solaranzeige.log
 echo "" >> /var/www/log/solaranzeige.log
 echo "#########################################################################" >> /var/www/log/solaranzeige.log
-echo "# Image Version 0.1.6 $LEGACY                                          #" >> /var/www/log/solaranzeige.log
+echo "# Image Version 0.1.7 $LEGACY                                          #" >> /var/www/log/solaranzeige.log
 echo "# Running Solaranzeige $solaranzeige_version #" >> /var/www/log/solaranzeige.log
 echo "#########################################################################" >> /var/www/log/solaranzeige.log
 echo "" >> /var/www/log/solaranzeige.log
