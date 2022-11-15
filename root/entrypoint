@@ -80,7 +80,6 @@ if [[ ! -f /var/www/html/pheditor.php ]]; then
   cd /var/www/html && rm -rf /tmp/git
   su -s /bin/bash -c "TERM=xterm /usr/local/sbin/solaranzeige.update"
   su -s /bin/bash -c "TERM=xterm /usr/local/sbin/pvforecast.update"
-  curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/html/index.php' > /var/www/html/index.php
   curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/html/pheditor.php' > /var/www/html/pheditor.php
   UPDATE='no'
 fi
@@ -88,7 +87,6 @@ fi
 if [[ "${UPDATE}" = "yes" ]]; then
   /usr/local/sbin/solaranzeige.update
   /usr/local/sbin/pvforecast.update
-  curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/html/index.php' > /var/www/html/index.php
 fi
 
 # Restore Config Files
@@ -110,6 +108,9 @@ chmod -R 777 /var/www
 chmod -R 777 /var/lib/influxdb
 chmod -R 777 /var/lib/grafana
 chmod -R 777 /run/mosquitto
+
+# Download current Quick Access
+curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/html/index.php' > /var/www/html/index.php
 
 # Hack usb_init.php
 sed -i 's/file_get_contents("\/sys\/firmware\/devicetree\/base\/model")/"Docker Image 0.1.7"/g' /var/www/html/usb_init.php
