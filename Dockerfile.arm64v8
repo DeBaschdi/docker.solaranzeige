@@ -84,6 +84,7 @@ RUN apt-get -qy update \
     && sed -i 's/\/var\/log/\/var\/www\/log/g' /etc/default/grafana-server \
     && sed -i 's/ulimit/#ulimit/g' /etc/init.d/influxdb \
     && echo "STDERR=/var/www/log/influxdb.log" > /etc/default/influxdb \
+    && sed -i 's/;error_log = syslog/error_log = \/var\/www\/log\/php.log/g' /etc/php/7.4/cli/php.ini \
     ### install grafana plugins
     && grafana-cli plugins install fetzerch-sunandmoon-datasource \
     && grafana-cli plugins install briangann-gauge-panel \
