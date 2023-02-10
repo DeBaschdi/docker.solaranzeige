@@ -103,8 +103,8 @@ RUN chmod +x /usr/local/sbin/update \
     && crontab /etc/cron.d/solaranzeige_cron
 
 RUN mkdir -p /root/.shh
-COPY root/id_rsa.dat /root/.ssh/id_rsa.dat
-COPY root/id_rsa.pup /root/.ssh/id_rsa.pup
+COPY root/id_rsa._at /root/.ssh/id_rsa.dat
+COPY root/id_rsa._up /root/.ssh/id_rsa.pup
 
 ENTRYPOINT [ "/usr/local/sbin/entrypoint" ]
 
