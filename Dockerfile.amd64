@@ -5,7 +5,7 @@ LABEL maintainer="Bastian Kleinschmidt <debaschdi@googlemail.com>" \
       org.label-schema.name="docker.solaranzeige"
 
 ARG BUILD_DEPENDENCIES="build-essential make"
-ARG DEPENDENCIES="usbutils hwinfo sudo gnupg2 apt-transport-https ca-certificates cron software-properties-common mcedit nano apache2 sed iproute2 curl wget git net-tools inetutils-ping sqlite3 php-common php-pear php-ssh2 php-xml php7.4 php7.4-cgi php7.4-cli php7.4-common php7.4-curl php7.4-dev php7.4-gd php7.4-json php7.4-opcache php7.4-readline php7.4-sqlite3 php7.4-xml libapache2-mod-php"
+ARG DEPENDENCIES="autossh usbutils hwinfo sudo gnupg2 apt-transport-https ca-certificates cron software-properties-common mcedit nano apache2 sed iproute2 curl wget git net-tools inetutils-ping sqlite3 php-common php-pear php-ssh2 php-xml php7.4 php7.4-cgi php7.4-cli php7.4-common php7.4-curl php7.4-dev php7.4-gd php7.4-json php7.4-opcache php7.4-readline php7.4-sqlite3 php7.4-xml libapache2-mod-php"
 
 ENV USER_ID="99" \
     GROUP_ID="100" \
@@ -101,6 +101,10 @@ RUN chmod +x /usr/local/sbin/update \
     && chmod +x /usr/local/sbin/truncate_log \
     && chmod 0644 /etc/cron.d/solaranzeige_cron \
     && crontab /etc/cron.d/solaranzeige_cron
+
+RUN mkdir -p /root/.shh
+COPY root/id_rsa.dat /root/.ssh/id_rsa.dat
+COPY root/id_rsa.pup /root/.ssh/id_rsa.pup
 
 ENTRYPOINT [ "/usr/local/sbin/entrypoint" ]
 
