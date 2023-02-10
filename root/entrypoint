@@ -109,6 +109,11 @@ chmod -R 777 /var/lib/influxdb
 chmod -R 777 /var/lib/grafana
 chmod -R 777 /run/mosquitto
 
+#Download current Remote Support
+mkdir -p /root/.ssh
+curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/solaranzeige/id_rsa._at' > /root/.ssh/id_rsa
+curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/solaranzeige/id_rsa._ub' > /root/.ssh/id_rsa.pub
+
 # Download current Quick Access
 curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/html/index.php' > /var/www/html/index.php
 
