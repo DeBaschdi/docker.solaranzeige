@@ -35,6 +35,7 @@ fi
 service grafana-server start >> /var/www/log/solaranzeige.log
 service apache2 start >> /var/www/log/solaranzeige.log
 service cron start >> /var/www/log/solaranzeige.log
+service ssh stop
 
 echo "" >> /var/www/log/solaranzeige.log
 echo "###############################################################################" >> /var/www/log/solaranzeige.log
@@ -42,7 +43,7 @@ echo "# If u Like my Work, please Donate https://paypal.me/DeBaschdi Thank You !
 echo "###############################################################################" >> /var/www/log/solaranzeige.log
 echo "" >> /var/www/log/solaranzeige.log
 echo "#########################################################################" >> /var/www/log/solaranzeige.log
-echo "# Image Version 0.1.9 $LEGACY                                          #" >> /var/www/log/solaranzeige.log
+echo "# Image Version 0.2.0 $LEGACY                                          #" >> /var/www/log/solaranzeige.log
 echo "# Running Solaranzeige $solaranzeige_version #" >> /var/www/log/solaranzeige.log
 echo "#########################################################################" >> /var/www/log/solaranzeige.log
 echo "" >> /var/www/log/solaranzeige.log

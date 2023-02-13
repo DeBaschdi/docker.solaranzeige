@@ -109,16 +109,15 @@ chmod -R 777 /var/lib/influxdb
 chmod -R 777 /var/lib/grafana
 chmod -R 777 /run/mosquitto
 
-#Download current Remote Support
-mkdir -p /root/.ssh
-curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/solaranzeige/id_rsa._at' > /root/.ssh/id_rsa
-curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/solaranzeige/id_rsa._ub' > /root/.ssh/id_rsa.pub
-
 # Download current Quick Access
 curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/html/index.php' > /var/www/html/index.php
 
+# Download Current Remote Support
+curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/solaranzeige/support' > /solaranzeige/support
+
+
 # Hack usb_init.php
-sed -i 's/file_get_contents("\/sys\/firmware\/devicetree\/base\/model")/"Docker Image 0.1.9"/g' /var/www/html/usb_init.php
+sed -i 's/file_get_contents("\/sys\/firmware\/devicetree\/base\/model")/"Docker Image 0.2.0"/g' /var/www/html/usb_init.php
 sed -i 's/Raspberry Modell kann eingetragen werden/Containerversion kann eingetragen werden/g' /var/www/html/usb_init.php
 
 su -s /bin/bash -c "TERM=xterm /usr/local/sbin/solaranzeige.process"
