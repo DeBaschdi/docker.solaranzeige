@@ -80,7 +80,7 @@ Just edit your Persist {SOLARANZEIGE_STORAGE}/solaranzeige_cron File and restart
 dont forget to add an empty Newline at the End of this File.
 
 ## Modify all Settings like Grafana / Influx ect vie Webbrowser 
-Open your Webbrowser and open Solaranzeiges "Quick Access" e.g. IP:8080 and use "File Editor" , standart passowrd is "solar" 
+Open your Webbrowser and open Solaranzeiges "Quick Access" e.g. IP:8080 and use "File Editor" , standard password is "solar" 
 after saving, please restart your Container to take effect.
 
 <img src="https://raw.githubusercontent.com/DeBaschdi/docker.solaranzeige/master/Templates/Unraid/pheditor.png" height="379" width="766">
