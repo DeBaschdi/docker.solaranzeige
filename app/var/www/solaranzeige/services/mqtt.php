@@ -27,12 +27,14 @@
 //
 //
 //
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
 $Tracelevel = 7;  //  1 bis 10  10 = Debug
 
-if (is_file($Pfad."/1.user.config.php")) {
-  require($Pfad."/1.user.config.php");
+$basedir = dirname(__FILE__,2);
+require($basedir."/library/base.inc.php");
+
+
+if (is_file($basedir."/config/1.user.config.php")) {
+  require($basedir."/config/1.user.config.php");
 
   /*************************************************************************
   //  Ist die MQTT Übertragung eingeschaltet?
@@ -45,29 +47,14 @@ if (is_file($Pfad."/1.user.config.php")) {
   }
 }
 else {
-
-  if (is_file($Pfad."/user.config.php")) {
-    require($Pfad."/user.config.php");
-
-    /*************************************************************************
-    //  Ist die MQTT Übertragung eingeschaltet?
-    //  Wenn nicht, dann ist hier Schluß.
-    //  Nur bei Single-Geräte-Version!
-    *************************************************************************/
-    if ($MQTT == false) {
-      //  Es sollen keine Daten an den MQTT Broker übermittelt werden.
-      exit;
-    }
-  }
-  else {
-    //  Das Setup wurde noch nicht gemacht.
+  require($basedir."/config/user.config.php");
+  
+  if ($MQTT == false) {
+    //  Es sollen keine Daten an den MQTT Broker übermittelt werden.
     exit;
   }
 }
 
-require($Pfad."/phpinc/funktionen.inc.php");
-
-$funktionen = new funktionen();
 $aktuelleDaten = array();
 $Startzeit = time();
 $Auswahl = array();
@@ -131,11 +118,11 @@ $funktionen->log_schreiben($MQTTDaten["MQTTConnectReturnText"],"MQT",8);
 //  DATEN EMPFANGEN    DATEN EMPFANGEN    DATEN EMPFANGEN    DATEN EMPFANGEN
 *****************************************************************************/
 
-if (is_file($Pfad."/1.user.config.php")) {
+if (is_file($basedir."/config/1.user.config.php")) {
   // Multi-Regler-Version
   for ($mra_i = 1; $mra_i < 7; $mra_i++) {
-    if (is_file($Pfad."/".$mra_i.".user.config.php")) {
-      require($Pfad."/".$mra_i.".user.config.php");
+    if (is_file($basedir."/config/".$mra_i.".user.config.php")) {
+      require($basedir."/config/".$mra_i.".user.config.php");
       foreach($MQTTTopic as $key=>$wert) {
         $client->subscribe($wert, 0);       // Subscribe   QoS = 0
       }
@@ -254,13 +241,13 @@ function mqttDatenAuswerten($RawDaten) {
 
   $Teile = explode("/",$RawDaten["MQTTTopic"],4);
 
-  if (file_exists("/var/www/html/".$Teile[2].".user.config.php")) {
+  if (file_exists($basedir."/config/".$Teile[2].".user.config.php")) {
     $funktionen->log_schreiben("File ist vorhanden. ".$Teile[2].".user.config.php","   ",9);
-    include($Teile[2].".user.config.php");
+    include($basedir."/config/".$Teile[2].".user.config.php");
     $Daten["GeraeteID"] = $Teile[2];
   }
   else   {
-    include("user.config.php");
+    include($basedir."/config/user.config.php");
   }
 
   

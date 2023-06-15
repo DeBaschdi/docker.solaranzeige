@@ -4,24 +4,17 @@
 //  Script ermittelt, der ausgelesen werden soll. Die Information steht in
 //  der Datei "user.config.php
 ******************************************************************************/
-$basedir = dirname(__FILE__,1);
-
-echo $basedir;
-exit;
 $zentralerTimestamp = time();
-require($Pfad."/user.config.php");
+
+$basedir = dirname(__FILE__,2);
+require($basedir."/library/base.inc.php");
+require($basedir."/config/user.config.php");
 
 if (!isset($InfluxDBLokal)) {
   $InfluxDBLokal = "solaranzeige";
 }
 
-If (is_file("/sys/firmware/devicetree/base/model")) {
-  //  Auf welcher Platine läuft die Software?
-  $Platine = file_get_contents("/sys/firmware/devicetree/base/model");
-}
-else {
-  $Platine = "";
-}
+$Platine = getEnvPlattform();
 
 /****************************************************************************
 //  Erst einmal prüfen ob der Script schon läuft
@@ -43,10 +36,11 @@ if( !empty($runningScript) ) {
   }
 }
 
-$shell_befehl = "vcgencmd measure_temp | egrep -o '[0-9]*\.[0-9]*'";
-$temp = shell_exec($shell_befehl);
-$RaspiTemp = (int) $temp;
+// $shell_befehl = "vcgencmd measure_temp | egrep -o '[0-9]*\.[0-9]*'";
+// $temp = shell_exec($shell_befehl);
+// $RaspiTemp = (int) $temp;
 
+$Pfad = $basedir.'/wechselrichter';
 
 switch ($Regler) {
 

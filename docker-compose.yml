@@ -7,12 +7,15 @@ services:
     container_name: Solaranzeige
     restart: "unless-stopped"
     environment:
-      - PUID=99
-      - PGID=100
       - TIMEZONE=Europe/Berlin
-      - UPDATE=no
-      - MOSQUITTO=yes
-      - INFLUXDB=yes
+      - SA_REGLER=70
+      - SA_SERIENNUMMER=A22B10A2499
+      - SA_WR_IP=192.168.10.119
+      - SA_WR_PORT=502
+      - SA_OBJECT=Home
+      - SA_INFLUX_LOCAL_ENABLED=false
+      - SA_INFLUX_REMOTE_ENABLED=true
+      - SA_INFLUX_HOST=influxdb
     volumes:
       - ./app/var/www:/var/www
     tmpfs:

@@ -2,7 +2,7 @@
 set -e
 set -f
 
-solaranzeige_version="v0.0.0"
+export SA_VERSION="v0.0.0"
 
 if [[ ! -f /var/log/solaranzeige.log ]]; then
   touch /var/log/solaranzeige.log
@@ -45,8 +45,8 @@ fi
 
 echo "" >> /var/log/solaranzeige.log
 echo "#########################################################################" >> /var/log/solaranzeige.log
-echo "# Running Solaranzeige $solaranzeige_version #" >> /var/log/solaranzeige.log
+echo "# Running Solaranzeige $SA_VERSION #" >> /var/log/solaranzeige.log
 echo "#########################################################################" >> /var/log/solaranzeige.log
-echo "" >> /var/www/log/solaranzeige.log
+echo "" >> /var/log/solaranzeige.log
 
 docker-php-entrypoint --apache-foreground

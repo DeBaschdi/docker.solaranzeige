@@ -1,3 +1,4 @@
+<?php header("refresh: 5;");?>
 <!DOCTYPE html>
 <html>
 
@@ -36,7 +37,7 @@
     <div class="coffee-span-12 coffee-offset-0 coffee-768-span-12">  
       <fieldset style="padding:5px 20px; border: 2px solid #C5D8E1; border-radius: 6px; background: white;vertical-align:middle;">
         <legend style="padding:20px;">Live Log</legend>
-        <div style="float:left; width:100%; height:500px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:left;"><?php header("refresh: 5;"); exec('tail -n 20 /var/log/solaranzeige.log', $solarlogs); foreach($solarlogs as $solarlog) {echo "<br />".$solarlog;} ?></p></div>
+        <div style="float:left; width:100%; height:500px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:left;"><?php exec('tail -n 20 /var/log/solaranzeige.log', $solarlogs); foreach($solarlogs as $solarlog) {echo "<br />".$solarlog;} ?></p></div>
         <p style="clear: both; text-align: center;"></p> 
       </fieldset>
     </div>

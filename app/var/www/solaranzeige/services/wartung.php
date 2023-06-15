@@ -27,15 +27,19 @@
 //  am Anschluß durchlaufen. Vorhandenes Dokument: Wartung.pdf
 *************************************************************************/
 // 365 = 1 Jahr : 730 = 2 Jahre : 1095 = 3 Jahre : 1461 = 4 Jahre
-$Tage = 1461; //  Nach spätestens 4 Jahren sollten ältere Daten
+$Tage = 4*365; //  Nach spätestens 4 Jahren sollten ältere Daten
 //  gelöscht werden.
 //  0 = Löschen ausgeschaltet
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
+
+$basedir = dirname(__FILE__,2);
+require($basedir."/library/base.inc.php");
+
+if (is_file($basedir."/config/1.user.config.php")) {
+  require($basedir."/config/1.user.config.php");
+} else {
+  require($basedir."/config/user.config.php");
 }
+
 $Tracelevel = 3; //  1 bis 10  10 = Debug
 log_schreiben( "- - - - - - - - - - - - - - - - - - - - - - - - - - - - -", "|-->", 1 );
 log_schreiben( "Wartung wird durchgeführt....", "", 3 );
@@ -76,8 +80,8 @@ exit;
 //  $Loglevel=2   Loglevel 1-4   4 = Trace
 **************************************************************************/
 function log_schreiben( $LogMeldung, $Titel = "", $Loglevel = 3, $UTF8 = 0 ) {
-  global $Tracelevel, $Pfad;
-  $LogDateiName = $Pfad."/../log/wartung.log";
+  global $Tracelevel;
+  $LogDateiName = "/var/log/wartung.log";
   if (strlen( $Titel ) < 4) {
     switch ($Loglevel) {
 

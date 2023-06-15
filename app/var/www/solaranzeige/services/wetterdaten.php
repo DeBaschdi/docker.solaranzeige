@@ -12,19 +12,16 @@
 //
 *************************************************************/
 setlocale( LC_TIME, NULL ); // Damit der Wochentag in Deutsch geschrieben wird.
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/1.user.config.php");
+
+$basedir = dirname(__FILE__,2);
+require($basedir."/library/base.inc.php");
+
+if (is_file($basedir."/config/1.user.config.php")) {
+  require($basedir."/config/1.user.config.php");
+} else {
+  require($basedir."/config/user.config.php");
 }
-else {
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
+
 $Tracelevel = 7; //  1 bis 10  10 = Debug
 $Ergebnis = array();
 $funktionen = new funktionen( );

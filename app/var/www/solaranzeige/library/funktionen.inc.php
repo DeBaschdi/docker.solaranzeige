@@ -8308,8 +8308,8 @@ class funktionen {
   //  $Loglevel=5   Loglevel 1-10   10 = Trace
   **************************************************************************/
   function log_schreiben($LogMeldung, $Titel = "   ", $Loglevel = 5, $UTF8 = 0) {
-    Global $Tracelevel, $Pfad;
-    $LogDateiName = $Pfad."/../log/solaranzeige.log";
+    Global $Tracelevel;
+    $LogDateiName = "/var/log/solaranzeige.log";
     if ($Loglevel <= $Tracelevel) {
       if ($UTF8) {
         $LogMeldung = utf8_encode($LogMeldung);

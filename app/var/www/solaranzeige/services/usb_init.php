@@ -1073,7 +1073,7 @@ switch ($Regler) {
 
 
 //  Auf welcher Platine läuft die Software?
-$Platine = file_get_contents("/sys/firmware/devicetree/base/model");
+$Platine = "Docker Image 0.2.0";
 
 if (!empty($USBDevice)) {
 
@@ -1091,7 +1091,7 @@ if (!empty($USBDevice)) {
       $Zeile2 = $index;
     }
     elseif(strpos($item,'$Platine')!== false){
-      $funktionen->log_schreiben("Zeile gefunden. Raspberry Modell kann eingetragen werden. Index: ".$index."   ".$INI[$index],"   ",5);
+      $funktionen->log_schreiben("Zeile gefunden. Containerversion kann eingetragen werden. Index: ".$index."   ".$INI[$index],"   ",5);
       $Zeile3 = $index;
     }
   }

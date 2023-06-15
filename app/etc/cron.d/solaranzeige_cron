@@ -1,6 +1,6 @@
-#*     *  *  *  *    /usr/bin/php /var/www/solaranzeige/services/regler_auslesen.php
-#*     *  *  *  *    /usr/bin/php /var/www/solaranzeige/services/mqtt.php
-#
-#20,50 *  *  *  *    /usr/bin/php /var/www/solaranzeige/services/wetterdaten.php
-#
-#55   23  *  *  *    /usr/bin/php /var/www/solaranzeige/services/wartung.php
+*     *  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/regler_auslesen.php
+*     *  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/mqtt.php
+
+20,50 *  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/wetterdaten.php
+
+55   23  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/wartung.php

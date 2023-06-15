@@ -281,8 +281,8 @@ $HF2211 = getEnvAsBoolean("SA_HF2211",false);
 //  und den neuen US2000C aus dem Jahr 2019 und später
 //  Anzahl der vorhandenen Batteriepacks und Modell 2000 / 3000
 //  -------------------------------------------------------------------
-$Batteriepacks = getEnvAsString("","1"); //                                Regler = "41"
-$PylonTech = getEnvAsString("","2000");  //                                Regler = "41"
+$Batteriepacks = getEnvAsString("SA_BATTERY_PACK","1"); //                                Regler = "41"
+$PylonTech = getEnvAsString("SA_PYLON_TECH","2000");  //                                Regler = "41"
 //
 //
 //  Ethernet Kabelverbindung:          Local Area Network  (LAN)
@@ -749,26 +749,4 @@ $Alpha_ESS = getEnvAsInteger("SA_ALPHA_ESS",0);
 //
 // ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE
 
-
-
-function getEnvAsString(string $key, string $defaultValue) :string {
-  $value = getenv($key);
-  if ($value === FALSE) return $defaultValue;
-  return $value;
-}
-function getEnvAsBoolean(string $key, bool $defaultValue) :bool {
-  $value = getenv($key);
-  if ($value === FALSE) return $defaultValue;
-  return ($value === "true" || $value === "1" || $value === "on" || $value === "yes");
-}
-function getEnvAsInteger(string $key, int $defaultValue) :int {
-  $value = getenv($key);
-  if ($value === FALSE) return $defaultValue;
-  return intval($value);
-}
-function getEnvAsFloat(string $key, float $defaultValue) :float {
-  $value = getenv($key);
-  if ($value === FALSE) return $defaultValue;
-  return floatval($value);
-}
 ?>

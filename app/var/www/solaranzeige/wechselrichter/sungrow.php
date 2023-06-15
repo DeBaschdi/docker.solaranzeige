@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -28,16 +27,7 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
+
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -45,7 +35,6 @@ if (isset($USBDevice) and !empty($USBDevice)) {
 $Tracelevel = 7; //  1 bis 10  10 = Debug
 $RemoteDaten = true;
 $Device = "WR"; // WR = Wechselrichter
-$Version = "";
 $Start = time( ); // Timestamp festhalten
 $funktionen->log_schreiben( "-------------   Start  sungrow.php    -------------------------- ", "|--", 6 );
 $funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
@@ -53,36 +42,6 @@ $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale( LC_TIME, "de_DE.utf8" );
 $funktionen->log_schreiben( "Sungrow: ".$WR_IP." Port: ".$WR_Port." GeräteID: ".$WR_Adresse, "   ", 7 );
-
-//  Hardware Version ermitteln.
-$Teile = explode( " ", $Platine );
-if ($Teile[1] == "Pi") {
-  $funktionen->log_schreiben( "Hardware Version: ".$Platine, "o  ", 8 );
-  $Version = trim( $Teile[2] );
-  if ($Teile[3] == "Model") {
-    $Version .= trim( $Teile[4] );
-    if ($Teile[5] == "Plus") {
-      $Version .= trim( $Teile[5] );
-    }
-  }
-}
-switch ($Version) {
-
-  case "2B":
-    break;
-
-  case "3B":
-    break;
-
-  case "3BPlus":
-    break;
-
-  case "4B":
-    break;
-
-  default:
-    break;
-}
 
 if (empty($WR_Adresse)) {
   $WR_ID = "FF";
@@ -821,8 +780,8 @@ do {
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( "/var/www/html/rct_wr_math.php" )) {
-    include 'rct_wr_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists( $basedir."/services/rct_wr_math.php" )) {
+    include $basedir."/services/rct_wr_math.php"; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -832,7 +791,7 @@ do {
   **************************************************************************/
   if ($MQTT) {
     $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    require ($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -884,7 +843,7 @@ do {
   else {
     $rc = $funktionen->influx_local( $aktuelleDaten );
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time( ) - $Start));
     $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
@@ -911,7 +870,7 @@ do {
 *********************************************************************/
 if (isset($Homematic) and $Homematic == true) {
   $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-  require ($Pfad."/homematic.php");
+  require ($basedir."/services/homematic.php");
 }
 
 /*********************************************************************
@@ -921,7 +880,7 @@ if (isset($Homematic) and $Homematic == true) {
 *********************************************************************/
 if (isset($Messenger) and $Messenger == true) {
   $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-  require ($Pfad."/meldungen_senden.php");
+  require ($basedir."/services/meldungen_senden.php");
 }
 $funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 
