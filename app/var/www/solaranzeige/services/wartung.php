@@ -81,7 +81,7 @@ exit;
 **************************************************************************/
 function log_schreiben( $LogMeldung, $Titel = "", $Loglevel = 3, $UTF8 = 0 ) {
   global $Tracelevel;
-  $LogDateiName = "/var/log/wartung.log";
+  $LogDateiName = "/var/log/solaranzeige.log";
   if (strlen( $Titel ) < 4) {
     switch ($Loglevel) {
 

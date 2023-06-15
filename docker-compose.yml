@@ -4,26 +4,29 @@ services:
   solaranzeige:
     build: .
 #    image: "takealug/solaranzeige:latest"
-    container_name: Solaranzeige
     restart: "unless-stopped"
+    depends_on:
+      - influxdb
+    ports:
+      - 1883:1883
+      - 8080:80
+    volumes:
+      - ./app/var/www:/var/www
+    tmpfs:
+      - /var/log
+      - /tmp
     environment:
       - TIMEZONE=Europe/Berlin
       - SA_REGLER=70
-      - SA_SERIENNUMMER=A22B10A2499
+      - SA_SERIENNUMMER=xxx
       - SA_WR_IP=192.168.10.119
       - SA_WR_PORT=502
       - SA_OBJECT=Home
       - SA_INFLUX_LOCAL_ENABLED=false
       - SA_INFLUX_REMOTE_ENABLED=true
       - SA_INFLUX_HOST=influxdb
-    volumes:
-      - ./app/var/www:/var/www
-    tmpfs:
-      - /var/log
-      - /tmp
-    ports:
-      - 1883:1883
-      - 8080:80
+      - SA_INFLUX_USERNAME=admin
+      - SA_INFLUX_PASSWORD=solaranzeige
 
   influxdb:
     image: "docker.io/influxdb"
@@ -39,9 +42,16 @@ services:
   grafana:
     image: "docker.io/grafana/grafana:main"
     restart: "unless-stopped"
+    depends_on:
+      - influxdb
     ports:
       - 3000:3000
     volumes:
       - ./data/grafana:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
     environment:
       - GF_INSTALL_PLUGINS=fetzerch-sunandmoon-datasource, briangann-gauge-panel, agenty-flowcharting-panel
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_USER=solaranzeige
+      
