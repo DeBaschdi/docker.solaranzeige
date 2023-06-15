@@ -1,0 +1,52 @@
+#!/bin/bash
+set -e
+set -f
+
+solaranzeige_version="v0.0.0"
+
+if [[ ! -f /var/log/solaranzeige.log ]]; then
+  touch /var/log/solaranzeige.log
+  chmod 777 /var/log/solaranzeige.log
+fi
+
+ln -fs /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
+dpkg-reconfigure -f noninteractive tzdata
+
+
+#Install Missing Files after possible Container Update
+#if [[ ! -f /var/www/html/automation.web.php ]]; then
+#  echo "Install Steuerung...."
+#  /usr/local/bin/steuerung-setup
+#fi
+
+cp /etc/mosquitto/mosquitto-solaranzeige.conf /etc/mosquitto/mosquitto.conf
+mkdir -p /run/mosquitto
+chmod -R 777 /run/mosquitto
+
+# Hack usb_init.php
+sed -i 's/file_get_contents("\/sys\/firmware\/devicetree\/base\/model")/"Docker Image 0.2.0"/g' /var/www/solaranzeige/services/usb_init.php
+sed -i 's/Raspberry Modell kann eingetragen werden/Containerversion kann eingetragen werden/g' /var/www/solaranzeige/services/usb_init.php
+
+
+PWD=$(pwd)
+echo ""
+echo "Setup Crontab..."
+crontab /etc/cron.d/solaranzeige_cron > /var/log/solaranzeige.log
+echo ""
+
+echo "Starting Services..." >> /var/log/solaranzeige.log
+if [[ "${MOSQUITTO}" = "yes" ]]; then
+  mosquitto -c /etc/mosquitto/mosquitto.conf >> /var/log/solaranzeige.log &disown
+else
+  echo "Mosquitto is disabled..." >> /var/log/solaranzeige.log
+fi
+
+/etc/init.d/cron start
+
+echo "" >> /var/log/solaranzeige.log
+echo "#########################################################################" >> /var/log/solaranzeige.log
+echo "# Running Solaranzeige $solaranzeige_version #" >> /var/log/solaranzeige.log
+echo "#########################################################################" >> /var/log/solaranzeige.log
+echo "" >> /var/www/log/solaranzeige.log
+
+docker-php-entrypoint --apache-foreground

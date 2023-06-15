@@ -1,8 +1,15 @@
-FROM php:7.4-bullseye
+FROM php:7.4-apache
 
-LABEL maintainer="Bastian Kleinschmidt <debaschdi@googlemail.com>" \
+LABEL maintainer="Thoralf Rickert-Wendt <trw@acoby.de>" \
+      org.label-schema.schema-version="1.0" \
+      org.label-schema.name="docker.solaranzeige" \
+      org.label-schema.vendor="acoby GmbH" \
+      org.label-schema.url="https://github.com/trickert76/docker.solaranzeige" \
       org.label-schema.docker.dockerfile="/Dockerfile" \
-      org.label-schema.name="docker.solaranzeige"
+      org.label-schema.build-date=${BUILD_DATE} \
+      org.label-schema.vcs-url=${VCS_URL} \
+      org.label-schema.vcs-ref=${VCS_REF} \
+      org.label-schema.version=${BUILD_VERSION}
 
 ARG BUILD_DEPENDENCIES="build-essential make"
 
@@ -17,7 +24,7 @@ ENV USER_ID="99" \
     LANG="en_US.UTF-8" \
     LC_ALL="en_US.UTF-8"
 
-COPY root/ /
+COPY app/ /
 
 RUN echo "Dir::Cache "";" >> /etc/apt/apt.conf.d/docker-nocache && \
     echo "Dir::Cache::archives "";" >> /etc/apt/apt.conf.d/docker-nocache && \
@@ -66,7 +73,14 @@ RUN apt-get --quiet --yes --no-install-recommends update && \
       python3-wrapt \
       python3-yaml \
       python3-isodate \
-      ca-certificates
+      ca-certificates && \
+    python3 -m pip install pysolcast pvlib
+RUN mkdir /tmp/git && \
+    cd /tmp/git && \
+    git clone https://github.com/StefaE/PVForecast.git && \
+    mv /tmp/git/PVForecast /pvforecast && \
+    cd / && \
+    rm -rf /tmp/git
 RUN curl -fsSL  http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key | apt-key add - && \
     echo "deb https://repo.mosquitto.org/debian bullseye main" | tee -a /etc/apt/sources.list.d/mosquitto.list && \
     apt-get --quiet --yes --no-install-recommends update && \
@@ -80,15 +94,7 @@ RUN apt-get install --quiet --yes --no-install-recommends \
       libmosquitto-dev && \
     pecl install Mosquitto-alpha && \
     echo "extension=mosquitto.so" > /usr/local/etc/php/conf.d/docker-php-ext-mosquitto.ini
-RUN python3 -m pip install pysolcast pvlib && \
-    chmod +x /usr/local/sbin/entrypoint && \
-    chmod +x /usr/local/sbin/solaranzeige-process && \
-    chmod +x /usr/local/sbin/solaranzeige-update && \
-    chmod +x /usr/local/sbin/solaranzeige-setup && \
-    chmod +x /usr/local/sbin/steuerung-setup && \
-    chmod +x /usr/local/sbin/pvforecast-update && \
-    chmod +x /usr/local/sbin/update && \
-    chmod +x /usr/local/sbin/truncate_log && \
+RUN chmod +x /usr/local/bin/entrypoint && \
     chmod 0644 /etc/cron.d/solaranzeige_cron && \
     crontab /etc/cron.d/solaranzeige_cron && \
     apt-get remove --purge --quiet --yes ${BUILD_DEPENDENCIES} && \
@@ -106,11 +112,7 @@ RUN python3 -m pip install pysolcast pvlib && \
       /usr/share/man/ \
       /usr/share/locale/
 
-ENTRYPOINT [ "/usr/local/sbin/entrypoint" ]
-
-VOLUME /solaranzeige
-VOLUME /pvforecast
-VOLUME /var/www
+ENTRYPOINT [ "/usr/local/bin/entrypoint" ]
 
 EXPOSE 3000
 EXPOSE 80
