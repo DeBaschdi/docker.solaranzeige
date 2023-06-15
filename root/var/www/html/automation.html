@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <meta name="generator" content="Responsive Site Designer 1.5.1394">
+  <title>Automation</title>
+  <link rel="stylesheet" href="css/coffeegrinder.css">
+  <link rel="stylesheet" href="css/wireframe-theme.css">
+  <!-- <script>document.createElement( "picture" );</script>
+  <script src="js/picturefill.min.js" class="picturefill" async="async"></script>  -->
+  <link rel="stylesheet" href="css/main.css">
+</head>
+
+<body>
+  <div class="row cover-row">
+    <div class="coffee-span-12"></div>
+  </div>
+  <div class="row article-header">
+    <div class="coffee-span-12 coffee-768-span-12 coffee-768-offset-0 header-column coffee-offset-0" >
+      <h1 class="welcome-intro-title">Solaranzeige.de</h1><br>
+      <h1 class="welcome-title">Allgemeine Steuerung</h1>
+    </div>
+  </div>
+  <form method="post" action="automation.web.php" style="width: 92%; margin: 0 auto;">  
+  <div class="row article-header">
+    <div class="coffee-span-12 coffee-offset-0 coffee-768-span-12">  
+      <fieldset style="padding:5px 20px; border: 2px solid #C5D8E1; border-radius: 6px; background: white;vertical-align:middle;">
+        <legend style="padding:20px;">Verwendete Geräte</legend>
+        <div style="float:left; width:30%; height:50px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:center;">Laderegler (PV Leistung)</p></div>
+		<div style="float:left;width:23%;"><label><input type="text" placeholder="Regler Nummer" name="LR_ReglerNr" value="<?php echo $var["LRReglerNr"]; ?>" /></label></div>
+		<div style="float:left;width:23%"><label><input type="text" placeholder="Geräte ID" name="LadereglerID" value="<?php echo $var["LadereglerID"]; ?>" /></label></div>
+		<div style="float:left;width:23%"><label><input type="text" placeholder="Datenbankname" name="LR_Datenbank"  value="<?php echo $var["LRDB"]; ?>" /></label></div>
+		<p style="clear: both; text-align: center;"></p>		
+        <div style="float:left; width:30%; height:50px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:center;">Wechselrichter (AC Leistung)</p></div>
+		<div style="float:left;width:23%;"><label><input type="text" placeholder="Regler Nummer" name="WR_ReglerNr" value="<?php echo $var["WRReglerNr"]; ?>" /></label></div>
+		<div style="float:left;width:23%"><label><input type="text" placeholder="Geräte ID" name="WechselrichterID" value="<?php echo $var["WechselrichterID"]; ?>" /></label></div>
+		<div style="float:left;width:23%"><label><input type="text" placeholder="Datenbankname" name="WR_Datenbank" value="<?php echo $var["WRDB"]; ?>" /></label></div>
+		<p style="clear: both; text-align: center;"></p>
+        <div style="float:left; width:30%; height:50px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:center;">SmartMeter (Bezug und Einspeisung)</p></div>
+		<div style="float:left;width:23%;vertical-align:middle;"><label><input type="text" placeholder="Regler Nummer" name="SM_ReglerNr" value="<?php echo $var["SMReglerNr"]; ?>" /></label></div>
+		<div style="float:left;width:23%"><label><input type="text" placeholder="Geräte ID" name="SmartMeterID" value="<?php echo $var["SmartMeterID"]; ?>" /></label></div>
+		<div style="float:left;width:23%"><label><input type="text" placeholder="Datenbankname" name="SM_Datenbank" value="<?php echo $var["SMDB"]; ?>" /></label></div>
+		<p style="clear: both; text-align: center;"></p>
+        <div style="float:left; width:30%; height:50px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:center;">Batterie-Management-S. (SOC)</p></div>
+		<div style="float:left;width:23%;vertical-align:middle;"><label><input type="text" placeholder="Regler Nummer" name="BMS_ReglerNr" value="<?php echo $var["BMSReglerNr"]; ?>" /></label></div>
+		<div style="float:left;width:23%"><label><input type="text" placeholder="Geräte ID" name="BMSID" value="<?php echo $var["BMSID"]; ?>" /></label></div>
+		<div style="float:left;width:23%"><label><input type="text" placeholder="Datenbankname" name="BMS_Datenbank" value="<?php echo $var["BMSDB"]; ?>" /></label></div>		
+		<p style="clear: both; text-align: center;"></p>				
+      </fieldset>
+    </div>
+  </div>
+  <div class="row article-header">
+    <div class="coffee-span-12 coffee-offset-0 coffee-768-span-12">  
+      <fieldset style="padding:5px 20px; text-align:center; border: 2px solid #C5D8E1; border-radius: 6px; background: white;">
+        <legend style="padding:20px 20px 10px 20px; text-align:center;">Verwendete Relais</legend>
+        <div style="float:left; width:20%; height:50px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:left;">Relais 1 &nbsp;&nbsp;<?php echo " [ ".$var["Relais1Name"]." ] "; ?></p></div>
+		<div style="float:left;width:25%"><label>
+		<select name="Relais1Typ" size="1" style="margin-top: 8px; width: 150px; text-align:center;"><option>bitte wählen</option>
+		<option <?php if($var["Relais1Typ"] == "Sonoff POW") echo "selected" ?> >Sonoff POW</option><option <?php if($var["Relais1Typ"] == "Sonoff Basic") echo "selected" ?> >Sonoff Basic</option>
+		<option <?php if($var["Relais1Typ"] == "Sonoff TH16/TH10") echo "selected" ?> >Sonoff TH16/TH10</option>		
+		<option <?php if($var["Relais1Typ"] == "Sonoff 4CH") echo "selected" ?> >Sonoff 4CH</option>
+		<option <?php if($var["Relais1Typ"] == "Sonoff Dual R2") echo "selected" ?> >Sonoff Dual R2</option>
+		<option <?php if($var["Relais1Typ"] == "Sonoff S26R2") echo "selected" ?> >Sonoff S26R2</option>		
+		<option <?php if($var["Relais1Typ"] == "Shelly 2.5") echo "selected" ?> >Shelly 2.5</option>
+		<option <?php if($var["Relais1Typ"] == "Gosund SP1/SP111") echo "selected" ?> >Gosund SP1/SP111</option>
+		<option <?php if($var["Relais1Typ"] == "Gosund SP211") echo "selected" ?> >Gosund SP211</option>
+		<option <?php if($var["Relais1Typ"] == "Nous A1T") echo "selected" ?> >Nous A1T</option>
+		</select></label></div>
+		<div style="float:left;width:25%;vertical-align:middle;"><label>Anzahl der Kontakte:&nbsp;&nbsp; 
+		<select name="Relais1AnzKontakte" size="1" style="margin-top: 8px; width:45px">
+		<option <?php if($var["Relais1AnzKontakte"] == "0") echo "selected" ?> >0</option>
+		<option <?php if($var["Relais1AnzKontakte"] == "1") echo "selected" ?> >1</option>
+		<option <?php if($var["Relais1AnzKontakte"] == "2") echo "selected" ?> >2</option>
+		<option <?php if($var["Relais1AnzKontakte"] == "3") echo "selected" ?> >3</option>
+		<option <?php if($var["Relais1AnzKontakte"] == "4") echo "selected" ?> >4</option>		
+		<!-- <option <?php if($var["Relais1AnzKontakte"] == "4") echo "selected" ?> >4</option> -->
+		</select></label></div>
+		
+		<div style="float:left;width:20%"><label><input type="text" placeholder="Topic" name="Relais1Topic"  style="width: 100px;"  value="<?php echo $var["Relais1Topic"]; ?>"  /></label></div>
+  	    <div style="float:left; text-align:left; height:30px; margin-top:10px;" >
+		<input type="submit" value="Test" name="TestRelais1"/></div>	
+					
+		<p style="clear: both; text-align: center;"></p>	
+        <div style="float:left; width:20%; height:50px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:left;">Relais 2 &nbsp;&nbsp; <?php echo " [ ".$var["Relais2Name"]." ] "; ?></p></div>
+		<div style="float:left;width:25%"><label>
+		<select name="Relais2Typ" size="1" style="margin-top: 8px; width: 150px; text-align:center;"><option>bitte wählen</option>
+		<option <?php if($var["Relais2Typ"] == "Sonoff POW") echo "selected" ?> >Sonoff POW</option><option <?php if($var["Relais2Typ"] == "Sonoff Basic") echo "selected" ?> >Sonoff Basic</option>
+		<option <?php if($var["Relais2Typ"] == "Sonoff TH16/TH10") echo "selected" ?> >Sonoff TH16/TH10</option>
+		<option <?php if($var["Relais2Typ"] == "Sonoff 4CH") echo "selected" ?> >Sonoff 4CH</option>
+		<option <?php if($var["Relais2Typ"] == "Sonoff Dual R2") echo "selected" ?> >Sonoff Dual R2</option>
+		<option <?php if($var["Relais1Typ"] == "Sonoff S26R2") echo "selected" ?> >Sonoff S26R2</option>				
+		<option <?php if($var["Relais2Typ"] == "Shelly 2.5") echo "selected" ?> >Shelly 2.5</option>
+		<option <?php if($var["Relais2Typ"] == "Gosund SP1/SP111") echo "selected" ?> >Gosund SP1/SP111</option>
+		<option <?php if($var["Relais2Typ"] == "Gosund SP211") echo "selected" ?> >Gosund SP211</option>
+		<option <?php if($var["Relais2Typ"] == "Nous A1T") echo "selected" ?> >Nous A1T</option>		
+        </select></label></div>
+		<div style="float:left;width:25%;vertical-align:middle;"><label>Anzahl der Kontakte:&nbsp;&nbsp;
+		<select name="Relais2AnzKontakte" size="1" style="margin-top: 8px; width:45px">
+		<option <?php if($var["Relais2AnzKontakte"] == "0") echo "selected" ?> >0</option>
+		<option <?php if($var["Relais2AnzKontakte"] == "1") echo "selected" ?> >1</option>
+		<option <?php if($var["Relais2AnzKontakte"] == "2") echo "selected" ?> >2</option>
+		<!-- <option <?php if($var["Relais2AnzKontakte"] == "4") echo "selected" ?> >4</option>  -->
+		</select></label></div>		
+		<div style="float:left;width:20%"><label><input type="text" placeholder="Topic" name="Relais2Topic"  style="width: 100px;"  value="<?php echo $var["Relais2Topic"]; ?>" /></label></div>		
+  	    <div style="float:left; text-align:left; height:30px; margin-top:10px;" >
+		<input type="submit" value="Test" name="TestRelais2"/></div>	
+		<p style="clear: both; text-align: center;"></p>			
+      </fieldset>
+    </div>
+  </div>
+  <div class="row article-header">
+    <div class="coffee-span-12 coffee-offset-0 coffee-768-span-12">  
+      <fieldset style="padding:5px 20px; text-align:center; border: 2px solid #C5D8E1; border-radius: 6px; background: white;">
+        <legend style="padding:20px 20px 10px 20px; text-align:center;">Steuerung Steuerkreis 1 Kontakt 1&nbsp;&nbsp;&nbsp; <b><?php if($var["Relais1Kontakt1"] == 0) echo "<font color='#000000'>"; else echo "<font color='#ff0000'>"; ?>[ EIN ]</font></b></legend>
+        <div Style="height:40px; width:100%;">
+		  <div style="float:left; width: 30%; text-align:left; margin-top:7px;" ><label><input type="checkbox" name="Relais1aktiv" style="margin: 0 10px 0 0;" <?php if ($var["Relais1aktiv"] == 1) echo "checked"; ?> /> Relais 1 Kontakt 1 &nbsp;&nbsp;&nbsp;einschalten:</label></div>
+		  <div style="float:left; font-size: 0.85em; margin-top:7px;">(leere Felder werden nicht berücksichtigt.)</div> 
+		  <div style="float:left; width:35%; font-size: 0.85em; text-align:right; ">Min. Einschaltdauer <input type="text" placeholder="Minuten" name="11MinEin" style="text-align:center; max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K1einMinuten"]; ?>" /> Min.&nbsp;&nbsp;</div>		
+		</div>
+        <div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="11PVWattein" style="text-align:center; max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K1PVein"]; ?>" /> W&nbsp;&nbsp;PV Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="11PVein" <?php if($var["Relais1K1PVBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float:left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="11PVein" <?php if($var["Relais1K1PVBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="11ACWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K1ACein"]; ?>" /> W&nbsp;&nbsp;AC Leistung</label></div>    
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="11ACein" <?php if($var["Relais1K1ACBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="11ACein" <?php if($var["Relais1K1ACBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>		
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="11SMWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K1SMein"]; ?>" /> W&nbsp;&nbsp;Einspeisung</label></div>    
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="11SMein" <?php if($var["Relais1K1SMBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="11SMein" <?php if($var["Relais1K1SMBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>	
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:50%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="11BMSWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K1BMSein"]; ?>" /> %&nbsp;&nbsp;Batterie SOC</label></div>    
+        </div>							
+      </fieldset>
+      <fieldset style="padding:5px 20px; text-align:center; border: 2px solid #C5D8E1; border-radius: 6px; background: white;">	  
+        <legend style="padding:20px 20px 10px 20px; text-align:center;">Steuerung Steuerkreis 1 Kontakt 1&nbsp;&nbsp;&nbsp; <b><?php if($var["Relais1Kontakt1"] == 0) echo "<font color='#ff0000'>"; else echo "<font color='#000000'>"; ?>[ AUS ]</font>
+		</b></legend>
+        <div Style="height:40px; width:100%;">
+		  <div style="float:left; width: 30%; text-align:left; margin-top:7px;" ><div style="float:left; width: 20px;">&nbsp;</div><label>Relais 1 Kontakt 1 &nbsp;&nbsp;&nbsp;ausschalten:</label></div>
+		  <div style="float:left; font-size: 0.85em; margin-top:7px;">(leere Felder werden nicht berücksichtigt.)</div> 
+		  <div style="float:left; width:35%; font-size: 0.85em; text-align:right; ">Feste Einschaltdauer <input type="text" placeholder="Minuten" name="11MaxEin" style="text-align:center; max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K1ausMinuten"]; ?>" /> Min.&nbsp;&nbsp;</div> 		
+		</div>
+        <div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="11PVWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K1PVaus"]; ?>" /> W&nbsp;&nbsp;PV Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="11PVaus" <?php if($var["Relais1K1PVBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="11PVaus" <?php if($var["Relais1K1PVBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		  
+        </div>
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="11ACWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K1ACaus"]; ?>" /> W&nbsp;&nbsp;AC Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="11ACaus" <?php if($var["Relais1K1ACBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="11ACaus" <?php if($var["Relais1K1ACBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		      
+        </div>		
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="11SMWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K1SMaus"]; ?>" /> W&nbsp;&nbsp;Einspeisung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="11SMaus"  <?php if($var["Relais1K1SMBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="11SMaus" <?php if($var["Relais1K1SMBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		      
+        </div>	
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="11BMSWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K1BMSaus"]; ?>" /> %&nbsp;&nbsp;Batterie SOC</label></div>    
+        </div>	
+      </fieldset>
+    </div>
+	<?php if( $var["Relais1AnzKontakte"] < 2 )  echo "<!--------------"; ?>
+    <div class="coffee-span-12 coffee-offset-0 coffee-768-span-12">  
+      <fieldset style="padding:5px 20px; text-align:center; border: 2px solid #C5D8E1; border-radius: 6px; background: white;">
+        <legend style="padding:20px 20px 10px 20px; text-align:center;">Steuerung Steuerkreis 1 Kontakt 2&nbsp;&nbsp;&nbsp; <b><?php if($var["Relais1Kontakt2"] == 0) echo "<font color='#000000'>"; else echo "<font color='#ff0000'>"; ?>[ EIN ]</font></b></legend>
+        <div Style="height:30px; ">
+		  <div style="float:left; width: 350px; text-align:left; " ><div style="float:left; width: 20px;">&nbsp;</div><label>Relais 1 Kontakt 2 &nbsp;&nbsp;&nbsp;einschalten:</label></div>
+		  <div style="float:left; font-size: 0.875em;">(leere Felder werden nicht berücksichtigt.)</div>		
+		</div>
+        <div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="12PVWattein" style="text-align:center; max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K2PVein"]; ?>" /> W&nbsp;&nbsp;PV Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="12PVein" <?php if($var["Relais1K2PVBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float:left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="12PVein" <?php if($var["Relais1K2PVBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="12ACWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K2ACein"]; ?>" /> W&nbsp;&nbsp;AC Leistung</label></div>    
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="12ACein" <?php if($var["Relais1K2ACBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="12ACein" <?php if($var["Relais1K2ACBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>		
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="12SMWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K2SMein"]; ?>" /> W&nbsp;&nbsp;Einspeisung</label></div>    
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="12SMein" <?php if($var["Relais1K2SMBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="12SMein" <?php if($var["Relais1K2SMBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>	
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:50%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="12BMSWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K2BMSein"]; ?>" /> %&nbsp;&nbsp;Batterie SOC</label></div>    
+        </div>							
+      </fieldset>
+      <fieldset style="padding:5px 20px; text-align:center; border: 2px solid #C5D8E1; border-radius: 6px; background: white;">	  
+        <legend style="padding:20px 20px 10px 20px; text-align:center;">Steuerung Steuerkreis 1 Kontakt 2&nbsp;&nbsp;&nbsp; <b><?php if($var["Relais1Kontakt2"] == 0) echo "<font color='#ff0000'>"; else echo "<font color='#000000'>"; ?>[ AUS ]</font></b></legend>
+        <div Style="height:30px; ">
+		  <div style="float:left; width: 350px; text-align:left; " ><div style="float:left; width: 20px;">&nbsp;</div><label>Relais 1 Kontakt 2 &nbsp;&nbsp;&nbsp;ausschalten:</label></div>
+  	      <?php if( $var["Relais1K2ausMinuten"] == 0 )  echo '<div style="float:left; font-size: 0.875em;">(leere Felder werden nicht berücksichtigt.)</div>'; else echo '<div style="float:left; font-size: 0.875em;"> nach <b>'.$var["Relais1K2ausMinuten"].'  Minuten!</b><font color=red >&nbsp;&nbsp;&nbsp; Der Rest wird ignoriert.</font></div>'; ?>	
+		</div>
+        <div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="12PVWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K2PVaus"]; ?>" /> W&nbsp;&nbsp;PV Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="12PVaus" <?php if($var["Relais1K2PVBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="12PVaus" <?php if($var["Relais1K2PVBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		  
+        </div>
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="12ACWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K2ACaus"]; ?>" /> W&nbsp;&nbsp;AC Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="12ACaus" <?php if($var["Relais1K2ACBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="12ACaus" <?php if($var["Relais1K2ACBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		      
+        </div>		
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="12SMWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K2SMaus"]; ?>" /> W&nbsp;&nbsp;Einspeisung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="12SMaus"  <?php if($var["Relais1K2SMBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="12SMaus" <?php if($var["Relais1K2SMBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		      
+        </div>	
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="12BMSWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K2BMSaus"]; ?>" /> %&nbsp;&nbsp;Batterie SOC</label></div>    
+        </div>	
+      </fieldset>
+    </div>	
+	<?php if($var["Relais1AnzKontakte"] < 2 )  echo "-------------->"; ?>	
+	<?php if( $var["Relais1AnzKontakte"] < 3 )  echo "<!--------------"; ?>
+    <div class="coffee-span-12 coffee-offset-0 coffee-768-span-12">  
+      <fieldset style="padding:5px 20px; text-align:center; border: 2px solid #C5D8E1; border-radius: 6px; background: white;">
+        <legend style="padding:20px 20px 10px 20px; text-align:center;">Steuerung Steuerkreis 1 Kontakt 3&nbsp;&nbsp;&nbsp; <b><?php if($var["Relais1Kontakt3"] == 0) echo "<font color='#000000'>"; else echo "<font color='#ff0000'>"; ?>[ EIN ]</font></b></legend>
+        <div Style="height:30px; ">
+		  <div style="float:left; width: 350px; text-align:left; " ><div style="float:left; width: 20px;">&nbsp;</div><label>Relais 1 Kontakt 3 &nbsp;&nbsp;&nbsp;einschalten:</label></div>
+		  <div style="float:left; font-size: 0.875em;">(leere Felder werden nicht berücksichtigt.)</div>		
+		</div>
+        <div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="13PVWattein" style="text-align:center; max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K3PVein"]; ?>" /> W&nbsp;&nbsp;PV Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="13PVein" <?php if($var["Relais1K3PVBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float:left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="13PVein" <?php if($var["Relais1K3PVBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="13ACWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K3ACein"]; ?>" /> W&nbsp;&nbsp;AC Leistung</label></div>    
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="13ACein" <?php if($var["Relais1K3ACBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="13ACein" <?php if($var["Relais1K3ACBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>		
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="13SMWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K3SMein"]; ?>" /> W&nbsp;&nbsp;Einspeisung</label></div>    
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="13SMein" <?php if($var["Relais1K3SMBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="13SMein" <?php if($var["Relais1K3SMBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>	
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:50%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="13BMSWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K3BMSein"]; ?>" /> %&nbsp;&nbsp;Batterie SOC</label></div>    
+        </div>							
+      </fieldset>
+      <fieldset style="padding:5px 20px; text-align:center; border: 2px solid #C5D8E1; border-radius: 6px; background: white;">	  
+        <legend style="padding:20px 20px 10px 20px; text-align:center;">Steuerung Steuerkreis 1 Kontakt 3&nbsp;&nbsp;&nbsp; <b><?php if($var["Relais1Kontakt3"] == 0) echo "<font color='#ff0000'>"; else echo "<font color='#000000'>"; ?>[ AUS ]</font></b></legend>
+        <div Style="height:30px; ">
+		  <div style="float:left; width: 350px; text-align:left; " ><div style="float:left; width: 20px;">&nbsp;</div><label>Relais 1 Kontakt 3 &nbsp;&nbsp;&nbsp;ausschalten:</label></div>
+  	      <?php if( $var["Relais1K3ausMinuten"] == 0 )  echo '<div style="float:left; font-size: 0.875em;">(leere Felder werden nicht berücksichtigt.)</div>'; else echo '<div style="float:left; font-size: 0.875em;"> nach <b>'.$var["Relais1K3ausMinuten"].'  Minuten!</b><font color=red >&nbsp;&nbsp;&nbsp; Der Rest wird ignoriert.</font></div>'; ?>	
+		</div>
+        <div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="13PVWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K3PVaus"]; ?>" /> W&nbsp;&nbsp;PV Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="13PVaus" <?php if($var["Relais1K3PVBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="13PVaus" <?php if($var["Relais1K3PVBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		  
+        </div>
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="13ACWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K3ACaus"]; ?>" /> W&nbsp;&nbsp;AC Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="13ACaus" <?php if($var["Relais1K3ACBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="13ACaus" <?php if($var["Relais1K3ACBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		      
+        </div>		
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="13SMWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K3SMaus"]; ?>" /> W&nbsp;&nbsp;Einspeisung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="13SMaus"  <?php if($var["Relais1K3SMBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="13SMaus" <?php if($var["Relais1K3SMBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		      
+        </div>	
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="13BMSWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K3BMSaus"]; ?>" /> %&nbsp;&nbsp;Batterie SOC</label></div>    
+        </div>	
+      </fieldset>
+    </div>	
+	<?php if($var["Relais1AnzKontakte"] < 3 )  echo "-------------->"; ?>	
+	<?php if( $var["Relais1AnzKontakte"] < 4 )  echo "<!--------------"; ?>
+    <div class="coffee-span-12 coffee-offset-0 coffee-768-span-12">  
+      <fieldset style="padding:5px 20px; text-align:center; border: 2px solid #C5D8E1; border-radius: 6px; background: white;">
+        <legend style="padding:20px 20px 10px 20px; text-align:center;">Steuerung Steuerkreis 1 Kontakt 4&nbsp;&nbsp;&nbsp; <b><?php if($var["Relais1Kontakt4"] == 0) echo "<font color='#000000'>"; else echo "<font color='#ff0000'>"; ?>[ EIN ]</font></b></legend>
+        <div Style="height:30px; ">
+		  <div style="float:left; width: 350px; text-align:left; " ><div style="float:left; width: 20px;">&nbsp;</div><label>Relais 1 Kontakt 4 &nbsp;&nbsp;&nbsp;einschalten:</label></div>
+		  <div style="float:left; font-size: 0.875em;">(leere Felder werden nicht berücksichtigt.)</div>		
+		</div>
+        <div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="14PVWattein" style="text-align:center; max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K4PVein"]; ?>" /> W&nbsp;&nbsp;PV Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="14PVein" <?php if($var["Relais1K4PVBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float:left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="14PVein" <?php if($var["Relais1K4PVBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="14ACWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K4ACein"]; ?>" /> W&nbsp;&nbsp;AC Leistung</label></div>    
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="14ACein" <?php if($var["Relais1K4ACBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="14ACein" <?php if($var["Relais1K4ACBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>		
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="14SMWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K4SMein"]; ?>" /> W&nbsp;&nbsp;Einspeisung</label></div>    
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="14SMein" <?php if($var["Relais1K4SMBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="14SMein" <?php if($var["Relais1K4SMBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>	
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:50%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="14BMSWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K4BMSein"]; ?>" /> %&nbsp;&nbsp;Batterie SOC</label></div>    
+        </div>							
+      </fieldset>
+      <fieldset style="padding:5px 20px; text-align:center; border: 2px solid #C5D8E1; border-radius: 6px; background: white;">	  
+        <legend style="padding:20px 20px 10px 20px; text-align:center;">Steuerung Steuerkreis 1 Kontakt 4&nbsp;&nbsp;&nbsp; <b><?php if($var["Relais1Kontakt4"] == 0) echo "<font color='#ff0000'>"; else echo "<font color='#000000'>"; ?>[ AUS ]</font></b></legend>
+        <div Style="height:30px; ">
+		  <div style="float:left; width: 350px; text-align:left; " ><div style="float:left; width: 20px;">&nbsp;</div><label>Relais 1 Kontakt 4 &nbsp;&nbsp;&nbsp;ausschalten:</label></div>
+  	      <?php if( $var["Relais1K4ausMinuten"] == 0 )  echo '<div style="float:left; font-size: 0.875em;">(leere Felder werden nicht berücksichtigt.)</div>'; else echo '<div style="float:left; font-size: 0.875em;"> nach <b>'.$var["Relais1K4ausMinuten"].'  Minuten!</b><font color=red >&nbsp;&nbsp;&nbsp; Der Rest wird ignoriert.</font></div>'; ?>	
+		</div>
+        <div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="14PVWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K4PVaus"]; ?>" /> W&nbsp;&nbsp;PV Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="14PVaus" <?php if($var["Relais1K4PVBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="14PVaus" <?php if($var["Relais1K4PVBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		  
+        </div>
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="14ACWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K4ACaus"]; ?>" /> W&nbsp;&nbsp;AC Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="14ACaus" <?php if($var["Relais1K4ACBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="14ACaus" <?php if($var["Relais1K4ACBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		      
+        </div>		
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="14SMWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K4SMaus"]; ?>" /> W&nbsp;&nbsp;Einspeisung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="14SMaus"  <?php if($var["Relais1K4SMBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="14SMaus" <?php if($var["Relais1K4SMBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		      
+        </div>	
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="14BMSWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais1K4BMSaus"]; ?>" /> %&nbsp;&nbsp;Batterie SOC</label></div>    
+        </div>	
+      </fieldset>
+    </div>	
+	<?php if($var["Relais1AnzKontakte"] < 4 )  echo "-------------->"; ?>	
+	<div style="position:static;">&nbsp;</div>
+	<div>
+    <hr style="margin-top: 10px; border-width: 3px; border-color: #DE1D80;  "> 
+    </div>
+	<?php if( $var["Relais2AnzKontakte"] == 0 )  echo "<!--------------"; ?>
+    <div class="coffee-span-12 coffee-offset-0 coffee-768-span-12">  
+      <fieldset style="padding:5px 20px; text-align:center; border: 2px solid #C5D8E1; border-radius: 6px; background: white;">
+        <legend style="padding:20px 20px 10px 20px; text-align:center;">Steuerung Steuerkreis 2 Kontakt 1&nbsp;&nbsp;&nbsp; <b><?php if($var["Relais2Kontakt1"] == 0) echo "<font color='#000000'>"; else echo "<font color='#ff0000'>"; ?>[ EIN ]</font></b></legend>
+        <div Style="height:30px; ">
+		  <div style="float:left; width: 350px; text-align:left; " ><label><input type="checkbox" name="Relais2aktiv" style="margin: 0 10px 0 0;" <?php if ($var["Relais2aktiv"] == 1) echo "checked"; ?> /> Relais 2 Kontakt 1 &nbsp;&nbsp;&nbsp;einschalten:</label></div>
+		  <div style="float:left; font-size: 0.875em;">(leere Felder werden nicht berücksichtigt.)</div>		
+		</div>
+        <div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="21PVWattein" style="text-align:center; max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K1PVein"]; ?>" /> W&nbsp;&nbsp;PV Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="21PVein" <?php if($var["Relais2K1PVBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float:left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="21PVein" <?php if($var["Relais2K1PVBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="21ACWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K1ACein"]; ?>" /> W&nbsp;&nbsp;AC Leistung</label></div>    
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="21ACein" <?php if($var["Relais2K1ACBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="21ACein" <?php if($var["Relais2K1ACBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>		
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="21SMWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K1SMein"]; ?>" /> W&nbsp;&nbsp;Einspeisung</label></div>    
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="21SMein" <?php if($var["Relais2K1SMBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="21SMein" <?php if($var["Relais2K1SMBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>	
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:50%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="21BMSWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K1BMSein"]; ?>" /> %&nbsp;&nbsp;Batterie SOC</label></div>    
+        </div>							
+      </fieldset>
+      <fieldset style="padding:5px 20px; text-align:center; border: 2px solid #C5D8E1; border-radius: 6px; background: white;">	  
+        <legend style="padding:20px 20px 10px 20px; text-align:center;">Steuerung Steuerkreis 2 Kontakt 1&nbsp;&nbsp;&nbsp; <b><?php if($var["Relais2Kontakt1"] == 0) echo "<font color='#ff0000'>"; else echo "<font color='#000000'>"; ?>[ AUS ]</font>
+		</b></legend>
+        <div Style="height:30px; ">
+		  <div style="float:left; width: 350px; text-align:left; " ><div style="float:left; width: 20px;">&nbsp;</div><label>Relais 2 Kontakt 1 &nbsp;&nbsp;&nbsp;ausschalten:</label></div>
+	      <?php if( $var["Relais2K1ausMinuten"] == 0 )  echo '<div style="float:left; font-size: 0.875em;">(leere Felder werden nicht berücksichtigt.)</div>'; else echo '<div style="float:left; font-size: 0.875em;"> nach <b>'.$var["Relais2K1ausMinuten"].'  Minuten!</b><font color=red >&nbsp;&nbsp;&nbsp; Der Rest wird ignoriert.</font></div>'; ?>	
+		</div>
+        <div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="21PVWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K1PVaus"]; ?>" /> W&nbsp;&nbsp;PV Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="21PVaus" <?php if($var["Relais2K1PVBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="21PVaus" <?php if($var["Relais2K1PVBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		  
+        </div>
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="21ACWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K1ACaus"]; ?>" /> W&nbsp;&nbsp;AC Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="21ACaus" <?php if($var["Relais2K1ACBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="21ACaus" <?php if($var["Relais2K1ACBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		      
+        </div>		
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="21SMWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K1SMaus"]; ?>" /> W&nbsp;&nbsp;Einspeisung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="21SMaus"  <?php if($var["Relais2K1SMBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="21SMaus" <?php if($var["Relais2K1SMBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		      
+        </div>	
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="21BMSWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K1BMSaus"]; ?>" /> %&nbsp;&nbsp;Batterie SOC</label></div>    
+        </div>	
+      </fieldset>
+    </div>
+	<?php if( $var["Relais2AnzKontakte"] == 0 )  echo "--------------->"; ?>	
+	<?php if( $var["Relais2AnzKontakte"] < 2 )  echo "<!--------------"; ?>
+    <div class="coffee-span-12 coffee-offset-0 coffee-768-span-12">  
+      <fieldset style="padding:5px 20px; text-align:center; border: 2px solid #C5D8E1; border-radius: 6px; background: white;">
+        <legend style="padding:20px 20px 10px 20px; text-align:center;">Steuerung Steuerkreis 2 Kontakt 2&nbsp;&nbsp;&nbsp; <b><?php if($var["Relais2Kontakt2"] == 0) echo "<font color='#000000'>"; else echo "<font color='#ff0000'>"; ?>[ EIN ]</font></b></legend>
+        <div Style="height:30px; ">
+		  <div style="float:left; width: 350px; text-align:left; " ><div style="float:left; width: 20px;">&nbsp;</div><label>Relais 2 Kontakt 2 &nbsp;&nbsp;&nbsp;einschalten:</label></div>
+		  <div style="float:left; font-size: 0.875em;">(leere Felder werden nicht berücksichtigt.)</div>		
+		</div>
+        <div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="22PVWattein" style="text-align:center; max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K2PVein"]; ?>" /> W&nbsp;&nbsp;PV Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="22PVein" <?php if($var["Relais2K2PVBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float:left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="22PVein" <?php if($var["Relais2K2PVBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="22ACWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K2ACein"]; ?>" /> W&nbsp;&nbsp;AC Leistung</label></div>    
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="22ACein" <?php if($var["Relais2K2ACBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="22ACein" <?php if($var["Relais2K2ACBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>		
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="22SMWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K2SMein"]; ?>" /> W&nbsp;&nbsp;Einspeisung</label></div>    
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="22SMein" <?php if($var["Relais2K2SMBedingungein"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="22SMein" <?php if($var["Relais2K2SMBedingungein"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>
+        </div>	
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:50%; text-align:left;" >
+		  <label>>= <input type="text" placeholder="Watt" name="22BMSWattein" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K2BMSein"]; ?>" /> %&nbsp;&nbsp;Batterie SOC</label></div>    
+        </div>							
+      </fieldset>
+      <fieldset style="padding:5px 20px; text-align:center; border: 2px solid #C5D8E1; border-radius: 6px; background: white;">	  
+        <legend style="padding:20px 20px 10px 20px; text-align:center;">Steuerung Steuerkreis 2 Kontakt 2&nbsp;&nbsp;&nbsp; <b><?php if($var["Relais2Kontakt2"] == 0) echo "<font color='#ff0000'>"; else echo "<font color='#000000'>"; ?>[ AUS ]</font></b></legend>
+        <div Style="height:30px; ">
+		  <div style="float:left; width: 350px; text-align:left; " ><div style="float:left; width: 20px;">&nbsp;</div><label>Relais 2 Kontakt 2 &nbsp;&nbsp;&nbsp;ausschalten:</label></div>
+ 	      <?php if( $var["Relais2K2ausMinuten"] == 0 )  echo '<div style="float:left; font-size: 0.875em;">(leere Felder werden nicht berücksichtigt.)</div>'; else echo '<div style="float:left; font-size: 0.875em;"> nach <b>'.$var["Relais2K2ausMinuten"].'  Minuten!</b><font color=red >&nbsp;&nbsp;&nbsp; Der Rest wird ignoriert.</font></div>'; ?>	
+		</div>
+        <div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="22PVWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K2PVaus"]; ?>" /> W&nbsp;&nbsp;PV Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="22PVaus" <?php if($var["Relais2K2PVBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="22PVaus" <?php if($var["Relais2K2PVBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		  
+        </div>
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="22ACWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K2ACaus"]; ?>" /> W&nbsp;&nbsp;AC Leistung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="22ACaus" <?php if($var["Relais2K2ACBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="22ACaus" <?php if($var["Relais2K2ACBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		      
+        </div>		
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="22SMWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K2SMaus"]; ?>" /> W&nbsp;&nbsp;Einspeisung</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="22SMaus"  <?php if($var["Relais2K2SMBedingungaus"] == "and" ) echo "checked"; ?> value="and" /> und</label></div>
+		  <div style="float: left; width:10%; text-align:left; height:30px; margin-top:10px;" >
+		  <label><input type="radio" name="22SMaus" <?php if($var["Relais2K2SMBedingungaus"] == "or" ) echo "checked"; ?> value="or" /> oder</label></div>		      
+        </div>	
+		<div style="width:100%; height:50px;" >
+		  <div style="float:left; width:30%;">&nbsp;</div>
+		  <div style="float: left; width:30%; text-align:left;" >
+		  <label><= <input type="text" placeholder="Watt" name="22BMSWattaus" style="max-width:60px; margin: 0 5px 0 5px;" value="<?php echo $var["Relais2K2BMSaus"]; ?>" /> %&nbsp;&nbsp;Batterie SOC</label></div>    
+        </div>	
+      </fieldset>
+    </div>	
+	<?php if($var["Relais2AnzKontakte"] < 2 )  echo "-------------->"; ?>	
+
+  </div>  
+  <div style="max-width: 1200px; width: 100%; height: 120px; margin: 0 auto;" ><input type="reset" style="margin: 20px 10px 10px 10px;" /> <input type="submit" style="margin: 20px 10px 10px 10px; float:right;" /></div>
+  </form>
+
+</body>
+
+</html>

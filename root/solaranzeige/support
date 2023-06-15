@@ -1,0 +1,30 @@
+#!/bin/bash
+
+#Download current Remote Support
+#mkdir -p /root/.ssh
+#curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/solaranzeige/id_rsa._at' > /root/.ssh/id_rsa
+#curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/solaranzeige/id_rsa._ub' > /root/.ssh/id_rsa.pub
+#curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/solaranzeige/sshd_config' > /etc/ssh/sshd_config
+#curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/solaranzeige/known_hosts' > /root/.ssh/known_hosts
+
+#Create ukroot
+#useradd -m -d /ukroot -o -u 0 -g 0 -s /bin/bash ukroot
+
+#Set Fake Password
+#echo "root:solar.2016"|chpasswd
+#echo "ukroot:solar.2016"|chpasswd
+
+#Start sshd Service
+#service ssh start
+# Reverse ssh Tunnel nach familie-kunz aufbauen
+
+# Warten bis der dhcp Server die Adresse gesendet hat.
+
+#sudo /usr/bin/autossh -p9853 -fNC -o "ServerAliveInterval 60" -o "ServerAliveCountMax 3" -R 10000:localhost:22 solaranzeige@familie-kunz.net
+
+
+#echo " "
+#echo "Remote Support jetzt möglich."
+#echo "Gültig bis zum nächsten Reboot."
+#echo "-------------------------------"
+#echo " "

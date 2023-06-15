@@ -1,0 +1,356 @@
+#!/usr/bin/php
+<?php
+/******************************************************************************
+//  Mit diesem Script wird ein Update auf die neue Automation durchgeführt.
+//  Bitte nur Änderungen vornehmen, wenn man sich auskennt.
+//  Version 27.01.2021
+******************************************************************************/
+//  require("/var/www/html/user.config.php");
+//  require("/var/www/html/phpinc/funktionen.inc.php");
+$Tracelevel = 8; //  1 bis 10  10 = Debug
+
+
+$host = "solaranzeige.de";
+$port = 9853;
+$username = "solar";
+$password = "kk37.-55H";
+$Dir = "/Multi/";
+$remoteDir = $Dir;
+$localDir = "/var/www/html/";
+$localDirDB = "/var/www/html/database/";
+$localDirDB = "/var/www/html/css/";
+
+if (isset($argv[1])) {
+  $force = true;
+}
+else {
+  $force = false;
+}
+
+echo "\n\nEs werden alle nötigen Dateien für die Steuerung überspielt.\n";
+echo "\n";
+
+echo "[W]eiter    [A]bbruch\n\n";
+$line = trim(fgets(STDIN));
+
+if (strtoupper(substr($line,0,1)) <> "W")  {
+  echo "\nUpdate abgebrochen.";
+  echo "\n\n";
+  exit;
+}
+
+echo "\nUpdate wird gestartet .....";
+echo "\n\n";
+
+log_schreiben(" ","   ",6);
+log_schreiben("Update wird durchgeführt.","   ",6);
+if (!function_exists("ssh2_connect")) {
+    log_schreiben("Funktion ssh2_connect nicht vorhanden.","   ",6);
+    exit;
+}
+elseif (!$connection = ssh2_connect($host, $port))  {
+    log_schreiben("Server: ".$host." Port: ".$port." nicht erreichbar.","   ",6);
+    exit;
+}
+elseif (!ssh2_auth_password($connection, $username, $password)) {
+    log_schreiben("UserID oder Password falsch.","   ",6);
+    exit;
+}
+
+if (!$stream = ssh2_sftp($connection)) {
+    log_schreiben("Kann Stream nicht aufbauen.","   ",6);
+    exit;
+}
+
+$remoteDir = $Dir."css/";
+if (!$dir = opendir("ssh2.sftp://".$stream.$remoteDir))  {
+    log_schreiben("Entferntes Verzeichnis nicht vorhanden.","   ",6);
+    exit;
+}
+
+// Zuerst das verzeichnis erstellen.
+//
+
+mkdir("/var/www/html/css", 0744);
+$localDir = "/var/www/html/css/";
+
+
+$files = array();
+while (false !== ($file = readdir($dir)))
+{
+    if ($file == "." || $file == ".." || $file == "phpinc" || $file == "motd")
+        continue;
+    $files[] = $file;
+}
+
+
+foreach ($files as $file) {
+
+    log_schreiben("Datei ".$file." wird kopiert.","o->",6);
+    if (!$remote = @fopen("ssh2.sftp://".$stream.$remoteDir.$file, 'r'))
+    {
+    log_schreiben("Entfernte Datei ".$file." nicht vorhanden oder kann nicht kopiert werden.","X  ",6);
+        continue;
+    }
+
+    if (!$local = @fopen($localDir . $file, 'w'))
+    {
+    log_schreiben("Datei ".$file." kann nicht in das lokale Verzeichnis geschrieben werden.","X  ",6);
+        continue;
+    }
+
+    $read = 0;
+    $filesize = filesize("ssh2.sftp://".$stream.$remoteDir.$file);
+
+    while ($read < $filesize && ($buffer = fread($remote, $filesize - $read)))
+    {
+        $read += strlen($buffer);
+        if (fwrite($local, $buffer) === FALSE)
+        {
+          log_schreiben("Fehler beim Schreiben in die Datei ".$file,"X  ",6);
+          break;
+        }
+    }
+
+    fclose($local);
+    fclose($remote);
+}
+closedir($dir);
+
+
+
+$remoteDir = $Dir."database/";
+if (!$dir = opendir("ssh2.sftp://".$stream.$remoteDir))  {
+    log_schreiben("Entferntes Verzeichnis nicht vorhanden.","   ",6);
+    exit;
+}
+
+$localDir = "/var/www/html/database/";
+
+if (is_file("/var/www/html/database/automation.sqlite3") and $force == false ) {
+
+  $files = array();
+  while (false !== ($file = readdir($dir)))
+  {
+    if ($file == "." || $file == ".." || $file == "automation.sqlite3")
+        continue;
+    $files[] = $file;
+  }
+
+}
+else {
+
+  $files = array();
+  while (false !== ($file = readdir($dir)))
+  {
+    if ($file == "." || $file == ".." )
+        continue;
+    $files[] = $file;
+  }
+
+}
+
+
+foreach ($files as $file) {
+
+    log_schreiben("Datei ".$file." wird kopiert.","o->",6);
+    if (!$remote = @fopen("ssh2.sftp://".$stream.$remoteDir.$file, 'r'))
+    {
+    log_schreiben("Entfernte Datei ".$file." nicht vorhanden oder kann nicht kopiert werden.","X  ",6);
+        continue;
+    }
+
+    if (!$local = @fopen($localDir . $file, 'w'))
+    {
+    log_schreiben("Datei ".$file." kann nicht in das lokale Verzeichnis geschrieben werden.","X  ",6);
+        continue;
+    }
+
+    $read = 0;
+    $filesize = filesize("ssh2.sftp://".$stream.$remoteDir.$file);
+
+    while ($read < $filesize && ($buffer = fread($remote, $filesize - $read)))
+    {
+        $read += strlen($buffer);
+        if (fwrite($local, $buffer) === FALSE)
+        {
+          log_schreiben("Fehler beim Schreiben in die Datei ".$file,"X  ",6);
+          break;
+        }
+    }
+
+    chown ( $localDir . $file, "www-data" );
+
+    fclose($local);
+    fclose($remote);
+}
+closedir($dir);
+
+
+$remoteDir = $Dir."automation/";
+$localDir = "/var/www/html/";
+
+$remote = @fopen("ssh2.sftp://".$stream.$remoteDir."automation.php", 'r');
+if ($remote) {
+  $local = @fopen($localDir."automation.php", 'w');
+  $read = 0;
+  $filesize = filesize("ssh2.sftp://".$stream.$remoteDir."automation.php");
+
+  while ($read < $filesize && ($buffer = fread($remote, $filesize - $read)))  {
+    $read += strlen($buffer);
+    if (fwrite($local, $buffer) === FALSE)  {
+      log_schreiben("Fehler beim Schreiben in die Datei automation.php","X  ",6);
+      break;
+    } 
+  }
+  log_schreiben("Datei  automation.php  wird kopiert.","o->",6);
+  chmod($localDir."automation.php", 0744);  
+}
+else {
+  log_schreiben("Datei  automation.php  wurde nicht gefunden.","o->",6);
+}
+fclose($local);
+fclose($remote);
+
+
+
+
+$remote = @fopen("ssh2.sftp://".$stream.$remoteDir."automation.web.php", 'r');
+if ($remote) {
+  $local = @fopen($localDir."automation.web.php", 'w');
+  $read = 0;
+  $filesize = filesize("ssh2.sftp://".$stream.$remoteDir."automation.web.php");
+
+  while ($read < $filesize && ($buffer = fread($remote, $filesize - $read)))  {
+    $read += strlen($buffer);
+    if (fwrite($local, $buffer) === FALSE)  {
+      log_schreiben("Fehler beim Schreiben in die Datei automation.web.php","X  ",6);
+      break;
+    } 
+  }
+  log_schreiben("Datei  automation.web.php  wird kopiert.","o->",6);
+  chmod($localDir."automation.web.php", 0644);  
+}
+else {
+  log_schreiben("Datei  automation.web.php  wurde nicht gefunden.","o->",6);
+}
+fclose($local);
+fclose($remote);
+
+
+$remote = @fopen("ssh2.sftp://".$stream.$remoteDir."automation.html", 'r');
+if ($remote) {
+  $local = @fopen($localDir."automation.html", 'w');
+  $read = 0;
+  $filesize = filesize("ssh2.sftp://".$stream.$remoteDir."automation.html");
+
+  while ($read < $filesize && ($buffer = fread($remote, $filesize - $read)))  {
+    $read += strlen($buffer);
+    if (fwrite($local, $buffer) === FALSE)  {
+      log_schreiben("Fehler beim Schreiben in die Datei automation.html","X  ",6);
+      break;
+    } 
+  }
+  log_schreiben("Datei  automation.html  wird kopiert.","o->",6);
+  chmod($localDir."automation.html", 0644);  
+}
+else {
+  log_schreiben("Datei  automation.html  wurde nicht gefunden.","o->",6);
+}
+fclose($local);
+fclose($remote);
+
+
+$remote = @fopen("ssh2.sftp://".$stream.$remoteDir."cover.jpg", 'r');
+if ($remote) {
+  $local = @fopen($localDir."images/cover.jpg", 'w');
+  $read = 0;
+  $filesize = filesize("ssh2.sftp://".$stream.$remoteDir."cover.jpg");
+
+  while ($read < $filesize && ($buffer = fread($remote, $filesize - $read)))  {
+    $read += strlen($buffer);
+    if (fwrite($local, $buffer) === FALSE)  {
+      log_schreiben("Fehler beim Schreiben in die Datei images/cover.jpg","X  ",6);
+      break;
+    } 
+  }
+  log_schreiben("Datei  cover.jpg  wird kopiert.","o->",6);
+  chmod($localDir."images/cover.jpg", 0644);  
+}
+else {
+  log_schreiben("Datei  cover.jpg  wurde nicht gefunden.","o->",6);
+}
+fclose($local);
+fclose($remote);
+
+
+
+
+$remote = @fopen("ssh2.sftp://".$stream.$remoteDir."auto-math.php", 'r');
+if ($remote) {
+  $local = @fopen($localDir."auto-math.php", 'w');
+  $read = 0;
+  $filesize = filesize("ssh2.sftp://".$stream.$remoteDir."auto-math.php");
+
+  while ($read < $filesize && ($buffer = fread($remote, $filesize - $read)))  {
+    $read += strlen($buffer);
+    if (fwrite($local, $buffer) === FALSE)  {
+      log_schreiben("Fehler beim Schreiben in die Datei auto-math.php","X  ",6);
+      break;
+    } 
+  }
+  log_schreiben("Datei  auto-math.php  wird kopiert.","o->",6);
+  chmod($localDir."auto-math.php", 0644);  
+  chown($localDir."auto-math.php", "pi" );
+  chgrp($localDir."auto-math.php", "users" );
+
+}
+else {
+  log_schreiben("Datei  auto-math.php wurde nicht gefunden.","o->",6);
+}
+
+fclose($local);
+fclose($remote);
+closedir($dir);
+
+log_schreiben("---------------------------------------------------","   ",6);  
+
+echo "\nUpdate ist beendet.\n";
+echo "Bitte den weiteren Anweisungen im Dokument Automation.pdf folgen.\n";
+echo "Ein 'sudo reboot' ist nicht nötig\n";
+echo "Nicht vergessen, CRONTAB muss noch geändert werden!\n\n";
+
+exit;
+
+
+/**************************************************************************
+//  Log Eintrag in die Logdatei schreiben
+//  $LogMeldung = Die Meldung ISO Format
+//  $Loglevel=5   Loglevel 1-10   10 = Trace
+**************************************************************************/
+
+function log_schreiben($LogMeldung,$Titel="   ",$Loglevel=5,$UTF8=0){
+    Global $Tracelevel;
+    $LogDateiName = "/var/www/log/update.log";
+    if ($Loglevel <= $Tracelevel) {
+
+      if($UTF8) {
+         $LogMeldung = utf8_encode($LogMeldung);
+      }
+
+      if ($handle = fopen($LogDateiName, 'a')) {
+        //  Schreibe in die geöffnete Datei.
+        //  Bei einem Fehler bis zu 3 mal versuchen.
+        for ($i=1;$i<4;$i++) {
+          $rc = fwrite($handle,date("d.m. H:i:s")." ".substr($Titel,0,3)." ".$LogMeldung."\n");
+          if ($rc) {
+            break;
+          }
+          sleep(1);
+        }
+
+        fclose($handle);
+      }
+    }
+}
+?>

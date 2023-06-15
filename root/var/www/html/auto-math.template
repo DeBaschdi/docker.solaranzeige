@@ -1,0 +1,44 @@
+<?php
+/******************************************************************************
+//  Hie können eigene Berechnungen gemacht werden, wenn das nötig ist.
+//  Es stehen alle Felder folgender Measurements zur Verfügung:
+//  Laderegler ==>  Measurement 'PV'      ->  Array  $LRVar
+//  Wechselrichter ==> Measurement 'AC'   ->  Array  $WRVar
+//  SmartMeter ==> Measurement 'AC'       ->  Array  $MeterVar
+//  BMS ==>  Measurement 'Batterie'       ->  Array  $BMSVar
+//
+//  Die Steuerung benötigt folgende Variablen, die man hier noch beeinflussen 
+//  kann. Bitte hier nur benutzen, wenn man sie auch anders berechnen möchte. 
+//  Ansonsten hier nicht benutzen.
+//
+//
+//  $PVLeistung      = erzeugte Solarleistung in Watt
+//  $ACLeistung      = erzeugte Wechselstrom Leistung in Watt 
+//  $Bezug           = aktuell bezogene Gesamtleistung in Watt
+//  $Einspeissung    = aktuelle Einspeisung in Watt
+//  $SOC             = aktuelle Kapazität in Prozent. 0 - 100%
+//
+//  $aWATTar["Preis_kWh"]  = Preis positiv oder negativ
+//  $aWATTar["Sortierung"] = Sortireung der aktuellen 12 Stunden  1 - 12
+//                           1 = schlechtester und 12 = bester Preis
+//
+//  Beschreibung dieses Array's ist in dem Dokument Automation.pdf
+//  $UserKontaktAuswertung["Relais1"]["Kontakt1"] = 0 / 1  0 = OFF / AUS 
+//  $UserKontaktAuswertung["Relais2"]["Kontakt2"] = 0 / 1  1 = ON / EIN
+//  usw.
+******************************************************************************/
+
+
+
+
+
+
+
+
+
+
+
+
+
+return;
+?>

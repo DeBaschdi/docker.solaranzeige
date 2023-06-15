@@ -1,8 +1,10 @@
 version: "2"
+
 services:
   solaranzeige:
-    image: takealug/solaranzeige:latest
+    image: "takealug/solaranzeige:latest"
     container_name: Solaranzeige
+    restart: "unless-stopped"
     environment:
       - PUID=99
       - PGID=100
@@ -11,16 +13,40 @@ services:
       - MOSQUITTO=yes
       - INFLUXDB=yes
     volumes:
-      - /home/dockeruser/solaranzeige/data/solaranzeige:/solaranzeige
-      - /home/dockeruser/solaranzeige/data/pvforecast:/pvforecast
-      - /home/dockeruser/solaranzeige/data/influx:/var/lib/influxdb
-      - /home/dockeruser/solaranzeige/data/grafana:/var/lib/grafana
-      - /home/dockeruser/solaranzeige/data/www:/var/www
+      - ./data/solaranzeige:/solaranzeige
+      - ./data/pvforecast:/pvforecast
+      - ./data/influx:/var/lib/influxdb
+      - ./data/www:/var/www
     tmpfs:
       - /var/log
       - /tmp
     ports:
-      - 3000:3000
       - 1883:1883
       - 8080:80
-    restart: unless-stopped
+
+  influxdb:
+    image: "docker.io/influxdb"
+    restart: "unless-stopped"
+    volumes:
+      - ./data/influx:/var/lib/influxdb
+    tmpfs:
+      - /var/log
+      - /tmp
+    environment:
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=solaranzeige
+      - DOCKER_INFLUXDB_INIT_ORG=
+      - DOCKER_INFLUXDB_INIT_BUCKET=
+
+  grafana:
+    image: "docker.io/grafana/grafana:main"
+    restart: "unless-stopped"
+    ports:
+      - 3000:3000
+    tmpfs:
+      - /var/log
+      - /tmp
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    environment:
+      - GF_INSTALL_PLUGINS=fetzerch-sunandmoon-datasource, briangann-gauge-panel, agenty-flowcharting-panel

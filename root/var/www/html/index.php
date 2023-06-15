@@ -1,0 +1,15 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+  <title>Open Source Projekt Solaranzeige</title>
+  </head>
+  <body bgcolor="#fff8dc">
+    <center><br><br><br><br>
+    <h1><?php echo $_SERVER['SERVER_ADDR']; ?> &nbsp;&nbsp;&nbsp; Solaranzeige</h1>
+    <p>System ready.</p>
+    <p> zum Grafana-Start bitte</p> <h2>http://solaranzeige.local:3000</h2><p> in der Browserzeile ergänzen.</p>
+    <p> Falls "solaranzeige.local" nicht funktioniert, dann bitte hier die IP Adresse des Raspberry eingeben</p> 
+  </center>
+</body>
+</html>

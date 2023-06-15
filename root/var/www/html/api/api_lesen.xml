@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<solaranzeige>
+    <version>1.0</version>
+    <in_out>out</in_out>
+    <database name="solaranzeige">
+      <measurement name="Info">
+        <fieldname name="*"></fieldname>
+      </measurement>
+    </database>
+</solaranzeige>

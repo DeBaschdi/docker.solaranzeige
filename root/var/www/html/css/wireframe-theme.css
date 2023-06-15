@@ -1,0 +1,241 @@
+
+/************************************************
+ General Default Styles
+************************************************/
+h1, h2, h3, h4, h5, h6, p, table, blockquote, ul, ol, dl, button, form, textarea { margin:7px 0; }
+table, button, label { width:100%; }
+
+/************************************************
+ Form Default Styles
+************************************************/
+input.small { padding: 2px 6px; }
+input[type="submit"], input[type="reset"], button, .link-button {display: inline; padding:10px 20px 10px 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height:1em; color:rgb(70,70,70);  -webkit-border-radius: 4px; -moz-border-radius: 4px; -ms-border-radius: 4px; -o-border-radius: 4px; border-radius: 4px; font-size:0.875em; border: 1px solid #919191; -moz-text-shadow: 0px -1px 0 rgba(255, 255, 255, 0.3); -webkit-text-shadow: 0px -1px 0 rgba(255, 255, 255, 0.3); text-shadow: 0px -1px 0 rgba(255, 255, 255, 0.3); background-color: #c2c2c2; background-image:-o-linear-gradient(0deg, rgba(194, 194, 194, 1.00) 0%, rgba(220, 220, 220, 1.00) 100%); background-image:-moz-linear-gradient(0deg, rgba(194, 194, 194, 1.00) 0%, rgba(220, 220, 220, 1.00) 100%); background-image:-ms-linear-gradient(0deg, rgba(194, 194, 194, 1.00) 0%, rgba(220, 220, 220, 1.00) 100%); background-image:-webkit-linear-gradient(0deg, rgba(194, 194, 194, 1.00) 0%, rgba(220, 220, 220, 1.00) 100%); background-image:linear-gradient(0deg, rgba(194, 194, 194, 1.00) 0%, rgba(220, 220, 220, 1.00) 100%); }
+textarea { -webkit-border-radius: 1px; -moz-border-radius: 1px; -ms-border-radius: 1px; -o-border-radius: 1px; border-radius: 1px;}
+
+/************************************************
+ Link Default Styles
+************************************************/
+a.link-text, a.link-button { margin:7px 0; }
+a.link-button { display:inline-block; text-align:center; }
+a.link-button { color:rgb(70,70,70); text-decoration:none;  }
+a.link-image-1-1, a.link-image-2-1, a.link-image-1-2, a.link-image-3-2, a.link-image-4-3 {margin:7px 0;}
+
+/************************************************
+ Form input elements Default Styles
+************************************************/
+input[type="text"], input[type="password"], input[type="number"], input[type="email"], input[type="tel"], select { margin: 0px 0px 7px 0px; }
+
+/************************************************
+ Checkbox/Radio and its wrapper label Styles
+************************************************/
+label input[type="radio"], label input[type="checkbox"] {float:left; margin: 1px 4px 0 1px;}
+label.checkbox span, label.radio span {margin:0; display:inline; vertical-align: baseline;}
+
+/************************************************
+ Select Multiple Default StylesSelect 
+************************************************/
+select[multiple] {padding: 0;}
+
+/************************************************
+ Text Default StylesSelect 
+************************************************/
+span.text-element, span.glyph {margin: 7px 0;}
+
+/************************************************
+ Text Default StylesSelect 
+************************************************/
+label.label { margin:7px 0px 0px 0px;}
+
+/************************************************
+ Tables
+************************************************/
+table { max-width: 100%; border-collapse: collapse; border-spacing: 0; }
+
+.table { width: 100%; }
+.table thead.head { background: whitesmoke; }
+.table thead tr { border-bottom: 1px solid #ddd; }
+.table thead tr th { border-bottom: 1px solid #ccc; }
+.table tbody tr.even { background: #f7f7f7; }
+.table tbody tr.odd { background: white; }
+.table tbody tr:hover { background: #f2f2f2; }
+.table tbody tr td { border-bottom: 1px solid #ccc; }
+
+thead tr td, thead tr th, tbody tr td, tbody tr th, tfoot tr td, tfoot tr th { padding: 0.625em; }
+
+/************************************************
+ Images
+************************************************/
+img.image-1-1, img.image-2-1, img.image-1-2, img.image-3-2, img.image-4-3, img.square, img.skyscraper, img.leaderboard, img.rectangle, img.map, img.logo { margin:7px 0; }
+/************************************************
+ General Default Styles
+************************************************/
+body, html {height: 100%;}
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, p, blockquote, th, td, button, input, select, textarea { line-height:1.7; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;}
+
+/************************************************
+ Grid Default Styles
+************************************************/
+body { background-color:rgba(255,255,255,0); border: none; max-width:none; margin:0 auto; position: relative; }
+.row { background-color:rgba(255,255,255,0); margin:0 auto; border:none;}
+[class*='span'], .subgrid {background-color:rgba(255,255,255,0);}
+[class*='span'] {margin:0;}
+[class*="row"]>[class*='span'] {min-height:50px;}
+.subgrid, .container, .container-fluid, .form-container { margin:0 0 7px 0; min-width:10px;}
+
+/************************************************
+ Form Default Styles
+************************************************/
+button { line-height:1em; }
+
+/************************************************
+ Headings Default Styles
+************************************************/
+h1, h2, h3, h4, h5, h6 { line-height:1.2; font-weight:normal; font-style: normal; font-variant: normal; text-rendering: optimizeLegibility;}
+h1, h2, h3 { color:rgb(120,130,140); }
+h4, h5, h6 { color:rgb(90,100,105); }
+h1 { font-size:2.8125em; }
+h2 { font-size:2.5em; }
+h3 { font-size:2.1875em; }
+h4 { font-size:1.875em; }
+h5 { font-size:1.5625em; }
+h6 { font-size:1.25em; }
+
+/************************************************
+ Paragragh Default Styles
+************************************************/
+p { color:rgb(30,30,30); padding:0 0 3px 0; font-size:0.875em; }
+
+/************************************************
+ Link Default Styles
+************************************************/
+a { -webkit-transition-delay: 0s; -moz-transition-delay: 0s; -ms-transition-delay: 0s; -o-transition-delay: 0s; transition-delay: 0s; -webkit-transition-timing-function: ease; -moz-transition-timing-function: ease; -ms-transition-timing-function: ease; -o-transition-timing-function: ease; transition-timing-function: ease; -webkit-transition-duration: 0s; -moz-transition-duration: 0s; -ms-transition-duration: 0s; -o-transition-duration: 0s; transition-duration: 0s; -webkit-transition-property: all; -moz-transition-property: all; -ms-transition-property: all; -o-transition-property: all; transition-property: all; }
+a.link-text, a.link-button, a.link-button-image, a.link-button-glyph, button { font-size:0.875em; width:auto; }
+a.link-text { text-align:left; display:block; line-height:1.7; }
+a.link-image-1-1 img, a.link-image-2-1 img, a.link-image-1-2 img, a.link-image-3-2 img, a.link-image-4-3 img { max-width:200px; width:100%; margin:0;}
+a.link-image-1-1, a.link-image-2-1, a.link-image-1-2, a.link-image-3-2, a.link-image-4-3 { max-width:200px; display:block; }
+li.list-item-link { width: auto; max-width: none; min-width: 0; min-height: 0; background-color: transparent; padding: 0; margin: 0; border: none; float: none; clear: none; font-family:Georgia, Times, 'Times New Roman', serif; font-size: 1em; font-weight:normal; font-style: normal; font-variant: normal; line-height: 1.7; letter-spacing: normal; word-spacing: 0; white-space: normal; text-transform: none; text-indent: 0; text-decoration: none; text-align:left; }
+li.list-item-link > a { display:inline; font-size: 1em; padding:0; width:100%; text-decoration: underline;}
+
+/************************************************
+ Link and Submit Default Styles
+************************************************/
+.link-button, a.link-button-image, a.link-button-glyph, button {display: inline-block; padding: 10px 30px; border-width: 0; background-color: #14a839; background-image: none; text-shadow: none; border-radius: 4px; -webkit-border-radius: 4px; line-height: 1.6;}
+a.link-button, a.link-button-image, a.link-button-glyph, button {color: #fff; font-size: 1em;}
+a.link-button-image, a.link-button-glyph {margin: 7px 0px;}
+a.link-button-image {padding-top: 18px}
+a.link-button-image > span {text-align: center; margin-top: 5px; display:block;}
+a.link-button-glyph > span {display: inline-block;}
+a.link-button-glyph > span.link-button-text {padding-left: 10px;}
+
+/************************************************
+ Blockquote Default Styles
+************************************************/
+blockquote { padding:7px 2% 0 2%; font-size:0.875em; }
+
+/************************************************
+ Table Default Styles
+************************************************/
+.table-container { width:100%; overflow-x: auto; margin: 7px 0;}
+.table-container table { display:inline-table; border-collapse: separate; color:rgb(30,30,30); font-size:0.875em; text-align:left; line-height:1.4; vertical-align: top; }
+
+/************************************************
+ Images Default Styles
+************************************************/
+img.image-1-1, img.image-2-1, img.image-1-2, img.image-3-2, img.image-4-3, img.square, img.skyscraper, img.leaderboard, img.rectangle, img.map, img.logo { width:100%; max-width:200px; margin-bottom: 0.4375em; display:block; }
+img.square { max-width:400px;}
+img.skyscraper { max-width:200px; }
+img.leaderboard { max-width:300px; }
+img.rectangle { max-width:200px; }
+img.map { max-width:400px; }
+img.logo { max-width:200px; }
+.responsive-image { height: auto; overflow: hidden; width:100%; max-width:200px; margin: 0.4375em 0; display:block; }
+.responsive-image div {max-width: none; height: auto;}
+.responsive-image div img { width: 100%; }
+.responsive-picture { height: auto; overflow: hidden; width:100%; max-width:200px; margin: 0.4375em 0; display:block; }
+.responsive-picture picture {max-width: none; height: auto; display: block; line-height: 0; }
+.responsive-picture picture img { width: 100%; }
+
+/************************************************
+ Lists
+************************************************/
+ul, ol, dl { font-size: 0.875em; min-height: 20px; width: 100%;}
+ol { list-style-type:decimal; }
+ul { list-style-type:square; }
+dl dd { margin-left:2em; }
+
+/************************************************
+ Address Default Styles
+************************************************/
+address > a { font-size:0.875em; display: block;}
+
+/************************************************
+ Rule Default Styles
+************************************************/
+.rule { padding:5px 0; width:100%; margin:7px 0;}
+.rule hr { margin: 0; border: none; border-top: 1px solid rgb(221, 221, 221); width: 100%; }
+
+/************************************************
+ PLaceholder Small Hero Default Styles
+************************************************/
+.placeholder { background-color:lightgrey; text-align:center; padding:10px 0; margin:7px 0; width: 100%;}
+h3.smallhero-header, p.smallhero-tagline { margin: 0px; }
+h3.smallhero-header { font-size:1.25em; color: rgb(70,70,70); }
+h3.smallhero-tagline { color: rgb(100,100,100); font-style:normal; padding:0;}
+
+/************************************************
+ PLaceholder Hero Unit Default Styles
+************************************************/
+.placeholder-hero { background-color:lightgrey; text-align:left; padding:10px 0 10px 20px; margin:7px 0; width: 100%;}
+h1.hero-header, p.hero-tagline { margin: 0px; }
+h1.hero-header { color: rgb(70,70,70); }
+p.hero-tagline { color: rgb(100,100,100); font-style:normal; padding:0;}
+
+/************************************************
+ Social Default Styles
+************************************************/
+.social-media { display:block;   margin-top: 10px; }
+.social-media * { font-family:'coffeecup-font-icons' !important; color:#444; background-color: transparent;}
+.social-media li { display: inline; padding: 2px; }
+
+/************************************************
+ Social Element Default Styles
+************************************************/
+.social-element { display: inline-block; text-align: center; }
+.social-element a.social-image { margin: 10px auto; }
+.social-element a.social-label { text-align: center; font-family:Georgia, Times, 'Times New Roman', serif; display: block; }
+.social-image { background-color: #525252; border-radius: 3px 3px; max-width: 32px; display: inline-block;}
+.social-image img { margin: 0 auto; display: block; }
+
+/************************************************
+ Container element (holder) Styles
+************************************************/
+.container:after, .container-fluid:after, .form-container:after { content: ""; display: table; clear: both; }
+.container, .container-fluid, .form-container { min-height:50px; width: 100%; }
+
+/************************************************
+ Label and Span Styles
+************************************************/
+label { display: block; line-height:1; margin-top:3px; font-size:0.875em; }
+span.text-element { display: block; line-height:1.2; font-size:0.875em; }
+
+/************************************************
+ Form element Styles
+************************************************/
+input[type="text"], input[type="password"], input[type="number"], input[type="email"], input[type="tel"], input[type="file"] { line-height: 1; padding: 10px 4px; margin: 5px 0px; font-size:0.875em; max-width: 200px;}
+textarea { resize:none; padding:0; width:100%; font-size: 0.875em; }
+select { font-size: 0.875em; }
+
+input[type="text"] {
+  text-align:center;
+}
+
+/************************************************
+ Html Element
+************************************************/
+.html-element{ min-height: 50px; min-width: 10px; }
+
+/************************************************
+  Font Icon element Styles
+************************************************/
+span.glyph, a.glyph {font-size: 40px; display: block; color: black; text-decoration:none; margin: 0;}
+span.glyph i, a.glyph i { line-height: 1; }

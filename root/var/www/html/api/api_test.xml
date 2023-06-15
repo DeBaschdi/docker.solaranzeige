@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<solaranzeige>
+    <version>1.0</version>
+    <in_out>in</in_out>
+    <database name="test">
+      <measurement name="api">
+        <fieldname name="Batterie_Spannung"><value type="num">55,5</value></fieldname>
+        <fieldname name="Batterie_Strom"><value >5.5</value></fieldname>
+      </measurement>
+    </database>
+    <database name="test">
+        <measurement name="Batterie">
+        <fieldname name="AC_Spannung"><value type="num">230,30</value></fieldname>
+        <fieldname name="AC_Strom"><value type="num">-12.22</value></fieldname>
+        <fieldname name="AC_Strom1"><value type="num">-3,4</value></fieldname>
+        <fieldname name="AC_Strom2"><value type="num">-253.5</value></fieldname>
+        <fieldname name="AC_Strom3"><value type="num">-33.4</value></fieldname>
+      </measurement>
+    </database>
+</solaranzeige>

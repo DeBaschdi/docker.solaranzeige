@@ -1,0 +1,42 @@
+<?php
+/******************************************************************************
+//  Hie können eigene Berechnungen gemacht werden, wenn das nötig ist.
+//  Es stehen alle Felder folgender Measurements zur Verfügung:
+//  $INI ==>  Werte der INI Datei      ->  Array
+//  $wbSteuerung ==> Measurement 'Wallbox' der Datenbank 'steuerung' ->  Array
+//  $DB1 ==> Measurement 'PV' der Datenbank des Wechselrichters ->  Array
+//  $DB2 ==> Measurement 'Batterie' der Datenbank des BMS ->  Array
+//  $DB3 ==> Measurement 'Summen' der Datenbank der Wallbox ->  Array
+//  $DB4 ==> Measurement 'Service' der Datenbank der Wallbox ->  Array
+//  $DB5 ==> Measurement 'Pack1' der Datenbank des BMS ->  Array
+//  $DB6 ==> Measurement 'Ladung' der Datenbank 'steuerung' ->  Array
+//  $DB7 ==> Measurement 'AC' der Datenbank der Wallbox ->  Array
+//
+//  Die Steuerung benötigt folgende Variablen, die man hier noch beeinflussen 
+//  kann. Bitte hier nur benutzen, wenn man sie auch anders berechnen möchte. 
+//  Ansonsten hier nicht benutzen.
+//
+//
+//  $Eigenverbrauch  = geschätzter Eigenverbrauch
+//
+//
+******************************************************************************/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+return;
+?>
