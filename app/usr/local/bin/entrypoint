@@ -27,21 +27,22 @@ chmod -R 777 /run/mosquitto
 sed -i 's/file_get_contents("\/sys\/firmware\/devicetree\/base\/model")/"Docker Image 0.2.0"/g' /var/www/solaranzeige/services/usb_init.php
 sed -i 's/Raspberry Modell kann eingetragen werden/Containerversion kann eingetragen werden/g' /var/www/solaranzeige/services/usb_init.php
 
+chown -R www-data:www-data /var/www
 
 PWD=$(pwd)
 echo ""
 echo "Setup Crontab..."
-crontab /etc/cron.d/solaranzeige_cron > /var/log/solaranzeige.log
+printenv | cat - /var/www/solaranzeige/config/crontab > temp && mv temp /etc/crontab
+crontab /etc/crontab >> /var/log/solaranzeige.log
+/etc/init.d/cron start
 echo ""
 
-echo "Starting Services..." >> /var/log/solaranzeige.log
 if [[ "${MOSQUITTO}" = "yes" ]]; then
+  echo "Setup Mosquitto..." >> /var/log/solaranzeige.log
   mosquitto -c /etc/mosquitto/mosquitto.conf >> /var/log/solaranzeige.log &disown
 else
   echo "Mosquitto is disabled..." >> /var/log/solaranzeige.log
 fi
-
-/etc/init.d/cron start
 
 echo "" >> /var/log/solaranzeige.log
 echo "#########################################################################" >> /var/log/solaranzeige.log

@@ -13,9 +13,7 @@ LABEL maintainer="Thoralf Rickert-Wendt <trw@acoby.de>" \
 
 ARG BUILD_DEPENDENCIES="build-essential make"
 
-ENV USER_ID="99" \
-    GROUP_ID="100" \
-    TIMEZONE="Europe/Berlin" \
+ENV TIMEZONE="Europe/Berlin" \
     UPDATE="yes" \
     MOSQUITTO="yes" \
     DEBIAN_FRONTEND="noninteractive" \
@@ -95,8 +93,6 @@ RUN apt-get install --quiet --yes --no-install-recommends \
     pecl install Mosquitto-alpha && \
     echo "extension=mosquitto.so" > /usr/local/etc/php/conf.d/docker-php-ext-mosquitto.ini
 RUN chmod +x /usr/local/bin/entrypoint && \
-    chmod 0644 /etc/cron.d/solaranzeige_cron && \
-    crontab /etc/cron.d/solaranzeige_cron && \
     apt-get remove --purge --quiet --yes ${BUILD_DEPENDENCIES} && \
     apt-get -qy autoclean && \
     apt-get -qy clean && \

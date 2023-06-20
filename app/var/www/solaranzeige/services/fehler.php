@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -26,28 +25,25 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-// Handelt es sich um ein Multi Regler System?
-require($Pfad."/user.config.php");
+$basedir = dirname(__FILE__,2);
+require_once($basedir."/library/base.inc.php");
+require_once($basedir."/config/user.config.php");
 
-
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
+if (!isset($InfluxDBLokal)) {
+  $InfluxDBLokal = "solaranzeige";
 }
 
 $Tracelevel = 10;  //  1 bis 10  10 = Debug
 setlocale(LC_TIME,"de_DE.utf8");
 
 
-$funktionen->log_schreiben("------  Fehler!    Fehler!    Fehler!    Fehler!  ------------ ","|--",1);
+Log::write("------  Fehler!    Fehler!    Fehler!    Fehler!  ------------ ","|--",1);
 
+Log::write("Es ist kein Laderegler / Wechselrichter / sonstiges Gerät  ausgewählt.","   ",1);
+Log::write("Die Konfiguration wurde nicht richtig durchgeführt.","   ",1);
+Log::write("Wert für SA_REGLER ist nicht gesetzt oder unbekannt: '".getEnvAsString("SA_REGLER","0")."'","   ",1);
 
-$funktionen->log_schreiben("Es ist kein Laderegler / Wechselrichter / sonstiges Gerät  ausgewählt.","   ",1);
-$funktionen->log_schreiben("Die Konfiguration wurde nicht richtig durchgeführt.","   ",1);
-
-$funktionen->log_schreiben("------  Fehler!    Fehler!    Fehler!    Fehler!  ------------ ","|--",1);
+Log::write("------  Fehler!    Fehler!    Fehler!    Fehler!  ------------ ","|--",1);
 
 exit;
 

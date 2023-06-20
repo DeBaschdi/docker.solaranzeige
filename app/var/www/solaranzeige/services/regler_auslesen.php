@@ -7,8 +7,8 @@
 $zentralerTimestamp = time();
 
 $basedir = dirname(__FILE__,2);
-require($basedir."/library/base.inc.php");
-require($basedir."/config/user.config.php");
+require_once($basedir."/library/base.inc.php");
+require_once($basedir."/config/user.config.php");
 
 if (!isset($InfluxDBLokal)) {
   $InfluxDBLokal = "solaranzeige";
@@ -43,7 +43,6 @@ if( !empty($runningScript) ) {
 $Pfad = $basedir.'/wechselrichter';
 
 switch ($Regler) {
-
   case 1:
     // Victron energy Regler  Serie BlueSolar
     require($Pfad."/ivt_solarregler.php");
@@ -513,17 +512,12 @@ switch ($Regler) {
     /************************************************************************
     //  User PHP Script, falls gewünscht oder nötig
     ************************************************************************/
-    require_once ($Pfad . "/phpinc/funktionen.inc.php");
-    if (!isset($funktionen)) {
-      $funktionen = new funktionen( );
-    }
-    if ( file_exists ("/var/www/html/user_device.php")) {
-      $funktionen->log_schreiben("Datei 'user_device.php' gefunden.","   ",7);
-      require($Pfad."/user_device.php"); // Vom Benutzer selber geschriebene Datei.
-    }
-    else {
-      $funktionen->log_schreiben("Angegebener Regler ungültig. ".$Regler,"   ",2);
-      require($Pfad."/fehler.php");
+    if ( file_exists ($basedir."/config/user_device.php")) {
+      Log::write("Datei 'user_device.php' gefunden.","   ",7);
+      require($basedir."/config/user_device.php"); // Vom Benutzer selber geschriebene Datei.
+    } else {
+      Log::write("Angegebener Regler ungültig. ".$Regler,"   ",2);
+      require($basedir."/services/fehler.php");
     }
   break;
 }
