@@ -1,0 +1,33 @@
+apiVersion: 1
+
+datasources:
+- orgId: 1
+  name: Solaranzeige
+  type: influxdb
+  typeName: InfluxDB
+  typeLogoUrl: public/app/plugins/datasource/influxdb/img/influxdb_logo.svg
+  access: proxy
+  url: http://influxdb:8086
+  user: admin
+  database: solaranzeige
+  basicAuth: false
+  isDefault: false
+  jsonData:
+    httpMode: POST
+    keepCookies: []
+    timeInterval: 30s
+  readOnly: false
+- orgId: 1
+  name: Steuerung
+  type: influxdb
+  typeName: InfluxDB
+  typeLogoUrl: public/app/plugins/datasource/influxdb/img/influxdb_logo.svg
+  access: proxy
+  url: http://influxdb:8086
+  user: admin
+  database: steuerung
+  basicAuth: false
+  isDefault: false
+  jsonData:
+    httpMode: POST
+  readOnly: false

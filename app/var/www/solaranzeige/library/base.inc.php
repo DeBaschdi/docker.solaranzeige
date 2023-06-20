@@ -1,6 +1,13 @@
 <?php
 
-require_once ("funktionen.inc.php");
+require_once 'funktionen.inc.php';
+require_once 'Utils.class.php';
+require_once 'Log.class.php';
+require_once 'InfluxDB.class.php';
+require_once 'ModBus.class.php';
+require_once 'MQTT.class.php';
+
+
 if (!isset($funktionen)) {
   $funktionen = new funktionen();
 }

@@ -1,4 +1,9 @@
-<?php header("refresh: 5;");?>
+<?php
+header("refresh: 15;");
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+?>
 <!DOCTYPE html>
 <html>
 
@@ -37,7 +42,7 @@
     <div class="coffee-span-12 coffee-offset-0 coffee-768-span-12">  
       <fieldset style="padding:5px 20px; border: 2px solid #C5D8E1; border-radius: 6px; background: white;vertical-align:middle;">
         <legend style="padding:20px;">Live Log</legend>
-        <div style="float:left; width:100%; height:500px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:left;"><?php exec('tail -n 20 /var/log/solaranzeige.log', $solarlogs); foreach($solarlogs as $solarlog) {echo "<br />".$solarlog;} ?></p></div>
+        <div style="float:left; width:100%; height:500px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:left;"><textarea rows="22" readonly="readonly"><?php exec('tail -n 200 /var/log/solaranzeige.log', $solarlogs); foreach($solarlogs as $solarlog) {echo $solarlog."\n";} ?></textarea></p></div>
         <p style="clear: both; text-align: center;"></p> 
       </fieldset>
     </div>

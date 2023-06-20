@@ -1,6 +1,7 @@
-*     *  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/regler_auslesen.php
-*     *  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/mqtt.php
+*/5   *  *  *  *    echo "---mark---" >> /var/log/solaranzeige.log 2>&1
+*     *  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/regler_auslesen.php >> /var/log/solaranzeige.log 2>&1
+*     *  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/mqtt.php >> /var/log/solaranzeige.log 2>&1
 
-20,50 *  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/wetterdaten.php
+20,50 *  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/wetterdaten.php >> /var/log/solaranzeige.log 2>&1
 
-55   23  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/wartung.php
+55   23  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/wartung.php >> /var/log/solaranzeige.log 2>&1

@@ -1,14 +1,5 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_SOLARANZEIGE",
-      "label": "Solaranzeige",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "influxdb",
-      "pluginName": "InfluxDB"
-    }
-  ],
+  "__inputs": [],
   "__elements": [],
   "__requires": [
     {
@@ -83,7 +74,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "${DS_SOLARANZEIGE}"
+        "uid": "Solaranzeige"
       },
       "fieldConfig": {
         "defaults": {
@@ -134,7 +125,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "measurement": "Info",
@@ -165,7 +156,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "${DS_SOLARANZEIGE}"
+        "uid": "Solaranzeige"
       },
       "fieldConfig": {
         "defaults": {
@@ -226,7 +217,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "measurement": "Info",
@@ -258,7 +249,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "${DS_SOLARANZEIGE}"
+        "uid": "Solaranzeige"
       },
       "fieldConfig": {
         "defaults": {
@@ -390,7 +381,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "${DS_SOLARANZEIGE}"
+        "uid": "Solaranzeige"
       },
       "fieldConfig": {
         "defaults": {
@@ -440,7 +431,7 @@
           "alias": "String 1",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "hide": false,
@@ -477,7 +468,7 @@
           "alias": "String 2",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "measurement": "PV",
@@ -534,7 +525,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "${DS_SOLARANZEIGE}"
+        "uid": "Solaranzeige"
       },
       "fieldConfig": {
         "defaults": {
@@ -651,7 +642,7 @@
           "alias": "Spannung",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "hide": false,
@@ -688,7 +679,7 @@
           "alias": "Frequenz",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "measurement": "AC",
@@ -722,7 +713,7 @@
           "alias": "WR-Leistung",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "measurement": "AC",
@@ -780,7 +771,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "${DS_SOLARANZEIGE}"
+        "uid": "Solaranzeige"
       },
       "fieldConfig": {
         "defaults": {
@@ -1076,7 +1067,7 @@
           "alias": "String 1",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "hide": false,
@@ -1113,7 +1104,7 @@
           "alias": "String 2",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "measurement": "AC",
@@ -1147,7 +1138,7 @@
           "alias": "String 3",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "measurement": "AC",
@@ -1180,7 +1171,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "measurement": "AC",
@@ -1213,7 +1204,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "measurement": "Batterie",
@@ -1246,7 +1237,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "measurement": "Batterie",
@@ -1306,7 +1297,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "${DS_SOLARANZEIGE}"
+        "uid": "Solaranzeige"
       },
       "fieldConfig": {
         "defaults": {
@@ -1448,7 +1439,7 @@
           "alias": "erzeugte Leistung",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [
             {
@@ -1489,7 +1480,7 @@
           "alias": "Hausverbrauch",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [
             {
@@ -1530,7 +1521,7 @@
           "alias": "SOC",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [
             {
@@ -1572,7 +1563,7 @@
           "alias": "Einspeisung",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [
             {
@@ -1617,7 +1608,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "${DS_SOLARANZEIGE}"
+        "uid": "Solaranzeige"
       },
       "fieldConfig": {
         "defaults": {
@@ -1672,7 +1663,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "measurement": "Batterie",
@@ -1720,7 +1711,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "${DS_SOLARANZEIGE}"
+        "uid": "Solaranzeige"
       },
       "fieldConfig": {
         "defaults": {
@@ -1795,7 +1786,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "${DS_SOLARANZEIGE}"
+        "uid": "Solaranzeige"
       },
       "fieldConfig": {
         "defaults": {
@@ -1941,7 +1932,7 @@
           "alias": "Energie von Heute",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "measurement": "Summen",
@@ -1975,7 +1966,7 @@
           "alias": "Energie gesamt",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [],
           "measurement": "Summen",
@@ -2029,7 +2020,7 @@
       "dashes": false,
       "datasource": {
         "type": "influxdb",
-        "uid": "${DS_SOLARANZEIGE}"
+        "uid": "Solaranzeige"
       },
       "fieldConfig": {
         "defaults": {
@@ -2078,7 +2069,7 @@
           "alias": "Erzeugt",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [
             {
@@ -2119,7 +2110,7 @@
           "alias": "Eingespeist",
           "datasource": {
             "type": "influxdb",
-            "uid": "${DS_SOLARANZEIGE}"
+            "uid": "Solaranzeige"
           },
           "groupBy": [
             {
