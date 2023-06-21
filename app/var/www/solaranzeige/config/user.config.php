@@ -317,7 +317,7 @@ $Objekt = Utils::getEnvAsString("SA_OBJECT","");
 //  Sollen die Daten in die lokale Influx Datenbank geschrieben werden?
 //  Für die lokale Datenbank sind keine weiteren Angaben nötig.
 //  true oder false
-$InfluxDB_local = Utils::getEnvAsBoolean("SA_INFLUX_LOCAL_ENABLED",true);
+$InfluxDB_local = Utils::getEnvAsBoolean("SA_INFLUX_LOCAL_ENABLED",false);
 //
 //  Name der lokalen Datenbank. Bitte nicht ändern, sonst funktionieren die
 //  Standard Dashboards nicht!
@@ -344,7 +344,7 @@ $Wiederholungen = Utils::getEnvAsInteger("SA_INFLUX_FREQUENCE",1);
 //  Ist eine entfernte InfluxDB vorhanden und sollen dorthin auch die Daten
 //  übertragen werden?
 //  true oder false
-$InfluxDB_remote = Utils::getEnvAsBoolean("SA_INFLUX_REMOTE_ENABLED",false);
+$InfluxDB_remote = Utils::getEnvAsBoolean("SA_INFLUX_REMOTE_ENABLED",true);
 //
 //  Port an den die Daten geschickt werden. Normal ist Port 8086
 $InfluxPort = Utils::getEnvAsInteger("SA_INFLUX_PORT",8086);

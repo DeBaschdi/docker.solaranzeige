@@ -32,7 +32,7 @@ header("Pragma: no-cache");
     <div class="coffee-span-12 coffee-offset-0 coffee-768-span-12">  
       <fieldset style="padding:5px 20px; border: 2px solid #C5D8E1; border-radius: 6px; background: white;vertical-align:middle;">
         <legend style="padding:20px;">Quick Access</legend>
-        <div style="float:left; width:30%; height:50px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:center;"><td><a href='<?php echo "http://"; ?><?php echo $_SERVER['SERVER_NAME']; ?><?php echo ":3000"; ?>'>Grafana Dashboard&nbsp;</a></td></p></div>
+        <div style="float:left; width:30%; height:50px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:center;"><td><a href='/grafana/'>Grafana Dashboard&nbsp;</a></td></p></div>
         <p style="clear: both; text-align: center;"></p>		
         <div style="float:left; width:30%; height:50px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:center;"><td><a href='automation.web.php'>Steuerung&nbsp;</a></td></p></div>
       </fieldset>
@@ -42,7 +42,7 @@ header("Pragma: no-cache");
     <div class="coffee-span-12 coffee-offset-0 coffee-768-span-12">  
       <fieldset style="padding:5px 20px; border: 2px solid #C5D8E1; border-radius: 6px; background: white;vertical-align:middle;">
         <legend style="padding:20px;">Live Log</legend>
-        <div style="float:left; width:100%; height:500px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:left;"><textarea rows="22" readonly="readonly"><?php exec('tail -n 200 /var/log/solaranzeige.log', $solarlogs); foreach($solarlogs as $solarlog) {echo $solarlog."\n";} ?></textarea></p></div>
+        <div style="float:left; width:100%; height:500px; vertical-align:middle;" ><p style="padding-top: 10px; text-align:left;"><textarea rows="22" readonly="readonly"><?php $solarlogs = array(); exec('tail -n 200 /var/log/solaranzeige.log', $solarlogs); foreach($solarlogs as $solarlog) {echo $solarlog."\n";} ?></textarea></p></div>
         <p style="clear: both; text-align: center;"></p> 
       </fieldset>
     </div>

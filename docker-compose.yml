@@ -7,20 +7,13 @@ services:
     restart: "unless-stopped"
     depends_on:
       - influxdb
+      - grafana
     ports:
       - 1883:1883
       - 8080:80
     volumes:
- #     - ./app/var/www:/var/www
+#      - ./app/var/www:/var/www
       - ./data/log:/var/log
-    env_file:
-      - .env
-
-  influxdb:
-    image: "docker.io/influxdb:1.8"
-    restart: "unless-stopped"
-    volumes:
-      - ./data/influx:/var/lib/influxdb
     env_file:
       - .env
 
@@ -29,10 +22,16 @@ services:
     restart: "unless-stopped"
     depends_on:
       - influxdb
-    ports:
-      - 3000:3000
     volumes:
       - ./data/grafana:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
+    env_file:
+      - .env
+
+  influxdb:
+    image: "docker.io/influxdb:1.8"
+    restart: "unless-stopped"
+    volumes:
+      - ./data/influx:/var/lib/influxdb
     env_file:
       - .env

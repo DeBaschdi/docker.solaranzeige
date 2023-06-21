@@ -75,6 +75,7 @@ RUN apt-get --quiet --yes --no-install-recommends update && \
       python3-yaml \
       python3-isodate \
       ca-certificates && \
+    a2nmod proxy proxy_http proxy_http2 proxy_wstunnel && \
     python3 -m pip install pysolcast pvlib
 RUN mkdir /tmp/git && \
     cd /tmp/git && \
