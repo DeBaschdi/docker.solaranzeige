@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -28,23 +27,13 @@
 //  Achtung! Der Regler sendet zwischendurch immer wieder asynchrone Daten!
 //
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
 $Tracelevel = 7; //  1 bis 10  10 = Debug
 $Device = "WR"; // WR = Wechselrichter
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 $Version = "";
 $RemoteDaten = true;
 $Start = time( ); // Timestamp festhalten
-$funktionen->log_schreiben( "--------------   Start  easun_p30.php   ------------------------ ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "--------------   Start  easun_p30.php   ------------------------ ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale( LC_TIME, "de_DE.utf8" );
@@ -63,7 +52,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben( "Hardware Version: ".$Version, "o  ", 8 );
+Log::write( "Hardware Version: ".$Version, "o  ", 8 );
 switch ($Version) {
 
   case "2B":
@@ -88,7 +77,7 @@ switch ($Version) {
 //  Achtung! Dieser Wert wird jeden Tag um Mitternacht auf 0 gesetzt.
 //
 *****************************************************************************/
-$StatusFile = $Pfad."/database/".$GeraeteNummer.".WhProTag_easun.txt";
+$StatusFile = $basedir."/database/".$GeraeteNummer.".WhProTag_easun.txt";
 if (file_exists( $StatusFile )) {
 
   /***************************************************************************
@@ -96,14 +85,14 @@ if (file_exists( $StatusFile )) {
   ***************************************************************************/
   $aktuelleDaten["WattstundenGesamtHeute"] = file_get_contents( $StatusFile );
   $aktuelleDaten["WattstundenGesamtHeute"] = round( $aktuelleDaten["WattstundenGesamtHeute"], 2 );
-  $funktionen->log_schreiben( "WattstundenGesamtHeute: ".$aktuelleDaten["WattstundenGesamtHeute"], "   ", 8 );
+  Log::write( "WattstundenGesamtHeute: ".$aktuelleDaten["WattstundenGesamtHeute"], "   ", 8 );
   if (empty($aktuelleDaten["WattstundenGesamtHeute"])) {
     $aktuelleDaten["WattstundenGesamtHeute"] = 0;
   }
   if (date( "H:i" ) == "00:00" or date( "H:i" ) == "00:01") { // Jede Nacht 0 Uhr
     $aktuelleDaten["WattstundenGesamtHeute"] = 0; //  Tageszähler löschen
     $rc = file_put_contents( $StatusFile, "0" );
-    $funktionen->log_schreiben( "WattstundenGesamtHeute gelöscht.", "    ", 5 );
+    Log::write( "WattstundenGesamtHeute gelöscht.", "    ", 5 );
   }
 }
 else {
@@ -114,7 +103,7 @@ else {
   ***************************************************************************/
   $rc = file_put_contents( $StatusFile, "0" );
   if ($rc === false) {
-    $funktionen->log_schreiben( "Konnte die Datei kwhProTag_ax.txt nicht anlegen.", "   ", 5 );
+    Log::write( "Konnte die Datei kwhProTag_ax.txt nicht anlegen.", "   ", 5 );
   }
 }
 //  Nach em Öffnen des Port muss sofort der Regler ausgelesen werden, sonst
@@ -123,16 +112,16 @@ if ($HF2211) {
   // HF2211 WLAN Gateway wird benutzt (Noch nicht getestet 8.4.2021)
   $USB = fsockopen( $WR_IP, $WR_Port, $errno, $errstr, 15 ); // 5 Sekunden Timeout
   if ($USB === false) {
-    $funktionen->log_schreiben( "Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
-    $funktionen->log_schreiben( "Exit.... ", "XX ", 3 );
+    Log::write( "Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
+    Log::write( "Exit.... ", "XX ", 3 );
     goto Ausgang;
   }
 }
 else {
-  $USB = $funktionen->openUSB( $USBRegler );
+  $USB = USB::openUSB( $USBRegler );
   if (!is_resource( $USB )) {
-    $funktionen->log_schreiben( "USB Port kann nicht geöffnet werden. [1]", "XX ", 7 );
-    $funktionen->log_schreiben( "Exit.... ", "XX ", 7 );
+    Log::write( "USB Port kann nicht geöffnet werden. [1]", "XX ", 7 );
+    Log::write( "Exit.... ", "XX ", 7 );
     goto Ausgang;
   }
 }
@@ -142,11 +131,11 @@ stream_set_blocking( $USB, false );
 //  Sollen Befehle an den Wechselrichter gesendet werden?
 //
 ************************************************************************************/
-if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
-  $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
-  $Inhalt = file_get_contents( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+if (file_exists( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" )) {
+  Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
+  $Inhalt = file_get_contents( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
   $Befehle = explode( "\n", trim( $Inhalt ));
-  $funktionen->log_schreiben( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
+  Log::write( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
   for ($i = 0; $i < count( $Befehle ); $i++) {
     if ($i >= 4) {
       //  Es werden nur maximal 5 Befehle pro Datei verarbeitet!
@@ -161,11 +150,11 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
     //  QPI ist nur zum Testen ...
     //  Siehe Dokument:  Befehle_senden.pdf
     **************************************************************************/
-    if (file_exists( $Pfad."/befehle.ini.php" )) {
-      $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 9 );
-      $INI_File = parse_ini_file( $Pfad.'/befehle.ini.php', true );
+    if (file_exists( $basedir."/config/befehle.ini" )) {
+      Log::write( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 9 );
+      $INI_File = parse_ini_file( $basedir."/config/befehle.ini", true );
       $Regler26 = $INI_File["Regler26"];
-      $funktionen->log_schreiben( "Befehlsliste: ".print_r( $Regler26, 1 ), "|- ", 10 );
+      Log::write( "Befehlsliste: ".print_r( $Regler26, 1 ), "|- ", 10 );
       foreach ($Regler26 as $Template) {
         $Subst = $Befehle[$i];
         $l = strlen( $Template );
@@ -179,21 +168,21 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
         }
       }
       if ($Template != $Subst) {
-        $funktionen->log_schreiben( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
-        $funktionen->log_schreiben( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
+        Log::write( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
+        Log::write( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
         break;
       }
     }
     else {
-      $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
+      Log::write( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
       break;
     }
     $Wert = false;
     $Antwort = "";
     //  Besonderheiten bei der Prüfsumme korrigieren
     //  ---------------------------------------------
-    $CRC_raw = str_pad(dechex($funktionen->CRC16Normal( $Befehle[$i] )), 4, "0", STR_PAD_LEFT );
-    // $CRC_raw = dechex( $funktionen->CRC16Normal( $Befehle[$i] )); // geändert 4.2.2023
+    $CRC_raw = str_pad(dechex(Utils::CRC16Normal( $Befehle[$i] )), 4, "0", STR_PAD_LEFT );
+    // $CRC_raw = dechex( Utils::CRC16Normal( $Befehle[$i] )); // geändert 4.2.2023
     if (substr( $CRC_raw, 0, 2 ) == "0a") {
       $CRC_raw = "0b".substr( $CRC_raw, 2, 2 );
     }
@@ -206,7 +195,7 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
     elseif (substr( $CRC_raw, 2, 2 ) == "0d") {
       $CRC_raw = substr( $CRC_raw, 0, 2 )."0e";
     }
-    $CRC = $funktionen->hex2str( $CRC_raw );
+    $CRC = Utils::hex2str( $CRC_raw );
     if (strlen( $Befehle[$i] ) > 8) {
       fputs( $USB, substr( $Befehle[$i], 0, 8 ));
       usleep( 2000 );
@@ -222,13 +211,13 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
       $Antwort .= trim( $rc, "\0" );
       if (substr( $Antwort, - 1 ) == "\r" and substr( $Antwort, 0, 1 ) == "(") {
         if (substr( $Antwort, 1, 3 ) == "NAK") {
-          $funktionen->log_schreiben( "NAK empfangen: ".strtoupper( $funktionen->string2hex( $Antwort )), "    ", 7 );
+          Log::write( "NAK empfangen: ".strtoupper( Utils::string2hex( $Antwort )), "    ", 7 );
           $rc = "";
           $Wert = false;
           break;
         }
         if (substr( $Antwort, 1, 3 ) == "ACK") {
-          $funktionen->log_schreiben( "ACK empfangen: ".strtoupper( $funktionen->string2hex( $Antwort )), "    ", 8 );
+          Log::write( "ACK empfangen: ".strtoupper( Utils::string2hex( $Antwort )), "    ", 8 );
           $rc = "";
           $Wert = true;
           break;
@@ -241,20 +230,20 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
       }
     }
     if ($Wert === false) {
-      $funktionen->log_schreiben( "Befehlsausführung erfolglos! ".$funktionen->string2hex( $Befehle[$i].$CRC."\r" ), "    ", 7 );
-      $funktionen->log_schreiben( "receive: ".strtoupper( $funktionen->string2hex( $Antwort )), "    ", 9 );
+      Log::write( "Befehlsausführung erfolglos! ".Utils::string2hex( $Befehle[$i].$CRC."\r" ), "    ", 7 );
+      Log::write( "receive: ".strtoupper( Utils::string2hex( $Antwort )), "    ", 9 );
     }
     if ($Wert === true) {
-      $funktionen->log_schreiben( "Befehl ".$Befehle[$i]." erfolgreich gesendet!", "    ", 7 );
+      Log::write( "Befehl ".$Befehle[$i]." erfolgreich gesendet!", "    ", 7 );
     }
   }
-  $rc = unlink( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+  $rc = unlink( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
   if ($rc) {
-    $funktionen->log_schreiben( "Datei  /pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 8 );
+    Log::write( "Datei  /pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 8 );
   }
 }
 else {
-  $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
+  Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
 }
 
 /*******************************************************************************
@@ -272,24 +261,24 @@ do {
   $Wert = false;
   $rc = fgets( $USB, 4096 ); // Alte Daten löschen
   usleep( 1000 );
-  $CRC = $funktionen->hex2str( dechex( $funktionen->CRC16Normal( "QPI" )));
+  $CRC = Utils::hex2str( dechex( Utils::CRC16Normal( "QPI" )));
   fputs( $USB, "QPI".$CRC."\r" );
   usleep( $Zeit1 ); //  Es dauert etwas, bis die ersten Daten kommen ...
-  $funktionen->log_schreiben( "Befehl: QPI\r", "    ", 9 );
+  Log::write( "Befehl: QPI\r", "    ", 9 );
   $Antwort = "";
   for ($k = 1; $k < 200; $k++) {
     $rc = fgets( $USB, 4096 ); // 4096
     usleep( $Zeit2 );
     $Antwort .= trim( $rc, "\0" );
     if (substr( $Antwort, - 1 ) == "\r" and substr( $Antwort, 0, 1 ) == "(") {
-      $funktionen->log_schreiben( "Antwort: ".bin2hex( $rc ), "    ", 9 );
+      Log::write( "Antwort: ".bin2hex( $rc ), "    ", 9 );
       if (substr( $Antwort, 1, 3 ) == "NAK") {
         $Wert = false;
-        $funktionen->log_schreiben( "Wechselrichter Antwortet mit NAK!", "    ", 5 );
+        Log::write( "Wechselrichter Antwortet mit NAK!", "    ", 5 );
       }
       else {
         $aktuelleDaten["Protokoll"] = substr( $Antwort, 3, 2 );
-        $funktionen->log_schreiben( "Protokoll: ".substr( $Antwort, 3, 2 ), "    ", 7 );
+        Log::write( "Protokoll: ".substr( $Antwort, 3, 2 ), "    ", 7 );
         $Wert = true;
       }
       $rc = "";
@@ -297,15 +286,15 @@ do {
     }
   }
   if ($Wert === false) {
-    $funktionen->log_schreiben( "Datenübertragung vom Wechselrichter war erfolglos!", "    ", 9 );
+    Log::write( "Datenübertragung vom Wechselrichter war erfolglos!", "    ", 9 );
     $rc = "";
   }
   //  QMOD     QMOD     QMOD     QMOD     QMOD     QMOD     QMOD     QMOD
-  $CRC = $funktionen->hex2str( dechex( $funktionen->CRC16Normal( "QMOD" )));
+  $CRC = Utils::hex2str( dechex( Utils::CRC16Normal( "QMOD" )));
   fputs( $USB, "QMOD".$CRC."\r" );
   usleep( $Zeit1 ); // Es dauert etwas, bis die ersten Daten kommen ...
   $Antwort = "";
-  $funktionen->log_schreiben( "Befehl: QMOD\r", "    ", 9 );
+  Log::write( "Befehl: QMOD\r", "    ", 9 );
   for ($k = 1; $k < 200; $k++) {
     $rc = fgets( $USB, 4096 ); // 4096
     usleep( $Zeit2 );
@@ -320,7 +309,7 @@ do {
     //  C = Converter Mode
     //  D = Shutdown Mode
     if (substr( $Antwort, - 1 ) == "\r" and substr( $Antwort, 0, 1 ) == "(") {
-      $funktionen->log_schreiben( "Antwort: ".$Antwort, "    ", 9 );
+      Log::write( "Antwort: ".$Antwort, "    ", 9 );
       if (substr( $Antwort, 1, 3 ) == "NAK") {
         $Wert = false;
       }
@@ -332,12 +321,12 @@ do {
     }
   }
   if ($Wert === false) {
-    $funktionen->log_schreiben( "Datenübertragung vom Wechselrichter war erfolglos! [Modus]", "    ", 9 );
+    Log::write( "Datenübertragung vom Wechselrichter war erfolglos! [Modus]", "    ", 9 );
     $rc = "";
   }
   if ($Wert === true) {
     $aktuelleDaten["Modus"] = substr( $Antwort, 1, 1 );
-    $funktionen->log_schreiben( "Modus: ".substr( $Antwort, 1, 1 ), "    ", 8 );
+    Log::write( "Modus: ".substr( $Antwort, 1, 1 ), "    ", 8 );
     switch ($aktuelleDaten["Modus"]) {
 
       case "P":
@@ -394,7 +383,7 @@ do {
   $Wert = false;
   $Antwort = "";
   // Warnungen
-  $CRC = $funktionen->hex2str( dechex( $funktionen->CRC16Normal( "QPIWS" )));
+  $CRC = Utils::hex2str( dechex( Utils::CRC16Normal( "QPIWS" )));
   fputs( $USB, "QPIWS".$CRC."\r" );
   usleep( $Zeit1 ); // Es dauert etwas, bis die ersten Daten kommen ...
   for ($k = 1; $k < 200; $k++) {
@@ -413,12 +402,12 @@ do {
     }
   }
   if ($Wert === false) {
-    $funktionen->log_schreiben( "Datenübertragung vom Wechselrichter war erfolglos! [Warnungen]", "    ", 9 );
+    Log::write( "Datenübertragung vom Wechselrichter war erfolglos! [Warnungen]", "    ", 9 );
     $rc = "";
   }
   if ($Wert === true) {
     $aktuelleDaten["Warnungen"] = substr( $Antwort, 1, 32 );
-    $funktionen->log_schreiben( "Warnungen: ".substr( $Antwort, 1, 32 ), "    ", 8 );
+    Log::write( "Warnungen: ".substr( $Antwort, 1, 32 ), "    ", 8 );
     $aktuelleDaten["Fehlermeldung"] = "Alles in Ordnung.";
     if (substr( $aktuelleDaten["Warnungen"], 0, 1 ) == "1") {
       $aktuelleDaten["Fehlermeldung"] = "Keine Sonne";
@@ -500,7 +489,7 @@ do {
   $Wert = false;
   $Antwort = "";
   $rc = fgets( $USB, 4096 ); // Alte Daten löschen
-  $CRC = $funktionen->hex2str( dechex( $funktionen->CRC16Normal( "QID" )));
+  $CRC = Utils::hex2str( dechex( Utils::CRC16Normal( "QID" )));
   fputs( $USB, "QID".$CRC."\r" );
   usleep( $Zeit1 ); // Es dauert etwas, bis die ersten Daten kommen ...
   for ($k = 1; $k < 200; $k++) {
@@ -520,7 +509,7 @@ do {
     }
   }
   if ($Wert === false) {
-    $funktionen->log_schreiben( "Datenübertragung vom Wechselrichter war erfolglos! [Seriennummer]", "    ", 9 );
+    Log::write( "Datenübertragung vom Wechselrichter war erfolglos! [Seriennummer]", "    ", 9 );
     $rc = "";
   }
   $aktuelleDaten["Seriennummer"] = substr( $Antwort, 1, 14 );
@@ -528,7 +517,7 @@ do {
   $Wert = false;
   $Antwort = "";
   $rc = fgets( $USB, 4096 ); // Alte Daten löschen
-  $CRC = $funktionen->hex2str( dechex( $funktionen->CRC16Normal( "QPIRI" )));
+  $CRC = Utils::hex2str( dechex( Utils::CRC16Normal( "QPIRI" )));
   fputs( $USB, "QPIRI".$CRC."\r" );
   usleep( $Zeit1 ); //  Es dauert etwas, bis die ersten Daten kommen ...
   for ($k = 1; $k < 100; $k++) {      // 200 war vorher 2.11.2022
@@ -549,10 +538,10 @@ do {
     }
   }
   if ($Wert === false) {
-    $funktionen->log_schreiben( "Datenübertragung vom Wechselrichter war erfolglos! [Standardwerte]", "    ", 9 );
+    Log::write( "Datenübertragung vom Wechselrichter war erfolglos! [Standardwerte]", "    ", 9 );
     $rc = "";
   }
-  $funktionen->log_schreiben( substr( $Antwort, 1, - 3 )."  i: ".$k." Länge: ".strlen($Antwort), "    ", 7 );
+  Log::write( substr( $Antwort, 1, - 3 )."  i: ".$k." Länge: ".strlen($Antwort), "    ", 7 );
   if ($Wert === true and strlen( $Antwort ) >= 97) {
     $Teile = explode( " ", substr( $Antwort, 1, - 3 ));
     $aktuelleDaten["Nennspannung"] = floatval($Teile[0]);
@@ -583,7 +572,7 @@ do {
   $Wert = false;
   $Antwort = "";
   $rc = fgets( $USB, 4096 ); // Alte Daten löschen
-  $CRC = $funktionen->hex2str( dechex( $funktionen->CRC16Normal( "QPIGS" )));
+  $CRC = Utils::hex2str( dechex( Utils::CRC16Normal( "QPIGS" )));
   fputs( $USB, "QPIGS".$CRC."\r" );
   usleep( $Zeit1 ); //  dauert etwas, bis die ersten Daten kommen ...
   for ($k = 1; $k < 100; $k++) {       // 200 war vorher 2.11.2022
@@ -603,10 +592,10 @@ do {
     }
   }
   if ($Wert === false) {
-    $funktionen->log_schreiben( "Datenübertragung vom Wechselrichter war erfolglos! [Daten]", "    ", 9 );
+    Log::write( "Datenübertragung vom Wechselrichter war erfolglos! [Daten]", "    ", 9 );
     $rc = "";
   }
-  $funktionen->log_schreiben( substr( $Antwort, 1, -3 )."  i: ".$k." Länge: ".strlen($Antwort), "    ", 8 );
+  Log::write( substr( $Antwort, 1, -3 )."  i: ".$k." Länge: ".strlen($Antwort), "    ", 8 );
   if ($Wert === true and strlen( $Antwort ) == 110) {
     $Teile = explode( " ", substr( $Antwort, 1, - 3 ));
     $aktuelleDaten["Netzspannung"] = floatval($Teile[0]);
@@ -635,7 +624,7 @@ do {
   $Wert = false;
   $Antwort = "";
   $rc = fgets( $USB, 4096 ); // Alte Daten löschen
-  $CRC = $funktionen->hex2str( dechex( $funktionen->CRC16Normal( "QPIGS2" )));
+  $CRC = Utils::hex2str( dechex( Utils::CRC16Normal( "QPIGS2" )));
   fputs( $USB, "QPIGS2".$CRC."\r" );
   usleep( $Zeit1 ); //  dauert etwas, bis die ersten Daten kommen ...
   for ($k = 1; $k < 20; $k++) {        // 200 war vorher 2.11.2022
@@ -655,10 +644,10 @@ do {
     }
   }
   if ($Wert === false) {
-    $funktionen->log_schreiben( "Datenübertragung [QPIGS2] vom Wechselrichter war erfolglos!", "    ", 8 );
+    Log::write( "Datenübertragung [QPIGS2] vom Wechselrichter war erfolglos!", "    ", 8 );
     $rc = "";
   }
-  $funktionen->log_schreiben( substr( $Antwort, 1, -3 )."  i: ".$k." Länge: ".strlen($Antwort), "    ", 8 );
+  Log::write( substr( $Antwort, 1, -3 )."  i: ".$k." Länge: ".strlen($Antwort), "    ", 8 );
   if ($Wert === true and strlen( $Antwort ) == 70) {
     $Teile = explode( " ", substr( $Antwort, 1, - 3 ));
     $aktuelleDaten["Solarstrom2"] = floatval($Teile[0]);
@@ -668,21 +657,21 @@ do {
     $aktuelleDaten["Solarleistung"] = ($aktuelleDaten["Solarleistung1"] + $aktuelleDaten["Solarleistung2"]);
   }
   else {
-    $funktionen->log_schreiben( "Befehl [QPIGS2] gibt es nicht!", "    ", 7 );
+    Log::write( "Befehl [QPIGS2] gibt es nicht!", "    ", 7 );
   }
 
   if (empty($aktuelleDaten["Ladestatus"])) {
     $aktuelleDaten["Ladestatus"] = 0;
   }
   if (isset($aktuelleDaten["Fehlermeldung"])) {
-    $funktionen->log_schreiben( "Fehlermeldung: ".$aktuelleDaten["Fehlermeldung"], "   ", 1 );
+    Log::write( "Fehlermeldung: ".$aktuelleDaten["Fehlermeldung"], "   ", 1 );
   }
 
   // QALL     QALL     QALL     QALL     QALL     QALL     QALL
   $Wert = false;
   $Antwort = "";
   $rc = fgets( $USB, 4096 ); // Alte Daten löschen
-  $CRC = $funktionen->hex2str( dechex( $funktionen->CRC16Normal( "QALL" )));
+  $CRC = Utils::hex2str( dechex( Utils::CRC16Normal( "QALL" )));
   fputs( $USB, "QALL".$CRC."\r" );
   usleep( $Zeit1 ); //  dauert etwas, bis die ersten Daten kommen ...
   for ($k = 1; $k < 20; $k++) {        // 200 war vorher 2.11.2022
@@ -702,10 +691,10 @@ do {
     }
   }
   if ($Wert === false) {
-    $funktionen->log_schreiben( "Datenübertragung [QALL] vom Wechselrichter war erfolglos!", "    ", 8 );
+    Log::write( "Datenübertragung [QALL] vom Wechselrichter war erfolglos!", "    ", 8 );
     $rc = "";
   }
-  $funktionen->log_schreiben( substr( $Antwort, 1, -3 )."  i: ".$k." Länge: ".strlen($Antwort), "    ", 8 );
+  Log::write( substr( $Antwort, 1, -3 )."  i: ".$k." Länge: ".strlen($Antwort), "    ", 8 );
   if ($Wert === true and strlen( $Antwort ) == 82 ) {
     $Teile = explode( " ", substr( $Antwort, 1, - 3 ));
     // $aktuelleDaten["1"] = $Teile[0];
@@ -738,13 +727,13 @@ do {
   $aktuelleDaten["Firmware"] = 0;
   $aktuelleDaten["Produkt"] = "Protokoll 30";
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"] + 10);
-  $funktionen->log_schreiben( var_export( $aktuelleDaten, 1 ), "   ", 8);
+  Log::write( var_export( $aktuelleDaten, 1 ), "   ", 8);
 
   /**************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   **************************************************************************/
-  if (file_exists( "/var/www/html/easun_p30_math.php" )) {
-    include 'easun_p30_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists($basedir."/custom/easun_p30_math.php" )) {
+    include $basedir.'/custom/easun_p30_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -753,8 +742,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -789,9 +778,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test( );
+      $rc = InfluxDB::influx_remote_test( );
       if ($rc) {
-        $rc = $funktionen->influx_remote( $aktuelleDaten );
+        $rc = InfluxDB::influx_remote( $aktuelleDaten );
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -801,27 +790,27 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
   }
   else {
-    $rc = $funktionen->influx_local( $aktuelleDaten );
+    $rc = InfluxDB::influx_local( $aktuelleDaten );
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time( ) - $Start));
-    $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+    Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
     if ($Zeitspanne > 0) {
       sleep( $Zeitspanne );
     }
     break;
   }
   else {
-    $funktionen->log_schreiben( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
+    Log::write( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
     sleep( floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 8 );
+    Log::write( "Schleife ".$i." Ausgang...", "   ", 8 );
     break;
   }
   $i++;
@@ -834,8 +823,8 @@ if (isset($aktuelleDaten["Modus"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-    require ($Pfad."/homematic.php");
+    Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -844,13 +833,13 @@ if (isset($aktuelleDaten["Modus"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-    require ($Pfad."/meldungen_senden.php");
+    Log::write( "Nachrichten versenden...", "   ", 8 );
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+  Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 }
 else {
-  $funktionen->log_schreiben( "Keine gültigen Daten empfangen.", "!! ", 6 );
+  Log::write( "Keine gültigen Daten empfangen.", "!! ", 6 );
 }
 
 /*****************************************************************************
@@ -868,8 +857,8 @@ if (file_exists( $StatusFile ) and isset($aktuelleDaten["Solarleistung"])) {
   // aktuellen Wert in die Datei schreiben:
   $whProTag = ($whProTag + ($aktuelleDaten["Solarleistung"] / 60));
   $rc = file_put_contents( $StatusFile, $whProTag );
-  $funktionen->log_schreiben( "WattstundenGesamtHeute: ".round( $whProTag, 2 ), "   ", 5 );
+  Log::write( "WattstundenGesamtHeute: ".round( $whProTag, 2 ), "   ", 5 );
 }
-Ausgang:$funktionen->log_schreiben( "--------------   Stop   easun_p30.php    ----------------------- ", "|--", 6 );
+Ausgang:Log::write( "--------------   Stop   easun_p30.php    ----------------------- ", "|--", 6 );
 return;
 ?>

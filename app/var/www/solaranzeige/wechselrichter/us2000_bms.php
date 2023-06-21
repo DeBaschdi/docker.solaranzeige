@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 /*****************************************************************************
 //  Solaranzeige Projekt             Copyright (C) [2015-2016]  [Ulrich Kunz]
@@ -25,17 +24,6 @@
 //  Achtung! Der Regler sendet zwischendurch immer wieder asynchrone Daten!
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
-
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -45,9 +33,9 @@ $Tracelevel = 7;  //  1 bis 10  10 = Debug
 $Device = "BMS"; // BMS = Batteriemanagementsystem
 $Version = ""; 
 $Start = time();  // Timestamp festhalten
-$funktionen->log_schreiben("------------   Start  us2000_bms.php   ----------------- ","|--",6);
+Log::write("------------   Start  us2000_bms.php   ----------------- ","|--",6);
 
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 $aktuelleDaten["PylonTech"] = "2000"; 
@@ -67,7 +55,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",8);
+Log::write("Hardware Version: ".$Version,"o  ",8);
 
 switch($Version) {
   case "2B":
@@ -85,10 +73,10 @@ switch($Version) {
 
 //  Nach em Öffnen des Port muss sofort der Regler ausgelesen werden, sonst
 //  sendet er asynchrone Daten!
-$USB1 = $funktionen->openUSB($USBRegler);
+$USB1 = USB::openUSB($USBRegler);
 if (!is_resource($USB1)) {
-  $funktionen->log_schreiben("USB Port kann nicht geöffnet werden. [1]","XX ",7);
-  $funktionen->log_schreiben("Exit.... ","XX ",7);
+  Log::write("USB Port kann nicht geöffnet werden. [1]","XX ",7);
+  Log::write("Exit.... ","XX ",7);
   goto Ausgang;
 }
 
@@ -99,12 +87,12 @@ if (!is_resource($USB1)) {
 //  Achtung! Diese Funktion ist noch nicht fertig und noch nicht geprüft.
 ************************************************************************************/
 
-if (file_exists($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung")) {
+if (file_exists("/var/www/pipe/".$GeraeteNummer.".befehl.steuerung")) {
 
-  $funktionen->log_schreiben("Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----","|- ",5);
-  $Inhalt = file_get_contents($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung");
+  Log::write("Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----","|- ",5);
+  $Inhalt = file_get_contents("/var/www/pipe/".$GeraeteNummer.".befehl.steuerung");
   $Befehle = explode("\n",trim($Inhalt));
-  $funktionen->log_schreiben("Befehle: ".print_r($Befehle,1),"|- ",9);
+  Log::write("Befehle: ".print_r($Befehle,1),"|- ",9);
 
   for ($i = 0; $i < count($Befehle); $i++) {
 
@@ -119,21 +107,21 @@ if (file_exists($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung")) {
     //  damit das Gerät keinen Schaden nimmt.
     //  Siehe Dokument:  Befehle_senden.pdf
     ***************************************************************************/
-    if (file_exists($Pfad."/befehle.ini.php")) {
+    if (file_exists($basedir."/config/befehle.ini")) {
 
-      $funktionen->log_schreiben("Die Befehlsliste 'befehle.ini.php' ist vorhanden----","|- ",9);
-      $INI_File =  parse_ini_file($Pfad.'/befehle.ini.php', true);
+      Log::write("Die Befehlsliste 'befehle.ini.php' ist vorhanden----","|- ",9);
+      $INI_File =  parse_ini_file($basedir."/config/befehle.ini", true);
       $Regler13 = $INI_File["Regler13"];
-      $funktionen->log_schreiben("Befehlsliste: ".print_r($Regler13,1),"|- ",10);
+      Log::write("Befehlsliste: ".print_r($Regler13,1),"|- ",10);
       if (!in_array(strtoupper($Befehle[$i]), $Regler13)) {
-        $funktionen->log_schreiben("Dieser Befehl ist nicht zugelassen. ".$Befehle[$i],"|o ",3);
-        $funktionen->log_schreiben("Die Verarbeitung der Befehle wird abgebrochen.","|o ",3);
+        Log::write("Dieser Befehl ist nicht zugelassen. ".$Befehle[$i],"|o ",3);
+        Log::write("Die Verarbeitung der Befehle wird abgebrochen.","|o ",3);
         break;
       }
  
     }
     else {
-      $funktionen->log_schreiben("Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----","|- ",3);
+      Log::write("Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----","|- ",3);
       break;
     }
     $Wert = false;
@@ -142,15 +130,15 @@ if (file_exists($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung")) {
     //  Ab hier wird der Befehl gesendet.
     //  Diese Funktion ist noch nicht fertig programmiert.
     ************************************************************************/
-    $funktionen->log_schreiben("Befehl zur Ausführung: ".strtoupper($Befehle[$i]),"|- ",3);
+    Log::write("Befehl zur Ausführung: ".strtoupper($Befehle[$i]),"|- ",3);
   }
-  $rc = unlink($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung");
+  $rc = unlink("/var/www/pipe/".$GeraeteNummer.".befehl.steuerung");
   if ($rc) {
-    $funktionen->log_schreiben("Datei  /pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.","    ",8);
+    Log::write("Datei  /pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.","    ",8);
   }
 }
 else {
-  $funktionen->log_schreiben("Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----","|- ",8);
+  Log::write("Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----","|- ",8);
 }
 
 /*******************************************************************************
@@ -163,7 +151,7 @@ else {
 
 $i = 1;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...","+  ",9);
+  Log::write("Die Daten werden ausgelesen...","+  ",9);
 
   /****************************************************************************
   //  Ab hier wird der Regler ausgelesen.
@@ -183,23 +171,23 @@ do {
   ****************************************************************************/
 
   $Befehl = "200146900000";
-  $CRC = $funktionen->crc16_us2000($Befehl);
-  $rc =  $funktionen->us2000_auslesen($USB1,"~".$Befehl.$CRC."\r");
+  $CRC = Utils::crc16_us2000($Befehl);
+  $rc =  US2000::us2000_auslesen($USB1,"~".$Befehl.$CRC."\r");
   if ($rc) {
-    $Daten = $funktionen->us2000_daten_entschluesseln($rc);
+    $Daten = US2000::us2000_daten_entschluesseln($rc);
     $aktuelleDaten["Packs"] = hexdec($Daten["INFO"]);
   }
 
-  $funktionen->log_schreiben(print_r($rc,1),"** ",10);
+  Log::write(print_r($rc,1),"** ",10);
 
 
   for ($n = 1; $n <= $aktuelleDaten["Packs"]; $n++) {
 
     $Befehl = "20014642E0020".$n;
-    $CRC = $funktionen->crc16_us2000($Befehl);
-    $rc =  $funktionen->us2000_auslesen($USB1,"~".$Befehl.$CRC."\r");
+    $CRC = Utils::crc16_us2000($Befehl);
+    $rc =  US2000::us2000_auslesen($USB1,"~".$Befehl.$CRC."\r");
     if ($rc) {
-      $Daten = $funktionen->us2000_daten_entschluesseln($rc);
+      $Daten = US2000::us2000_daten_entschluesseln($rc);
       $aktuelleDaten["Pack".$n."_Zellen"] = hexdec(substr($Daten["INFO"],4,2));
       $aktuelleDaten["Pack".$n."_Zelle1"] = (hexdec(substr($Daten["INFO"],6,4))/1000);
       $aktuelleDaten["Pack".$n."_Zelle2"] = (hexdec(substr($Daten["INFO"],10,4))/1000);
@@ -222,7 +210,7 @@ do {
       $aktuelleDaten["Pack".$n."_Temp3"] = ((hexdec(substr($Daten["INFO"],76,4))-2731)/10);
       $aktuelleDaten["Pack".$n."_Temp4"] = ((hexdec(substr($Daten["INFO"],80,4))-2731)/10);
       $aktuelleDaten["Pack".$n."_Temp5"] = ((hexdec(substr($Daten["INFO"],84,4))-2731)/10);
-      $aktuelleDaten["Pack".$n."_Strom"] = ($funktionen->hexdecs(substr($Daten["INFO"],88,4))/10);
+      $aktuelleDaten["Pack".$n."_Strom"] = (Utils::hexdecs(substr($Daten["INFO"],88,4))/10);
       $aktuelleDaten["Pack".$n."_Spannung"] = (hexdec(substr($Daten["INFO"],92,4))/1000);
       $aktuelleDaten["Pack".$n."_Ah_left"] = (hexdec(substr($Daten["INFO"],96,4))/1000);
       $aktuelleDaten["Pack".$n."_Ah_total"] = (hexdec(substr($Daten["INFO"],102,4))/1000);
@@ -230,19 +218,19 @@ do {
     }
 
     $Befehl = "20014692E0020".$n;
-    $CRC = $funktionen->crc16_us2000($Befehl);
-    $rc =  $funktionen->us2000_auslesen($USB1,"~".$Befehl.$CRC."\r");
+    $CRC = Utils::crc16_us2000($Befehl);
+    $rc =  US2000::us2000_auslesen($USB1,"~".$Befehl.$CRC."\r");
     if ($rc) {
-      $Daten = $funktionen->us2000_daten_entschluesseln($rc);
+      $Daten = US2000::us2000_daten_entschluesseln($rc);
       // $aktuelleDaten["INFO".$n] = $Daten["INFO"];
       $aktuelleDaten["Pack".$n."_Status"] = hexdec(substr($Daten["INFO"],18,2));
     }
 
     $Befehl = "20014644E0020".$n;
-    $CRC = $funktionen->crc16_us2000($Befehl);
-    $rc = $funktionen->us2000_auslesen($USB1,"~".$Befehl.$CRC."\r");
+    $CRC = Utils::crc16_us2000($Befehl);
+    $rc = US2000::us2000_auslesen($USB1,"~".$Befehl.$CRC."\r");
     if ($rc) {
-      $Daten = $funktionen->us2000_daten_entschluesseln($rc);
+      $Daten = US2000::us2000_daten_entschluesseln($rc);
       // $aktuelleDaten["INFO".$n] = $Daten["INFO"];
       $aktuelleDaten["Pack".$n."_Warn_Zelle1"] = hexdec(substr($Daten["INFO"],6,2));
       $aktuelleDaten["Pack".$n."_Warn_Zelle2"] = hexdec(substr($Daten["INFO"],8,2));
@@ -280,17 +268,17 @@ do {
   }
 
   $Befehl = "200146510000";
-  $CRC = $funktionen->crc16_us2000($Befehl);
-  $rc = $funktionen->us2000_auslesen($USB1,"~".$Befehl.$CRC."\r");
+  $CRC = Utils::crc16_us2000($Befehl);
+  $rc = US2000::us2000_auslesen($USB1,"~".$Befehl.$CRC."\r");
   if ($rc) {
-    $Daten = $funktionen->us2000_daten_entschluesseln($rc);
+    $Daten = US2000::us2000_daten_entschluesseln($rc);
     $aktuelleDaten["Firmware"] = hexdec(substr($Daten["INFO"],20,4));
-    $aktuelleDaten["Produkt"] = trim($funktionen->Hex2String(substr($Daten["INFO"],0,20)));
+    $aktuelleDaten["Produkt"] = trim(Utils::Hex2String(substr($Daten["INFO"],0,20)));
     $PylonTech = "2000";
   }
 
   if ($aktuelleDaten["Packs"] == "")  {
-    $funktionen->log_schreiben("Keine Verbindung zum Pylontech Gerät vorhanden.","   ",3);
+    Log::write("Keine Verbindung zum Pylontech Gerät vorhanden.","   ",3);
     goto Ausgang;
   }
 
@@ -316,14 +304,14 @@ do {
 
 
   if ($i == 1) 
-    $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",8);
+    Log::write(var_export($aktuelleDaten,1),"   ",8);
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/us2000_bms_math.php")) {
-    include 'us_2000_bms_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/us2000_bms_math.php")) {
+    include $basedir.'/custom/us_2000_bms_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
 
@@ -334,8 +322,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -364,7 +352,7 @@ do {
   $aktuelleDaten["InfluxSSL"] = $InfluxSSL;
   $aktuelleDaten["Demodaten"] = false;
 
-  $funktionen->log_schreiben(print_r($aktuelleDaten,1),"** ",9);
+  Log::write(print_r($aktuelleDaten,1),"** ",9);
 
 
 
@@ -375,9 +363,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -387,31 +375,31 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
 
 
 
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time() - $Start));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+    Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
     sleep(floor((56 - (time() - $Start))/($Wiederholungen-$i+1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben("OK. Daten gelesen.","   ",9);
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",8);
+    Log::write("OK. Daten gelesen.","   ",9);
+    Log::write("Schleife ".$i." Ausgang...","   ",8);
     break;
   }
 
@@ -428,8 +416,8 @@ if (isset($aktuelleDaten["Packs"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-    require($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -438,20 +426,20 @@ if (isset($aktuelleDaten["Packs"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-    require($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...","   ",8);
+    require($basedir."/services/meldungen_senden.php");
   }
 
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);
+  Log::write("OK. Datenübertragung erfolgreich.","   ",7);
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.","!! ",6);
+  Log::write("Keine gültigen Daten empfangen.","!! ",6);
 }
 
 
 Ausgang:
 
-$funktionen->log_schreiben("------------   Stop   us2000_bms.php   ----------------- ","|--",6);
+Log::write("------------   Stop   us2000_bms.php   ----------------- ","|--",6);
 
 return;
 

@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 /*****************************************************************************
 //  Solaranzeige Projekt             Copyright (C) [2016-2020]  [Ulrich Kunz]
@@ -24,16 +23,6 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -44,8 +33,8 @@ $RemoteDaten = true;
 $Device = "WR"; // WR = Wechselrichter
 $Version = "";
 $Startzeit = time(); // Timestamp festhalten
-$funktionen->log_schreiben("-------------   Start  kostal_piko.php    --------------------- ", "|--", 6);
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8);
+Log::write("-------------   Start  kostal_piko.php    --------------------- ", "|--", 6);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 //  Dummy, falls das Gerät diese Daten nicht liefert.
@@ -65,7 +54,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version, "o  ", 8);
+Log::write("Hardware Version: ".$Version, "o  ", 8);
 switch ($Version) {
   case "2B":
     break;
@@ -78,24 +67,24 @@ switch ($Version) {
   default:
     break;
 }
-if ($funktionen->tageslicht() or $InfluxDaylight === false) {
+if (Utils::tageslicht() or $InfluxDaylight === false) {
   //  Der Wechselrichter wird nur am Tage abgefragt.
   if ($WR_IP == "0.0.0.0") {
-    $USB1 = $funktionen->openUSB($USBRegler);
+    $USB1 = USB::openUSB($USBRegler);
     if (!is_resource($USB1)) {
-      $funktionen->log_schreiben("USB Port kann nicht geöffnet werden. [1] ".$USBRegler, "XX ", 7);
-      $funktionen->log_schreiben("Exit.... ", "XX ", 7);
+      Log::write("USB Port kann nicht geöffnet werden. [1] ".$USBRegler, "XX ", 7);
+      Log::write("Exit.... ", "XX ", 7);
       goto Ausgang;
     }
   }
 }
 else {
-  $funktionen->log_schreiben("Es ist dunkel... ", "X  ", 7);
+  Log::write("Es ist dunkel... ", "X  ", 7);
   goto Ausgang;
 }
 $i = 1;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...", "+  ", 3);
+  Log::write("Die Daten werden ausgelesen...", "+  ", 3);
   if ($WR_IP == "0.0.0.0") {
     /****************************************************************************
     //  Ab hier wird der Wechselrichter ausgelesen.
@@ -116,65 +105,65 @@ do {
       $CKST = "01";
     }
     $Laenge = 12;
-    $rc = $funktionen->kostal_auslesen($USB1, $Start.$Header.$Adr.$Para.$Befehl.$CKST.$Stop, $Laenge);
+    $rc = Kostal::kostal_auslesen($USB1, $Start.$Header.$Adr.$Para.$Befehl.$CKST.$Stop, $Laenge);
     /**********************************************/
     if ($rc === false) {
       $aktuelleDaten["AC_Wh_Gesamt"] = 0;
     }
     else {
-      $rc = $funktionen->cobs_decoder($rc);
+      $rc = Utils::cobs_decoder($rc);
       $Ergebnis = substr($rc, 12, 8);
-      $aktuelleDaten["AC_Wh_Gesamt"] = $funktionen->kostal_umwandlung($Ergebnis);
+      $aktuelleDaten["AC_Wh_Gesamt"] = Kostal::kostal_umwandlung($Ergebnis);
     }
     $Befehl = "43";
     $CKST = "DC";
     $Laenge = 74;
-    $rc = $funktionen->kostal_auslesen($USB1, $Start.$Header.$Adr.$Para.$Befehl.$CKST.$Stop, $Laenge);
-    $rc = $funktionen->cobs_decoder($rc);
+    $rc = Kostal::kostal_auslesen($USB1, $Start.$Header.$Adr.$Para.$Befehl.$CKST.$Stop, $Laenge);
+    $rc = Utils::cobs_decoder($rc);
     $Ergebnis = substr($rc, 12, - 32);
-    $aktuelleDaten["PV_Spannung_1"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 0, 4)) / 10;
-    $aktuelleDaten["PV_Strom_1"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 4, 4)) / 100;
-    $aktuelleDaten["PV_Leistung_1"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 8, 4));
-    $aktuelleDaten["PV_Spannung_2"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 20, 4)) / 10;
-    $aktuelleDaten["PV_Strom_2"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 24, 4)) / 100;
-    $aktuelleDaten["PV_Leistung_2"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 28, 4));
-    $aktuelleDaten["PV_Spannung_3"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 40, 4)) / 10;
-    $aktuelleDaten["PV_Strom_3"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 44, 4)) / 100;
-    $aktuelleDaten["PV_Leistung_3"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 48, 4));
-    $aktuelleDaten["AC_Spannung_R"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 60, 4)) / 10;
-    $aktuelleDaten["AC_Strom_R"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 64, 4)) / 100;
-    $aktuelleDaten["AC_Leistung_R"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 68, 4));
-    $aktuelleDaten["AC_Spannung_S"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 76, 4)) / 10;
-    $aktuelleDaten["AC_Strom_S"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 80, 4)) / 100;
-    $aktuelleDaten["AC_Leistung_S"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 84, 4));
-    $aktuelleDaten["AC_Spannung_T"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 92, 4)) / 10;
-    $aktuelleDaten["AC_Strom_T"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 96, 4)) / 100;
-    $aktuelleDaten["AC_Leistung_T"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 100, 4));
+    $aktuelleDaten["PV_Spannung_1"] = Kostal::kostal_umwandlung(substr($Ergebnis, 0, 4)) / 10;
+    $aktuelleDaten["PV_Strom_1"] = Kostal::kostal_umwandlung(substr($Ergebnis, 4, 4)) / 100;
+    $aktuelleDaten["PV_Leistung_1"] = Kostal::kostal_umwandlung(substr($Ergebnis, 8, 4));
+    $aktuelleDaten["PV_Spannung_2"] = Kostal::kostal_umwandlung(substr($Ergebnis, 20, 4)) / 10;
+    $aktuelleDaten["PV_Strom_2"] = Kostal::kostal_umwandlung(substr($Ergebnis, 24, 4)) / 100;
+    $aktuelleDaten["PV_Leistung_2"] = Kostal::kostal_umwandlung(substr($Ergebnis, 28, 4));
+    $aktuelleDaten["PV_Spannung_3"] = Kostal::kostal_umwandlung(substr($Ergebnis, 40, 4)) / 10;
+    $aktuelleDaten["PV_Strom_3"] = Kostal::kostal_umwandlung(substr($Ergebnis, 44, 4)) / 100;
+    $aktuelleDaten["PV_Leistung_3"] = Kostal::kostal_umwandlung(substr($Ergebnis, 48, 4));
+    $aktuelleDaten["AC_Spannung_R"] = Kostal::kostal_umwandlung(substr($Ergebnis, 60, 4)) / 10;
+    $aktuelleDaten["AC_Strom_R"] = Kostal::kostal_umwandlung(substr($Ergebnis, 64, 4)) / 100;
+    $aktuelleDaten["AC_Leistung_R"] = Kostal::kostal_umwandlung(substr($Ergebnis, 68, 4));
+    $aktuelleDaten["AC_Spannung_S"] = Kostal::kostal_umwandlung(substr($Ergebnis, 76, 4)) / 10;
+    $aktuelleDaten["AC_Strom_S"] = Kostal::kostal_umwandlung(substr($Ergebnis, 80, 4)) / 100;
+    $aktuelleDaten["AC_Leistung_S"] = Kostal::kostal_umwandlung(substr($Ergebnis, 84, 4));
+    $aktuelleDaten["AC_Spannung_T"] = Kostal::kostal_umwandlung(substr($Ergebnis, 92, 4)) / 10;
+    $aktuelleDaten["AC_Strom_T"] = Kostal::kostal_umwandlung(substr($Ergebnis, 96, 4)) / 100;
+    $aktuelleDaten["AC_Leistung_T"] = Kostal::kostal_umwandlung(substr($Ergebnis, 100, 4));
     $Befehl = "90";
     $CKST = "8F";
     $Laenge = 32;
-    $rc = $funktionen->kostal_auslesen($USB1, $Start.$Header.$Adr.$Para.$Befehl.$CKST.$Stop, $Laenge);
-    $rc = $funktionen->cobs_decoder($rc);
+    $rc = Kostal::kostal_auslesen($USB1, $Start.$Header.$Adr.$Para.$Befehl.$CKST.$Stop, $Laenge);
+    $rc = Utils::cobs_decoder($rc);
     $Ergebnis = substr($rc, 12, - 2);
-    $aktuelleDaten["Modell"] = trim($funktionen->hex2str(substr($Ergebnis, 0, 32)));
+    $aktuelleDaten["Modell"] = trim(Utils::hex2str(substr($Ergebnis, 0, 32)));
     $aktuelleDaten["Strings"] = hexdec(substr($Ergebnis, 32, 2));
     $aktuelleDaten["Phasen"] = hexdec(substr($Ergebnis, 46, 2));
     $Befehl = "57";
     $CKST = "C8";
     $Laenge = 16;
-    $rc = $funktionen->kostal_auslesen($USB1, $Start.$Header.$Adr.$Para.$Befehl.$CKST.$Stop, $Laenge);
-    $rc = $funktionen->cobs_decoder($rc);
+    $rc = Kostal::kostal_auslesen($USB1, $Start.$Header.$Adr.$Para.$Befehl.$CKST.$Stop, $Laenge);
+    $rc = Utils::cobs_decoder($rc);
     $Ergebnis = substr($rc, 12, - 12);
-    $aktuelleDaten["Status"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 0, 2));
-    $aktuelleDaten["Fehler"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 2, 2));
-    $aktuelleDaten["FehlerCode"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 4, 4));
+    $aktuelleDaten["Status"] = Kostal::kostal_umwandlung(substr($Ergebnis, 0, 2));
+    $aktuelleDaten["Fehler"] = Kostal::kostal_umwandlung(substr($Ergebnis, 2, 2));
+    $aktuelleDaten["FehlerCode"] = Kostal::kostal_umwandlung(substr($Ergebnis, 4, 4));
     $Befehl = "9D";
     $CKST = "82";
     $Laenge = 12;
-    $rc = $funktionen->kostal_auslesen($USB1, $Start.$Header.$Adr.$Para.$Befehl.$CKST.$Stop, $Laenge);
-    $rc = $funktionen->cobs_decoder($rc);
+    $rc = Kostal::kostal_auslesen($USB1, $Start.$Header.$Adr.$Para.$Befehl.$CKST.$Stop, $Laenge);
+    $rc = Utils::cobs_decoder($rc);
     $Ergebnis = substr($rc, 12, - 4);
-    $aktuelleDaten["WattstundenGesamtHeute"] = $funktionen->kostal_umwandlung(substr($Ergebnis, 0, 8));
+    $aktuelleDaten["WattstundenGesamtHeute"] = Kostal::kostal_umwandlung(substr($Ergebnis, 0, 8));
     $aktuelleDaten["PV_Leistung"] = $aktuelleDaten["PV_Leistung_1"] + $aktuelleDaten["PV_Leistung_2"] + $aktuelleDaten["PV_Leistung_3"];
 
     if (!is_numeric($aktuelleDaten["AC_Leistung_R"])) {
@@ -188,32 +177,32 @@ do {
     //  pro Tag zu speichern.
     //
     *****************************************************************************/
-    $StatusFile = $Pfad."/database/".$GeraeteNummer.".WhProTag.txt";
+    $StatusFile = $basedir."/database/".$GeraeteNummer.".WhProTag.txt";
     if (!file_exists($StatusFile)) {
       /***************************************************************************
       //  Inhalt der Status Datei anlegen, wenn nicht existiert.
       ***************************************************************************/
       $rc = file_put_contents($StatusFile, "0");
       if ($rc === false) {
-        $funktionen->log_schreiben("Konnte die Datei whProTag_delta.txt nicht anlegen.", 5);
+        Log::write("Konnte die Datei whProTag_delta.txt nicht anlegen.", 5);
       }
       $aktuelleDaten["WattstundenGesamtHeute"] = 0;
     }
     else {
       $aktuelleDaten["WattstundenGesamtHeute"] = file_get_contents($StatusFile);
-      $funktionen->log_schreiben("WattstundenGesamtHeute: ".$aktuelleDaten["WattstundenGesamtHeute"], "   ", 8);
+      Log::write("WattstundenGesamtHeute: ".$aktuelleDaten["WattstundenGesamtHeute"], "   ", 8);
     }
     // wir laden die XML-Datei vom piko
     $xml = simplexml_load_file("http://".$WR_IP."/measurements.xml");
     // auswerten der XML-Datei
-    $funktionen->log_schreiben(">>>> Kopfdaten:");
+    Log::write(">>>> Kopfdaten:");
     foreach ($xml->Device[0]->attributes() as $key => $value) {
-      $funktionen->log_schreiben($key.' = "'.$value.'"');
+      Log::write($key.' = "'.$value.'"');
       $piko_kopf["$key"] = $value;
     }
-    $funktionen->log_schreiben(">>>> aktuelle Werte:");
+    Log::write(">>>> aktuelle Werte:");
     foreach ($xml->Device[0]->Measurements->Measurement as $wert) {
-      $funktionen->log_schreiben("Value: ".$wert->attributes()->Value." Unit: ".$wert->attributes()->Unit." Type: ".$wert->attributes()->Type);
+      Log::write("Value: ".$wert->attributes()->Value." Unit: ".$wert->attributes()->Unit." Type: ".$wert->attributes()->Type);
       $key = $wert->attributes()->Type;
       $piko_wert["$key"] = $wert->attributes()->Value;
     }
@@ -300,7 +289,7 @@ do {
       ***************************************************************************/
       if (date("H:i") == "00:00" or date("H:i") == "00:01") {
         $rc = file_put_contents($StatusFile, "0");
-        $funktionen->log_schreiben("WattstundenGesamtHeute  gesetzt.", "o- ", 5);
+        Log::write("WattstundenGesamtHeute  gesetzt.", "o- ", 5);
       }
       /***************************************************************************
       //  Daten einlesen ...   ( Watt * Stunden ) pro Tag = Wh
@@ -308,7 +297,7 @@ do {
       $whProTag = file_get_contents($StatusFile);
       $whProTag = ($whProTag + ($aktuelleDaten["PV_Leistung"]) / 60);
       $rc = file_put_contents($StatusFile, round($whProTag, 2));
-      $funktionen->log_schreiben("WattstundenGesamtHeute: ".round($whProTag, 2), "   ", 5);
+      Log::write("WattstundenGesamtHeute: ".round($whProTag, 2), "   ", 5);
     }
   }
   Ende:
@@ -320,8 +309,8 @@ do {
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/kostal_pico_math.php")) {
-    include 'kostal_pico_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/kostal_pico_math.php")) {
+    include $basedir.'/custom/kostal_pico_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -330,8 +319,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT and strtoupper($MQTTAuswahl) != "OPENWB") {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
 
@@ -359,8 +348,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT and strtoupper($MQTTAuswahl) != "OPENWB") {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1);
-    require ($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1);
+    require($basedir."/services/mqtt_senden.php");
   }
   /****************************************************************************
   //  Zeit und Datum
@@ -386,7 +375,7 @@ do {
   $aktuelleDaten["InfluxDBLokal"] = $InfluxDBLokal;
   $aktuelleDaten["InfluxSSL"] = $InfluxSSL;
   $aktuelleDaten["Demodaten"] = false;
-  $funktionen->log_schreiben(print_r($aktuelleDaten, 1), "*- ", 9);
+  Log::write(print_r($aktuelleDaten, 1), "*- ", 9);
   /*********************************************************************
   //  Daten werden in die Influx Datenbank gespeichert.
   //  Lokal und Remote bei Bedarf.
@@ -394,9 +383,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -406,28 +395,28 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (9 - (time() - $Startzeit));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Startzeit)) / ($Wiederholungen - $i + 1))), "   ", 9);
+    Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Startzeit)) / ($Wiederholungen - $i + 1))), "   ", 9);
     sleep(floor((56 - (time() - $Startzeit)) / ($Wiederholungen - $i + 1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben("OK. Daten gelesen.", "   ", 9);
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...", "   ", 8);
+    Log::write("OK. Daten gelesen.", "   ", 9);
+    Log::write("Schleife ".$i." Ausgang...", "   ", 8);
     break;
   }
   $i++;
@@ -439,8 +428,8 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
     $aktuelleDaten["Solarspannung"] = $aktuelleDaten["Solarspannung1"];
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...", "   ", 8);
-    require ($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...", "   ", 8);
+    require($basedir."/services/homematic.php");
   }
   /*********************************************************************
   //  Sollen Nachrichten an einen Messenger gesendet werden?
@@ -448,17 +437,17 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...", "   ", 8);
-    require ($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...", "   ", 8);
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.", "   ", 7);
+  Log::write("OK. Datenübertragung erfolgreich.", "   ", 7);
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.", "!! ", 6);
+  Log::write("Keine gültigen Daten empfangen.", "!! ", 6);
 }
 Ausgang:
 
-$funktionen->log_schreiben("-------------   Stop   kostal_piko.php     -------------------- ", "|--", 6);
+Log::write("-------------   Stop   kostal_piko.php     -------------------- ", "|--", 6);
 return;
 
 ?>

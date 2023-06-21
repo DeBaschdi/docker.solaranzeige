@@ -5,17 +5,13 @@
 //  damit die Grafana Anzeige schon einmal etwas zeigt.
 //  
 ******************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-require($Pfad."/user.config.php");
-require($Pfad."/phpinc/funktionen.inc.php");
-
-$funktionen = new funktionen();
+$basedir = dirname(__FILE__,2);
+require_once($basedir."/library/base.inc.php");
 
 for ($i=1;$i<5;$i++) {
 
-  $aktuelleDaten = $funktionen->demo_daten_erzeugen($Regler);
-  $rc = $funktionen->influx_local($aktuelleDaten);
+  $aktuelleDaten = InfluxDB::demo_daten_erzeugen($Regler);
+  $rc = InfluxDB::influx_local($aktuelleDaten);
 
   sleep(2);
 }

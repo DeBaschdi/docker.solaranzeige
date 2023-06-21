@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -32,16 +31,6 @@
 //  Forum.
 //
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -54,19 +43,19 @@ $RemoteDaten = true;
 $Device = "WR"; // WR = Wechselrichter
 $Version = "";
 $Start = time( ); // Timestamp festhalten
-$funktionen->log_schreiben( "-------------   Start  hoymiles.php    -------------------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "-------------   Start  hoymiles.php    -------------------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 $aktuelleDaten = array();
 $Zeitspanne = 0;
 
 setlocale( LC_TIME, "de_DE.utf8" );
-$funktionen->log_schreiben( "Hoymiles: ".$WR_IP." Port: ".$WR_Port, "   ", 7 );
+Log::write( "Hoymiles: ".$WR_IP." Port: ".$WR_Port, "   ", 7 );
 
 //  Hardware Version ermitteln.
 $Teile = explode( " ", $Platine );
 if ($Teile[1] == "Pi") {
-  $funktionen->log_schreiben( "Hardware Version: ".$Platine, "o  ", 8 );
+  Log::write( "Hardware Version: ".$Platine, "o  ", 8 );
   $Version = trim( $Teile[2] );
   if ($Teile[3] == "Model") {
     $Version .= trim( $Teile[4] );
@@ -103,19 +92,19 @@ else {
   $WR_ID = str_pad(dechex($WR_Adresse),2,"0",STR_PAD_LEFT);
 }
 
-$funktionen->log_schreiben("WR_ID: ".$WR_ID,"+  ",8);
+Log::write("WR_ID: ".$WR_ID,"+  ",8);
 
 
 $COM1 = fsockopen( $WR_IP, $WR_Port, $errno, $errstr, 10 ); // 10 = Timeout in Sekunden
 if (!is_resource( $COM1 )) {
-  $funktionen->log_schreiben( "Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
-  $funktionen->log_schreiben( "Exit.... ", "XX ", 9 );
+  Log::write( "Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
+  Log::write( "Exit.... ", "XX ", 9 );
   goto Ausgang;
 }
 
 $i = 1;
 do {
-  $funktionen->log_schreiben( "Die Daten werden ausgelesen...", "+  ", 7 );
+  Log::write( "Die Daten werden ausgelesen...", "+  ", 7 );
 
   /****************************************************************************
   //  Ab hier wird der Wechselrichter ausgelesen.
@@ -141,10 +130,10 @@ do {
     $RegisterAdresse = 49158 + $Shift;    // Hex C006   49158
     $RegisterAnzahl = "0001";   // Hex
     $DatenTyp = "Hex";
-    $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+    $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
     if (is_array( $Ergebnis )) {
       if ($Ergebnis["Befehl"] == 82) {
-        $funktionen->log_schreiben( "Letzte gefundene Panele Port: ".($i - 1), "   ", 5 );
+        Log::write( "Letzte gefundene Panele Port: ".($i - 1), "   ", 5 );
         $Stopport = ($i - 1);
         break;
       }
@@ -154,7 +143,7 @@ do {
       }
     }
     else {
-      $funktionen->log_schreiben( "Letzte gefundene Panele Port: ".($i - 1), "   ", 5 );
+      Log::write( "Letzte gefundene Panele Port: ".($i - 1), "   ", 5 );
       $Stopport = ($i - 1);
       break;
     }
@@ -180,13 +169,13 @@ do {
     $RegisterAdresse = 4097 + $Shift;    // Hex 1002
     $RegisterAnzahl = "0003";   // Hex
     $DatenTyp = "Hex";
-    $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+    $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
     if (is_array( $Ergebnis )) {
       $aktuelleDaten["Port".$i]["Seriennummer"] = substr($Ergebnis["Wert"],0,12);
-      $funktionen->log_schreiben( "Port ".$i." - Seriennummer: ".substr($Ergebnis["Wert"],0,12), "   ", 5 );
+      Log::write( "Port ".$i." - Seriennummer: ".substr($Ergebnis["Wert"],0,12), "   ", 5 );
     }
     else {
-      $funktionen->log_schreiben( "Lesefehler => Ausgang.", "   ", 5 );
+      Log::write( "Lesefehler => Ausgang.", "   ", 5 );
       goto Ausgang;
     }
 
@@ -194,12 +183,12 @@ do {
     $RegisterAdresse = 4103 + $Shift;    // Hex 1007
     $RegisterAnzahl = "0001";   // Hex
     $DatenTyp = "U8";
-    $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+    $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
     if (is_array( $Ergebnis )) {
       $aktuelleDaten["Port".$i]["Portnummer"] = $Ergebnis["Wert"];
     }
     else {
-      $funktionen->log_schreiben( "Lesefehler => Ausgang.", "   ", 5 );
+      Log::write( "Lesefehler => Ausgang.", "   ", 5 );
       goto Ausgang;
     }
 
@@ -208,12 +197,12 @@ do {
   $RegisterAdresse = (4104 + $Shift);  // Hex 1008 
   $RegisterAnzahl = "0001";   // Hex
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Port".$i]["PV_Spannung"] = ($Ergebnis["Wert"]/10);
   }
   else {
-    $funktionen->log_schreiben( "Lesefehler => Ausgang.", "   ", 5 );
+    Log::write( "Lesefehler => Ausgang.", "   ", 5 );
     goto Ausgang;
   }
 
@@ -221,63 +210,63 @@ do {
   $RegisterAdresse = (4106 + $Shift);  // Hex 100A
   $RegisterAnzahl = "0001";   // Hex
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Port".$i]["PV_Strom"] = $Ergebnis["Wert"]/100;
   }
   else {
-    $funktionen->log_schreiben( "Lesefehler => Ausgang.", "   ", 5 );
+    Log::write( "Lesefehler => Ausgang.", "   ", 5 );
     goto Ausgang;
   }
 
   $RegisterAdresse = (4108 + $Shift);  // Hex 100C
   $RegisterAnzahl = "0001";   // Hex
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Port".$i]["AC_Spannung"] = $Ergebnis["Wert"]/10;
 
-    $funktionen->log_schreiben("AC Spannung:". $Ergebnis["Wert"]/10, "   ", 7);
+    Log::write("AC Spannung:". $Ergebnis["Wert"]/10, "   ", 7);
 
   }
   else {
-    $funktionen->log_schreiben( "Lesefehler => Ausgang.", "   ", 5 );
+    Log::write( "Lesefehler => Ausgang.", "   ", 5 );
     goto Ausgang;
   }
 
   $RegisterAdresse = (4110 + $Shift);  // Hex 100E
   $RegisterAnzahl = "0001";   // Hex
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Port".$i]["Frequenz"] = $Ergebnis["Wert"]/100;
   }
   else {
-    $funktionen->log_schreiben( "Lesefehler => Ausgang.", "   ", 5 );
+    Log::write( "Lesefehler => Ausgang.", "   ", 5 );
     goto Ausgang;
   }
 
   $RegisterAdresse = (4112 + $Shift);  // Hex 1010
   $RegisterAnzahl = "0001";   // Hex
   $DatenTyp = "U32";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Port".$i]["PV_Leistung"] = $Ergebnis["Wert"];
   }
   else {
-    $funktionen->log_schreiben( "Lesefehler => Ausgang.", "   ", 5 );
+    Log::write( "Lesefehler => Ausgang.", "   ", 5 );
     goto Ausgang;
   }
 
   $RegisterAdresse = (4114 + $Shift);  // Hex 1012
   $RegisterAnzahl = "0001";   // Hex
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Port".$i]["WattstundenGesamtHeute"] = $Ergebnis["Wert"];
   }
   else {
-    $funktionen->log_schreiben( "Lesefehler => Ausgang.", "   ", 5 );
+    Log::write( "Lesefehler => Ausgang.", "   ", 5 );
     goto Ausgang;
   }
 
@@ -285,48 +274,48 @@ do {
   $RegisterAdresse = (4116 + $Shift);  // Hex 1014
   $RegisterAnzahl = "0002";   // Hex
   $DatenTyp = "U32";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Port".$i]["Energie_Total"] = $Ergebnis["Wert"];
   }
   else {
-    $funktionen->log_schreiben( "Lesefehler => Ausgang.", "   ", 5 );
+    Log::write( "Lesefehler => Ausgang.", "   ", 5 );
     goto Ausgang;
   }
 
   $RegisterAdresse = (4120 + $Shift);  // Hex 1018
   $RegisterAnzahl = "0001";   // Hex
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Port".$i]["Temperatur"] = $Ergebnis["Wert"]/10;
   }
   else {
-    $funktionen->log_schreiben( "Lesefehler => Ausgang.", "   ", 5 );
+    Log::write( "Lesefehler => Ausgang.", "   ", 5 );
     goto Ausgang;
   }
 
   $RegisterAdresse = (4122 + $Shift);  // Hex 1042
   $RegisterAnzahl = "0001";   // Hex
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Port".$i]["Status"] = $Ergebnis["Wert"];
   }
   else {
-    $funktionen->log_schreiben( "Lesefehler => Ausgang.", "   ", 5 );
+    Log::write( "Lesefehler => Ausgang.", "   ", 5 );
     goto Ausgang;
   }
 
   $RegisterAdresse = (4124 + $Shift);  // Hex 1044
   $RegisterAnzahl = "0001";   // Hex
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Port".$i]["Fehler"] = $Ergebnis["Wert"];
   }
   else {
-    $funktionen->log_schreiben( "Lesefehler => Ausgang.", "   ", 5 );
+    Log::write( "Lesefehler => Ausgang.", "   ", 5 );
     goto Ausgang;
   }
 
@@ -353,14 +342,14 @@ do {
   $aktuelleDaten["Info"]["Objekt.Text"] = $Objekt;
   $aktuelleDaten["Info"]["Produkt.Text"] = "Hoymiles";
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"] + 10);
-  $funktionen->log_schreiben( var_export( $aktuelleDaten, 1 ), "   ", 8 );
+  Log::write( var_export( $aktuelleDaten, 1 ), "   ", 8 );
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( "/var/www/html/hoymiles_math.php" )) {
-    include 'hoymiles_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists($basedir."/custom/hoymiles_math.php" )) {
+    include $basedir.'/custom/hoymiles_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -369,8 +358,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT == true) {
-    $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+    require($basedir."/services/mqtt_senden.php");
   }
 
 
@@ -396,9 +385,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test( );
+      $rc = InfluxDB::influx_remote_test( );
       if ($rc) {
-        $rc = $funktionen->influx_remote( $aktuelleDaten );
+        $rc = InfluxDB::influx_remote( $aktuelleDaten );
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -408,16 +397,16 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
   }
   else {
-    $rc = $funktionen->influx_local( $aktuelleDaten );
+    $rc = InfluxDB::influx_local( $aktuelleDaten );
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time( ) - $Start));
-    $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+    Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
     if ($Zeitspanne > 0) {
       sleep( $Zeitspanne );
     }
@@ -426,13 +415,13 @@ do {
   else {
     $Zeitspanne = floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1));
     if ($Zeitspanne > 0) {
-      $funktionen->log_schreiben( "Schleife: ".($i)." Zeitspanne: ".$Zeitspanne, "   ", 7 );
+      Log::write( "Schleife: ".($i)." Zeitspanne: ".$Zeitspanne, "   ", 7 );
       sleep($Zeitspanne);
     }
   }
   if ($Wiederholungen <= $i or $i >= 1) {
     //  Die RCT Wechselrichter dürfen nur einmal pro Minute ausgelesen werden!
-    $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 5 );
+    Log::write( "Schleife ".$i." Ausgang...", "   ", 5 );
     break;
   }
   $i++;
@@ -443,8 +432,8 @@ do {
 //  übertragen.
 *********************************************************************/
 if (isset($Homematic) and $Homematic == true) {
-  $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-  require ($Pfad."/homematic.php");
+  Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+  require($basedir."/services/homematic.php");
 }
 
 /*********************************************************************
@@ -453,14 +442,14 @@ if (isset($Homematic) and $Homematic == true) {
 //  Gerät aktiviert sein.
 *********************************************************************/
 if (isset($Messenger) and $Messenger == true) {
-  $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-  require ($Pfad."/meldungen_senden.php");
+  Log::write( "Nachrichten versenden...", "   ", 8 );
+  require($basedir."/services/meldungen_senden.php");
 }
-$funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 fclose( $COM1 );
 /***/
 Ausgang:
 /***/
-$funktionen->log_schreiben( "-------------   Stop   hoymiles.php    -------------------------- ", "|--", 6 );
+Log::write( "-------------   Stop   hoymiles.php    -------------------------- ", "|--", 6 );
 return;
 ?>

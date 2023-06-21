@@ -35,8 +35,10 @@
 //  werden können. Das ist aber nicht zwingend notwendig. Man kann auch seine
 //  eigenen Variablen nutzen.
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
+$basedir = dirname(__FILE__,2);
+require($basedir."/library/base.inc.php");
+
+
 $Ueberschuss = false;
 $Datenbankname = "steuerung";
 $Measurement = "Wallbox";
@@ -58,7 +60,7 @@ $Praezision = 2;
 //  4 = Debugging
 *****************************************************************************/
 $Tracelevel = 3;
-log_schreiben( "- - - - - - - - -    Start WB Steuerung   - - - - - - - -", "|-->", 1 );
+Log::write( "- - - - - - - - -    Start WB Steuerung   - - - - - - - -", "|-->", 1 );
 
 /*********************************************************************************
 //  In der Datei "wallbox.steuerung.ini" stehen die Werte, die zur Steuerung der
@@ -67,12 +69,12 @@ log_schreiben( "- - - - - - - - -    Start WB Steuerung   - - - - - - - -", "|--
 //  Siehe Dokument:  wallbox_steuern.pdf
 *********************************************************************************/
 for ($i = 1; $i < 7; $i++) {
-  if (file_exists( $Pfad."/".$i.".wallbox.steuerung.ini" )) {
-    log_schreiben( "Grundlage der Steuerung ist die INI Datei '".$i.".wallbox.steuerung.ini'.", "|- ", 3 );
-    $INI = parse_ini_file( $Pfad."/".$i.".wallbox.steuerung.ini", true, INI_SCANNER_TYPED );
+  if (file_exists( $basedir."/config/".$i.".wallbox.steuerung.ini" )) {
+    Log::write( "Grundlage der Steuerung ist die INI Datei '".$i.".wallbox.steuerung.ini'.", "|- ", 3 );
+    $INI = parse_ini_file( $basedir."/config/".$i.".wallbox.steuerung.ini", true, INI_SCANNER_TYPED );
     if (!isset($INI["PV-Quelle"]["BisSOC"]) or !isset($INI["Batterie-Quelle"]["BisSOC"]) or !isset($INI["Netz-Quelle"]["BisSOC"])) {
-      log_schreiben( "Die Datei '".$i.".wallbox.steuerung.ini' konnte nicht richtig ausgelesen werden.", "|- ", 1 );
-      log_schreiben( print_r( $INI, 1 ), "|- ", 4 );
+      Log::write( "Die Datei '".$i.".wallbox.steuerung.ini' konnte nicht richtig ausgelesen werden.", "|- ", 1 );
+      Log::write( print_r( $INI, 1 ), "|- ", 4 );
       goto Ausgang;
     }
     //  Sonnenaufgang und Sonnenuntergang berechnen (default Standort ist Frankfurt)
@@ -86,7 +88,7 @@ for ($i = 1; $i < 7; $i++) {
     $ch = curl_init( 'http://localhost/query?db='.$Datenbankname.'&precision=s&q='.urlencode( 'select * from '.$Measurement.' order by time desc limit 1' ));
     $rc = datenbank( $ch );
     if (!isset($rc["JSON_Ausgabe"]["results"][0]["series"])) {
-      log_schreiben( "Es fehlt die Datenbank 'steuerung' oder sie ist leer.", "|- ", 1 );
+      Log::write( "Es fehlt die Datenbank 'steuerung' oder sie ist leer.", "|- ", 1 );
       goto Ausgang;
     }
     else {
@@ -97,19 +99,19 @@ for ($i = 1; $i < 7; $i++) {
         $wbSteuerung = array($rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"][1] => $rc["JSON_Ausgabe"]["results"][0]["series"][0]["values"][0][1], $rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"][2] => $rc["JSON_Ausgabe"]["results"][0]["series"][0]["values"][0][2], $rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"][3] => $rc["JSON_Ausgabe"]["results"][0]["series"][0]["values"][0][3]);
       }
       if ($wbSteuerung["wbSteuerung1"] == 0 and $wbSteuerung["wbSteuerung2"] == 0 and $wbSteuerung["wbSteuerung3"] == 0) {
-        log_schreiben( "Steuerung nicht aktiviert. Keine Ladequelle ausgesucht. Ausgang...", "", 1 );
+        Log::write( "Steuerung nicht aktiviert. Keine Ladequelle ausgesucht. Ausgang...", "", 1 );
         goto Ausgang;
       }
       if ($INI["Allgemein"]["Batterie"] == false) {
-        log_schreiben( "Keine Batterie angeschlossen...", "", 4 );
+        Log::write( "Keine Batterie angeschlossen...", "", 4 );
       }
       if (isset($INI["PV-Quelle"]["Intervall"])) {
         $Intervall = abs( round( $INI["PV-Quelle"]["Intervall"] ));
         if ($Intervall >= 1 AND $Intervall <= 9) {
-          log_schreiben( "Intervall: ".$INI["PV-Quelle"]["Intervall"], "", 4 );
+          Log::write( "Intervall: ".$INI["PV-Quelle"]["Intervall"], "", 4 );
         }
         else {
-          log_schreiben( "Intervall ungültig: ".$INI["PV-Quelle"]["Intervall"], "", 1 );
+          Log::write( "Intervall ungültig: ".$INI["PV-Quelle"]["Intervall"], "", 1 );
           $Intervall = 3;
         }
       }
@@ -117,25 +119,25 @@ for ($i = 1; $i < 7; $i++) {
         $Intervall = 3; //  Alle 3 Minuten
       }
       if (isset($INI["Allgemein"]["Phasen"]) and $INI["Allgemein"]["Phasen"] == 1) {
-        log_schreiben( "Phasen: ".$INI["Allgemein"]["Phasen"], "", 4 );
+        Log::write( "Phasen: ".$INI["Allgemein"]["Phasen"], "", 4 );
         $PUI = 230; //  Wechselstromberechnung
       }
       elseif (isset($INI["Allgemein"]["Phasen"]) and $INI["Allgemein"]["Phasen"] == 2) {
-        log_schreiben( "Phasen: ".$INI["Allgemein"]["Phasen"], "", 4 );
+        Log::write( "Phasen: ".$INI["Allgemein"]["Phasen"], "", 4 );
         $PUI = 400; //  2 Phasen Berechnung
       }
       else {
         $PUI = (400 * 1.73); //  Drehstromberechnung
       }
       if (isset($INI["PV-Quelle"]["Inselanlage"]) and $INI["PV-Quelle"]["Inselanlage"] == 1) {
-        log_schreiben( "es ist eine Inselanlage", "", 2 );
+        Log::write( "es ist eine Inselanlage", "", 2 );
         $Inselanlage = true;
       }
       else {
         $Inselanlage = false;
       }
       if (isset($INI["PV-Quelle"]["NurBeiSonne"]) and $INI["PV-Quelle"]["NurBeiSonne"] == 1) {
-        log_schreiben( "Ladung nur bei genügend Sonnenenergie. [ INI > NurBeiSonne = yes ]", "", 3 );
+        Log::write( "Ladung nur bei genügend Sonnenenergie. [ INI > NurBeiSonne = yes ]", "", 3 );
         $NurBeiSonne = true;
       }
       else {
@@ -143,7 +145,7 @@ for ($i = 1; $i < 7; $i++) {
       }
       if (isset($INI["PV-Quelle"]["Eigenverbrauch"])) {
         $Eigenverbrauch = $INI["PV-Quelle"]["Eigenverbrauch"];
-        log_schreiben( "Eigenverbrauch laut INI Datei: ".$Eigenverbrauch." Watt", "", 3 );
+        Log::write( "Eigenverbrauch laut INI Datei: ".$Eigenverbrauch." Watt", "", 3 );
       }
       else {
         $Eigenverbrauch = 0;
@@ -160,25 +162,25 @@ for ($i = 1; $i < 7; $i++) {
       $ch = curl_init( 'http://localhost/query?db='.$Datenbankname.'&precision=s&q='.urlencode( 'select * from Ladung order by time desc limit 1' ));
       $rc = datenbank( $ch );
       if (!isset($rc["JSON_Ausgabe"]["results"][0]["series"])) {
-        log_schreiben( "Es fehlt in der Datenbank '".$Datenbankname."' das Measurement 'Laden' oder sie ist leer.", "|- ", 1 );
+        Log::write( "Es fehlt in der Datenbank '".$Datenbankname."' das Measurement 'Laden' oder sie ist leer.", "|- ", 1 );
         // Flag setzen in die Datenbank "Steuerung"  Measurement "Ladung"  Flag "unterbrechung"
         $query = "Ladung Unterbrechung=0";
         $ch = curl_init( 'http://localhost/write?db=steuerung&precision=s' );
         $rc = datenbank( $ch, $query );
-        log_schreiben( "Unterbrechung Flag aufgehoben.", "", 4 );
+        Log::write( "Unterbrechung Flag aufgehoben.", "", 4 );
       }
       else {
         for ($h = 1; $h < count( $rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"] ); $h++) {
           $DB6[$rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"][$h]] = $rc["JSON_Ausgabe"]["results"][0]["series"][0]["values"][0][$h];
         }
         $Pause = $DB6["Unterbrechung"];
-        log_schreiben( "Datenbank: '".$Datenbankname."' ".print_r( $DB6, 1 ), "", 4 );
+        Log::write( "Datenbank: '".$Datenbankname."' ".print_r( $DB6, 1 ), "", 4 );
       }
 
       /**************************************************************************
       //  Auslesen der user.config.php für den Wechselrichter
       **************************************************************************/
-      require ($Pfad."/".$INI["Geraete"]["Wechselrichter"]);
+      require ($basedir."/config/".$INI["Geraete"]["Wechselrichter"]);
       $wrRegler = $Regler;
       $wrGeraeteNummer = substr( $INI["Geraete"]["Wechselrichter"], 0, 1 );
       sleep( 1 ); // Damit die Datenbank durch den Wechselrichter nicht belegt ist.
@@ -187,18 +189,18 @@ for ($i = 1; $i < 7; $i++) {
       $ch = curl_init( 'http://localhost/query?db='.$wrDatenbankname.'&precision=s&q='.urlencode( 'select * from PV order by time desc limit 1' ));
       $rc = datenbank( $ch );
       if (!isset($rc["JSON_Ausgabe"]["results"][0]["series"])) {
-        log_schreiben( "Es fehlt die Datenbank '".$wrDatenbankname."' mit dem Measurement PV, versuche es mit Measurement AC ", "|- ", 7 );
+        Log::write( "Es fehlt die Datenbank '".$wrDatenbankname."' mit dem Measurement PV, versuche es mit Measurement AC ", "|- ", 7 );
         $ch = curl_init( 'http://localhost/query?db='.$wrDatenbankname.'&precision=s&q='.urlencode( 'select * from AC order by time desc limit 1' ));
         $rc = datenbank( $ch );
         if (!isset($rc["JSON_Ausgabe"]["results"][0]["series"])) {
-          log_schreiben( "Es fehlt die Datenbank '".$wrDatenbankname."' mit dem Measurement PV und AC oder sie ist leer.", "|- ", 1 );
+          Log::write( "Es fehlt die Datenbank '".$wrDatenbankname."' mit dem Measurement PV und AC oder sie ist leer.", "|- ", 1 );
           goto Ausgang;
         }
       }
       for ($h = 1; $h < count( $rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"] ); $h++) {
         $DB1[$rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"][$h]] = $rc["JSON_Ausgabe"]["results"][0]["series"][0]["values"][0][$h];
       }
-      log_schreiben( "Datenbank: '".$wrDatenbankname."' ".print_r( $DB1, 1 ), "", 4 );
+      Log::write( "Datenbank: '".$wrDatenbankname."' ".print_r( $DB1, 1 ), "", 4 );
       switch ($wrRegler) {
 
         case 3:
@@ -395,14 +397,14 @@ for ($i = 1; $i < 7; $i++) {
           $ch = curl_init( 'http://localhost/query?db='.$wrDatenbankname.'&precision=s&q='.urlencode( 'select * from Batterie order by time desc limit 1' ));
           $rc = datenbank( $ch );
           if (!isset($rc["JSON_Ausgabe"]["results"][0]["series"])) {
-            log_schreiben( "Es fehlt die Datenbank '".$wrDatenbankname."' mit dem Measurement Batterie oder sie ist leer.", "|- ", 1 );
-            log_schreiben( "Wenn es das Measurement nicht gibt, dann bitte Batterie=no in der INI Datei eintragen. Es geht auch ohne Batterieüberwachung.", "|- ", 1 );
+            Log::write( "Es fehlt die Datenbank '".$wrDatenbankname."' mit dem Measurement Batterie oder sie ist leer.", "|- ", 1 );
+            Log::write( "Wenn es das Measurement nicht gibt, dann bitte Batterie=no in der INI Datei eintragen. Es geht auch ohne Batterieüberwachung.", "|- ", 1 );
             goto Ausgang;
           }
           for ($h = 1; $h < count( $rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"] ); $h++) {
             $DB2[$rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"][$h]] = $rc["JSON_Ausgabe"]["results"][0]["series"][0]["values"][0][$h];
           }
-          log_schreiben( "Datenbank: '".$wrDatenbankname."' ".print_r( $DB2, 1 ), "", 4 );
+          Log::write( "Datenbank: '".$wrDatenbankname."' ".print_r( $DB2, 1 ), "", 4 );
           switch ($wrRegler) {
 
             case 3:
@@ -538,7 +540,7 @@ for ($i = 1; $i < 7; $i++) {
       /**************************************************************************
       //  Auslesen der user.config.php für die Wallbox
       **************************************************************************/
-      require ($Pfad."/".$INI["Geraete"]["Wallbox"]);
+      require ($basedir."/config/".$INI["Geraete"]["Wallbox"]);
       $wbRegler = $Regler;
       $wbGeraeteNummer = substr( $INI["Geraete"]["Wallbox"], 0, 1 );
       $wbDatenbankname = $InfluxDBLokal;
@@ -546,35 +548,35 @@ for ($i = 1; $i < 7; $i++) {
       $ch = curl_init( 'http://localhost/query?db='.$wbDatenbankname.'&precision=s&q='.urlencode( 'select * from Summen order by time desc limit 1' ));
       $rc = datenbank( $ch );
       if (!isset($rc["JSON_Ausgabe"]["results"][0]["series"])) {
-        log_schreiben( "Es fehlt die Datenbank '".$wbDatenbankname."' mit dem Measurement Summen oder sie ist leer.", "|- ", 1 );
+        Log::write( "Es fehlt die Datenbank '".$wbDatenbankname."' mit dem Measurement Summen oder sie ist leer.", "|- ", 1 );
         goto Ausgang;
       }
       for ($h = 1; $h < count( $rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"] ); $h++) {
         $DB3[$rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"][$h]] = $rc["JSON_Ausgabe"]["results"][0]["series"][0]["values"][0][$h];
       }
-      log_schreiben( "Datenbank: '".$wbDatenbankname."' ".print_r( $DB3, 1 ), "", 4 );
+      Log::write( "Datenbank: '".$wbDatenbankname."' ".print_r( $DB3, 1 ), "", 4 );
       // $DB4 = Datenbank der Wallbox  Measurement: Service
       $ch = curl_init( 'http://localhost/query?db='.$wbDatenbankname.'&precision=s&q='.urlencode( 'select * from Service order by time desc limit 1' ));
       $rc = datenbank( $ch );
       if (!isset($rc["JSON_Ausgabe"]["results"][0]["series"])) {
-        log_schreiben( "Es fehlt die Datenbank '".$wbDatenbankname."' mit dem Measurement Service oder sie ist leer.", "|- ", 1 );
+        Log::write( "Es fehlt die Datenbank '".$wbDatenbankname."' mit dem Measurement Service oder sie ist leer.", "|- ", 1 );
         goto Ausgang;
       }
       for ($h = 1; $h < count( $rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"] ); $h++) {
         $DB4[$rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"][$h]] = $rc["JSON_Ausgabe"]["results"][0]["series"][0]["values"][0][$h];
       }
-      log_schreiben( "Datenbank: '".$wbDatenbankname."' ".print_r( $DB4, 1 ), "", 4 );
+      Log::write( "Datenbank: '".$wbDatenbankname."' ".print_r( $DB4, 1 ), "", 4 );
       // $DB7 = Datenbank der Wallbox  Measurement: AC
       $ch = curl_init( 'http://localhost/query?db='.$wbDatenbankname.'&precision=s&q='.urlencode( 'select * from AC  order by time desc limit 1' ));
       $rc = datenbank( $ch );
       if (!isset($rc["JSON_Ausgabe"]["results"][0]["series"])) {
-        log_schreiben( "Es fehlt die Datenbank '".$wbDatenbankname."' mit dem Measurement AC oder sie ist leer.", "|- ", 1 );
+        Log::write( "Es fehlt die Datenbank '".$wbDatenbankname."' mit dem Measurement AC oder sie ist leer.", "|- ", 1 );
         goto Ausgang;
       }
       for ($h = 1; $h < count( $rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"] ); $h++) {
         $DB7[$rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"][$h]] = $rc["JSON_Ausgabe"]["results"][0]["series"][0]["values"][0][$h];
       }
-      log_schreiben( "Datenbank: '".$wbDatenbankname."' ".print_r( $DB7, 1 ), "", 4 );
+      Log::write( "Datenbank: '".$wbDatenbankname."' ".print_r( $DB7, 1 ), "", 4 );
 
       /*************************************************************************
       //  Ladestatus 1 = Nicht bereit
@@ -642,7 +644,7 @@ for ($i = 1; $i < 7; $i++) {
           }
           elseif ($Zugangskontrolle == 1 and $RFID_Karte == 0) {
             //  Keine RFID Karte aktiv jedoch Autorisierung aktiv
-            log_schreiben( "Warte auf Aktivierung durch RFID Karte", "", 2 );
+            Log::write( "Warte auf Aktivierung durch RFID Karte", "", 2 );
             $Ladestatus = 1; //  Wallbox nicht bereit
           }
           //  Automatische Abfrage der benutzten Phasen.          //  Überschreibt den Phasen Eintrag in der wallbox.steuerung.ini
@@ -747,13 +749,13 @@ for ($i = 1; $i < 7; $i++) {
           if ($DB4["Stationsstatus"] == "B" and $LSAktiv == 1 and $MaxAmpere > 0) { // Das Auto hat die Ladung unterbrochen.
             $Ladestatus = 4;
             //  Hier eventuell das Kabel entriegeln
-            log_schreiben( "Ladung beendet. Bitte das Ladekabel entriegelt / entfernen.", "", 4 );
+            Log::write( "Ladung beendet. Bitte das Ladekabel entriegelt / entfernen.", "", 4 );
 
             /*******************
             $ret = befehl_senden("Unlock",$wbRegler,$wbGeraeteNummer,1);
             if ($ret == true) {
-            log_schreiben("Force unlock.","",3);
-            log_schreiben("Unlock,$wbRegler,$wbGeraeteNummer,1","",3);
+            Log::write("Force unlock.","",3);
+            Log::write("Unlock,$wbRegler,$wbGeraeteNummer,1","",3);
             }
             ******************/
           }
@@ -835,7 +837,7 @@ for ($i = 1; $i < 7; $i++) {
           if ($DB4["Stationsstatus"] == "2" and $LSAktiv == 1) { // Das Auto hat die Ladung unterbrochen.
             $Ladestatus = 4;
             //  Hier eventuell das Kabel entriegeln
-            log_schreiben( "Kann das Kabel entriegelt werden?", "", 4 );
+            Log::write( "Kann das Kabel entriegelt werden?", "", 4 );
           }
           if ($DB4["Stationsstatus"] == "1") { // Bereit zur Ladung
             $Ladestatus = 1;
@@ -1224,7 +1226,7 @@ for ($i = 1; $i < 7; $i++) {
           $StromL3 = $DB7["Strom_T"];
           if ($DB4["Ladestatus"] == "B" and $StationBereit == 0 and $MaxAmpere == 0) { // Das Auto hat die Ladung unterbrochen.
             $Ladestatus = 4;
-            log_schreiben( "Ladung beendet. Bitte das Ladekabel entriegeln / entfernen.", "", 4 );
+            Log::write( "Ladung beendet. Bitte das Ladekabel entriegeln / entfernen.", "", 4 );
           }
           if ($DB4["Ladestatus"] == "A") { // Bereit zur Ladung
             $Ladestatus = 1;
@@ -1279,7 +1281,7 @@ for ($i = 1; $i < 7; $i++) {
       //  Nur wenn auch der Eintrag in der INI Datei vorhanden ist.
       **************************************************************************/
       if (isset($INI["Geraete"]["BMS"])) {
-        require ($Pfad."/".$INI["Geraete"]["BMS"]);
+        require ($basedir."/config/".$INI["Geraete"]["BMS"]);
         // $DB5 = Datenbank des BMS  Measurement: Pack1 oder Batterie
         $bmsRegler = $Regler;
         $bmsGeraeteNummer = substr( $INI["Geraete"]["BMS"], 0, 1 );
@@ -1296,13 +1298,13 @@ for ($i = 1; $i < 7; $i++) {
         $rc = datenbank( $ch );
 
         if (!isset($rc["JSON_Ausgabe"]["results"][0]["series"])) {
-          log_schreiben( "Es fehlt die Datenbank '".$bmsDatenbankname."' oder sie ist leer.", "|- ", 1 );
+          Log::write( "Es fehlt die Datenbank '".$bmsDatenbankname."' oder sie ist leer.", "|- ", 1 );
           goto Ausgang;
         }
         for ($h = 1; $h < count( $rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"] ); $h++) {
           $DB5[$rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"][$h]] = round($rc["JSON_Ausgabe"]["results"][0]["series"][0]["values"][0][$h],0);
         }
-        log_schreiben( "Datenbank: '".$bmsDatenbankname."' ".print_r( $DB5, 1 ), "", 4 );
+        Log::write( "Datenbank: '".$bmsDatenbankname."' ".print_r( $DB5, 1 ), "", 4 );
         switch ($bmsRegler) {
 
           case 2:
@@ -1357,106 +1359,106 @@ for ($i = 1; $i < 7; $i++) {
         }
       }
       if ($Ladestatus == 1) {
-        log_schreiben( "Ladekabel nicht an beiden Seiten verriegelt oder kein Auto angeschlossen. Steuerung beendet....", "", 2 );
+        Log::write( "Ladekabel nicht an beiden Seiten verriegelt oder kein Auto angeschlossen. Steuerung beendet....", "", 2 );
         goto Ausgang;
       }
       if ($wbSteuerung["wbSteuerung1"] == 1) { // Start der PV Ladung
-        log_schreiben( "aktuelle Solarleistung - Eigenverbrauch: ".($Solarleistung - $Eigenverbrauch)." Watt", "", 3 );
+        Log::write( "aktuelle Solarleistung - Eigenverbrauch: ".($Solarleistung - $Eigenverbrauch)." Watt", "", 3 );
       }
       if ($wbSteuerung["wbSteuerung2"] == 1) { // Start der PV Ladung
-        log_schreiben( "aktuelle Solarleistung - Eigenverbrauch: ".($Solarleistung - $Eigenverbrauch)." Watt", "", 3 );
+        Log::write( "aktuelle Solarleistung - Eigenverbrauch: ".($Solarleistung - $Eigenverbrauch)." Watt", "", 3 );
       }
       if ($wbSteuerung["wbSteuerung3"] == 1) { // Start der PV Ladung
       }
       if ($INI["Allgemein"]["Batterie"] == true) {
-        log_schreiben( "aktueller SOC der Batterie: ".$SOC."%", "", 3 );
+        Log::write( "aktueller SOC der Batterie: ".$SOC."%", "", 3 );
       }
       switch ($Ladestatus) {
 
         case 1:
           //  Ladestatus 1 = Nicht bereit
-          log_schreiben( "Ladestation nicht bereit.", "", 3 );
+          Log::write( "Ladestation nicht bereit.", "", 3 );
           break;
 
         case 2:
           //  Ladestatus 2 = Bereit zum Laden
-          log_schreiben( "Ladestation bereit zum Laden.", "", 3 );
+          Log::write( "Ladestation bereit zum Laden.", "", 3 );
           break;
 
         case 3:
           //  Ladestatus 3 = Es wird geladen
-          log_schreiben( "Auto wird geladen.", "", 3 );
+          Log::write( "Auto wird geladen.", "", 3 );
           break;
 
         case 4:
           //  Ladestatus 4 = Ladung beendet
-          log_schreiben( "Ladung beendet. Stecker abziehen.", "", 3 );
+          Log::write( "Ladung beendet. Stecker abziehen.", "", 3 );
           break;
 
         case 5:
           //  Ladestatus 5 = Ladung unterbrochen
-          log_schreiben( "Ladung unterbrochen.", "", 3 );
+          Log::write( "Ladung unterbrochen.", "", 3 );
           break;
 
         default:
           //  Ladestatus 5 = Ladung unterbrochen
-          log_schreiben( "Unbekannter Ladestatus: ".$Ladestatus, "", 1 );
+          Log::write( "Unbekannter Ladestatus: ".$Ladestatus, "", 1 );
           break;
       }
       switch ($Kabelstatus) {
 
         case 0:
           //  0 = No cable plugged
-          log_schreiben( "Kein Kabel angeschlossen.", "", 3 );
+          Log::write( "Kein Kabel angeschlossen.", "", 3 );
           break;
 
         case 1:
           //  1 = Cable plugged
-          log_schreiben( "Kabel angeschlossen.", "", 3 );
+          Log::write( "Kabel angeschlossen.", "", 3 );
           break;
 
         case 3:
           //  3 = Cable plugged and locked
-          log_schreiben( "Kabel angeschlossen und verriegelt.", "", 3 );
+          Log::write( "Kabel angeschlossen und verriegelt.", "", 3 );
           break;
 
         case 5:
           //  5 = Cable plugged and locked. Vehicle not locked
-          log_schreiben( "Kabel angeschlossen und noch nicht verriegelt.", "", 3 );
+          Log::write( "Kabel angeschlossen und noch nicht verriegelt.", "", 3 );
           break;
 
         case 7:
           //  7 = Cable locked, ready for charging
           if ($wbRegler == "63") {
-            log_schreiben( "Kabel angeschlossen", "", 3 );
+            Log::write( "Kabel angeschlossen", "", 3 );
           }
           else {
-            log_schreiben( "Kabel angeschlossen und beidseitig verriegelt.", "", 3 );
+            Log::write( "Kabel angeschlossen und beidseitig verriegelt.", "", 3 );
           }
           break;
 
         default:
           //  unbekannter Kabelstatus
-          log_schreiben( "Unbekannter Kabelstatus", "", 1 );
+          Log::write( "Unbekannter Kabelstatus", "", 1 );
           break;
       }
       if ($Inselanlage) {
-        log_schreiben( "Laut INI Datei ist es eine Inselanlage.", "", 3 );
+        Log::write( "Laut INI Datei ist es eine Inselanlage.", "", 3 );
       }
 
       /****************************************************************************
       //  User PHP Script, falls gewünscht oder nötig
       //  Hier kann man, wenn nötig, Manipulationen an den Daten vornehmen.
       ****************************************************************************/
-      if (file_exists( "/var/www/html/wall-math.php" )) {
-        include 'wall-math.php'; // Falls etwas neu berechnet werden muss.
+      if (file_exists($basedir."/custom/wall-math.php" )) {
+        include $basedir.'/custom/wall-math.php'; // Falls etwas neu berechnet werden muss.
       }
-      log_schreiben( "Ladestatus: ".$Ladestatus, "", 3 );
-      log_schreiben( "Ladepause: ".$Pause, "", 3 );
-      log_schreiben( "StationBereit: ".$StationBereit, "", 3 );
-      log_schreiben( "Intervall: ".$Intervall, "", 3 );
-      log_schreiben( "Solarleistung: ".$Solarleistung, "", 3 );
-      log_schreiben( "Kabelstatus: ".$Kabelstatus, "", 3 );
+      Log::write( "Ladestatus: ".$Ladestatus, "", 3 );
+      Log::write( "Ladepause: ".$Pause, "", 3 );
+      Log::write( "StationBereit: ".$StationBereit, "", 3 );
+      Log::write( "Intervall: ".$Intervall, "", 3 );
+      Log::write( "Solarleistung: ".$Solarleistung, "", 3 );
+      Log::write( "Kabelstatus: ".$Kabelstatus, "", 3 );
 
       /*************************************************************************
       //  Ladequelle: PV    Ladequelle: PV    Ladequelle: PV    Ladequelle: PV
@@ -1471,29 +1473,29 @@ for ($i = 1; $i < 7; $i++) {
       //  Ladestop bei 50% SOC
       *************************************************************************/
       if ($wbSteuerung["wbSteuerung1"] == 1) { // Start der PV Ladung
-        log_schreiben( "Ladequelle: PV-Module.", "", 3 );
-        log_schreiben( "Ladestatus: ".$Ladestatus, "", 4 );
+        Log::write( "Ladequelle: PV-Module.", "", 3 );
+        Log::write( "Ladestatus: ".$Ladestatus, "", 4 );
         if ($Kabelstatus == 7) {
           // Ladung kann beginnen
           if ($INI["PV-Quelle"]["MaxEnergie"] > 0) {
-            log_schreiben( "Maximale Ladeenergie begrenzt auf: ".($INI["PV-Quelle"]["MaxEnergie"] / 1000)." kWh", "", 2 );
+            Log::write( "Maximale Ladeenergie begrenzt auf: ".($INI["PV-Quelle"]["MaxEnergie"] / 1000)." kWh", "", 2 );
           }
-          log_schreiben( "Eingestellter mindest Ladestrom (MinMilliAmpere): ".($INI["PV-Quelle"]["MinMilliAmpere"] / 1000)." A", "", 4 );
+          Log::write( "Eingestellter mindest Ladestrom (MinMilliAmpere): ".($INI["PV-Quelle"]["MinMilliAmpere"] / 1000)." A", "", 4 );
           if ($Ladestatus == 3) { // Es wird geladen.
-            log_schreiben( "Bis jetzt geladen: ".round( $WhLadung, 0 )." Wh (Wenn ein Zähler angeschlossen ist)", "", 2 );
-            log_schreiben( "aktueller Ladestrom: ".($MaxAmpere / 1000)." Ampere.", "", 2 );
+            Log::write( "Bis jetzt geladen: ".round( $WhLadung, 0 )." Wh (Wenn ein Zähler angeschlossen ist)", "", 2 );
+            Log::write( "aktueller Ladestrom: ".($MaxAmpere / 1000)." Ampere.", "", 2 );
             if ($SOC < $INI["PV-Quelle"]["BisSOC"] or ($NurBeiSonne == true and $Solarleistung <= ($Eigenverbrauch + $INI["PV-Quelle"]["MinSolarleistung"]))) {
-              log_schreiben( "Unterbrechung wegen zu geringer Solarleistung oder SOC.", "", 2 );
+              Log::write( "Unterbrechung wegen zu geringer Solarleistung oder SOC.", "", 2 );
               $ret = befehl_senden( "Pause", $wbRegler, $wbGeraeteNummer, 0 );
               if ($ret == true) {
-                log_schreiben( "Ladungspause. SOC kleiner ".$INI["PV-Quelle"]["BisSOC"]."% oder zu wenig Sonne.", "", 3 );
-                log_schreiben( "Pause, $wbRegler, $wbGeraeteNummer, 0", "", 4 );
+                Log::write( "Ladungspause. SOC kleiner ".$INI["PV-Quelle"]["BisSOC"]."% oder zu wenig Sonne.", "", 3 );
+                Log::write( "Pause, $wbRegler, $wbGeraeteNummer, 0", "", 4 );
               }
               // Flag setzen in die Datenbank "steuerung"  Measurement "Ladung"  Flag "Unterbrechung"
               $query = "Ladung Unterbrechung=1";
               $ch = curl_init( 'http://localhost/write?db=steuerung&precision=s' );
               $rc = datenbank( $ch, $query );
-              log_schreiben( "Unterbrechung Flag gesetzt", "", 4 );
+              Log::write( "Unterbrechung Flag gesetzt", "", 4 );
               $Pause = 1;
             }
             elseif ($Inselanlage) {
@@ -1503,30 +1505,30 @@ for ($i = 1; $i < 7; $i++) {
                   $Ladestrom = round( (((($Solarleistung - $Eigenverbrauch) / $PUI) * 1000) + 1000), - $Praezision ); // geändert 13.6.2021
                   if ($Ladestrom > $INI["PV-Quelle"]["MaxMilliAmpere"]) {
                     $Ladestrom = $INI["PV-Quelle"]["MaxMilliAmpere"];
-                    log_schreiben( "Stromstärke auf MaxMilliAmpere begrenzt,".$INI["PV-Quelle"]["MaxMilliAmpere"], "", 3 );
+                    Log::write( "Stromstärke auf MaxMilliAmpere begrenzt,".$INI["PV-Quelle"]["MaxMilliAmpere"], "", 3 );
                   }
                   if ($Ladestrom < round( $INI["PV-Quelle"]["MinMilliAmpere"], - $Praezision )) { // geändert 13.6.2021
                     $Ladestrom = round( $INI["PV-Quelle"]["MinMilliAmpere"], - $Praezision ); // geändert 13.6.2021
-                    log_schreiben( "Stromstärke auf MinMilliAmpere gesetzt,".$INI["PV-Quelle"]["MinMilliAmpere"], "", 3 );
+                    Log::write( "Stromstärke auf MinMilliAmpere gesetzt,".$INI["PV-Quelle"]["MinMilliAmpere"], "", 3 );
                   }
                 }
                 else {
                   $Ladestrom = $INI["PV-Quelle"]["MinMilliAmpere"];
-                  log_schreiben( "Stromstärke auf MinMilliAmpere begrenzt,".$INI["PV-Quelle"]["MinMilliAmpere"], "", 3 );
+                  Log::write( "Stromstärke auf MinMilliAmpere begrenzt,".$INI["PV-Quelle"]["MinMilliAmpere"], "", 3 );
                 }
                 if ($MaxAmpere <> $Ladestrom) {
                   // Ändern nur wenn der Strom nicht schon eingestellt ist.
                   $ret = befehl_senden( "Stromaenderung", $wbRegler, $wbGeraeteNummer, $Ladestrom );
                   if ($ret == true) {
-                    log_schreiben( "Stromänderung. ".$Ladestrom." MaxAmpere: ".$MaxAmpere, "", 2 );
-                    log_schreiben( "Stromänderung,$wbRegler,$wbGeraeteNummer,".$Ladestrom, "", 4 );
+                    Log::write( "Stromänderung. ".$Ladestrom." MaxAmpere: ".$MaxAmpere, "", 2 );
+                    Log::write( "Stromänderung,$wbRegler,$wbGeraeteNummer,".$Ladestrom, "", 4 );
                   }
                   if ($Pause == 1) {
                     // Flag setzen in die Datenbank "Steuerung"  Measurement "Ladung"  Flag "unterbrechung"
                     $query = "Ladung Unterbrechung=0";
                     $ch = curl_init( 'http://localhost/write?db=steuerung&precision=s' );
                     $rc = datenbank( $ch, $query );
-                    log_schreiben( "Unterbrechung Flag aufgehoben.", "", 4 );
+                    Log::write( "Unterbrechung Flag aufgehoben.", "", 4 );
                   }
                 }
               }
@@ -1535,117 +1537,117 @@ for ($i = 1; $i < 7; $i++) {
               if ($Solarleistung - $Eigenverbrauch > 0) {
                 // Aktuelle Solarleistung umgerechnet in Milliampere
                 $Ladestrom = round( (((($Solarleistung - $Eigenverbrauch) / $PUI) * 1000)), - $Praezision ); // -3 auf -2 geändert 12.5.2021
-                log_schreiben( "Ladestromstärke errechnet: ".$Ladestrom." Milliampere", "", 3 );
+                Log::write( "Ladestromstärke errechnet: ".$Ladestrom." Milliampere", "", 3 );
                 if ($Ladestrom > $INI["PV-Quelle"]["MaxMilliAmpere"]) {
                   $Ladestrom = $INI["PV-Quelle"]["MaxMilliAmpere"];
-                  log_schreiben( "Stromstärke auf MaxMilliAmpere begrenzt,".$INI["PV-Quelle"]["MaxMilliAmpere"], "", 3 );
+                  Log::write( "Stromstärke auf MaxMilliAmpere begrenzt,".$INI["PV-Quelle"]["MaxMilliAmpere"], "", 3 );
                 }
                 if ($Ladestrom < round( $INI["PV-Quelle"]["MinMilliAmpere"], - $Praezision )) { // geändert 13.6.2021
                   $Ladestrom = round( $INI["PV-Quelle"]["MinMilliAmpere"], - $Praezision ); // geändert 13.6.2021
-                  log_schreiben( "Stromstärke auf MinMilliAmpere gesetzt,".$INI["PV-Quelle"]["MinMilliAmpere"], "", 3 );
+                  Log::write( "Stromstärke auf MinMilliAmpere gesetzt,".$INI["PV-Quelle"]["MinMilliAmpere"], "", 3 );
                 }
               }
               else {
                 $Ladestrom = $INI["PV-Quelle"]["MinMilliAmpere"];
-                log_schreiben( "Stromstärke auf MinMilliAmpere begrenzt,".$INI["PV-Quelle"]["MinMilliAmpere"], "", 3 );
+                Log::write( "Stromstärke auf MinMilliAmpere begrenzt,".$INI["PV-Quelle"]["MinMilliAmpere"], "", 3 );
               }
               if ($MaxAmpere <> $Ladestrom) {
-                log_schreiben( "MaxAmpere Ladestrom: ".$MaxAmpere." Milliampere", "", 4 );
-                log_schreiben( "Eingestellter Ladestrom: ".$Ladestrom, "", 4 );
+                Log::write( "MaxAmpere Ladestrom: ".$MaxAmpere." Milliampere", "", 4 );
+                Log::write( "Eingestellter Ladestrom: ".$Ladestrom, "", 4 );
                 // Ändern nur wenn der Strom nicht schon eingestellt ist.
                 $ret = befehl_senden( "Stromaenderung", $wbRegler, $wbGeraeteNummer, $Ladestrom );
                 if ($ret == true) {
-                  log_schreiben( "Stromänderung. Neu:".$Ladestrom." Vorher: ".$MaxAmpere, "", 2 );
-                  log_schreiben( "Stromänderung,$wbRegler,$wbGeraeteNummer,".$Ladestrom, "", 4 );
+                  Log::write( "Stromänderung. Neu:".$Ladestrom." Vorher: ".$MaxAmpere, "", 2 );
+                  Log::write( "Stromänderung,$wbRegler,$wbGeraeteNummer,".$Ladestrom, "", 4 );
                 }
                 if ($Pause == 1) {
                   // Flag setzen in die Datenbank "Steuerung"  Measurement "Ladung"  Flag "unterbrechung"
                   $query = "Ladung Unterbrechung=0";
                   $ch = curl_init( 'http://localhost/write?db=steuerung&precision=s' );
                   $rc = datenbank( $ch, $query );
-                  log_schreiben( "Unterbrechung Flag aufgehoben.", "", 4 );
+                  Log::write( "Unterbrechung Flag aufgehoben.", "", 4 );
                 }
               }
             }
           }
           elseif ($Ladestatus == 5) { // Ladung wurde unterbrochen.
             //  Wird nicht bei allen Wallboxtypen benutzt
-            log_schreiben( "Warte auf Aktivierung durch das Auto, aktuelle Solarleistung: ".$Solarleistung." Watt", "", 3 );
+            Log::write( "Warte auf Aktivierung durch das Auto, aktuelle Solarleistung: ".$Solarleistung." Watt", "", 3 );
           }
           elseif ($Ladestatus == 4) { // Ladung wurde beendet.
-            log_schreiben( "Ladung unterbrochen oder vom Auto / Wallbox beendet.", "", 2 );
+            Log::write( "Ladung unterbrochen oder vom Auto / Wallbox beendet.", "", 2 );
           }
           elseif ($Ladestatus == 2) { // Ladestatus 2 -  Ladung könnte beginnen
             // Sind die Voraussetzungen erfüllt?
             if ($INI["PV-Quelle"]["Sonnenaufgang"] == 1 and date( "H:i" ) > date( "H:i", ($Sonnenaufgang + 7200)) and date( "H" ) < 18) {
-              log_schreiben( "Es ist tagsüber, mehr als 1 Stunde nach Sonnenaufgang.", "", 3 );
+              Log::write( "Es ist tagsüber, mehr als 1 Stunde nach Sonnenaufgang.", "", 3 );
               $StartLadung = true;
             }
             elseif ($INI["PV-Quelle"]["BisUhrzeit"] < $INI["PV-Quelle"]["VonUhrzeit"] and (date( "H:i" ) >= $INI["PV-Quelle"]["VonUhrzeit"] or date( "H:i" ) < $INI["PV-Quelle"]["BisUhrzeit"])) {
-              log_schreiben( "Nachtschaltung: ".date( "H:i" ), "", 3 );
+              Log::write( "Nachtschaltung: ".date( "H:i" ), "", 3 );
               $StartLadung = true;
             }
             elseif (date( "H:i" ) > $INI["PV-Quelle"]["VonUhrzeit"] and date( "H:i" ) < $INI["PV-Quelle"]["BisUhrzeit"]) {
-              log_schreiben( "Die Einschaltzeit stimmt: ".date( "H:i" ), "", 3 );
+              Log::write( "Die Einschaltzeit stimmt: ".date( "H:i" ), "", 3 );
               $StartLadung = true;
             }
             else {
-              log_schreiben( "Die Einschaltzeit stimmt nicht überein.", "", 2 );
+              Log::write( "Die Einschaltzeit stimmt nicht überein.", "", 2 );
               $StartLadung = false;
             }
             if ($NurBeiSonne == true and $Solarleistung <= ($Eigenverbrauch + $INI["PV-Quelle"]["MinSolarleistung"])) {
-              log_schreiben( "Es soll nur bei Sonne geladen werden.", "", 2 );
+              Log::write( "Es soll nur bei Sonne geladen werden.", "", 2 );
               $StartLadung = false;
             }
             if ($Solarleistung >= ($INI["PV-Quelle"]["MinSolarleistung"] + $INI["PV-Quelle"]["Eigenverbrauch"]) and $StartLadung == true) {
-              log_schreiben( "Es steht genügend Solarleistung zur Verfügung: ".$Solarleistung." (MinSolarleistung + Eigenverbrauch)", "", 3 );
+              Log::write( "Es steht genügend Solarleistung zur Verfügung: ".$Solarleistung." (MinSolarleistung + Eigenverbrauch)", "", 3 );
               if ($SOC >= $INI["PV-Quelle"]["AbSOC"]) {
-                log_schreiben( "Die Batteriekapazität ist ausreichend: ".$SOC, "", 3 );
+                Log::write( "Die Batteriekapazität ist ausreichend: ".$SOC, "", 3 );
                 $ret = befehl_senden( "Start", $wbRegler, $wbGeraeteNummer, $INI["PV-Quelle"]["MinMilliAmpere"] );
                 if ($ret == true) {
-                  log_schreiben( "Start Ladung mit: ".($INI["PV-Quelle"]["MinMilliAmpere"] / 1000)." A", "", 2 );
-                  log_schreiben( "Start,$wbRegler,$wbGeraeteNummer,".$INI["PV-Quelle"]["MinMilliAmpere"], "", 4 );
+                  Log::write( "Start Ladung mit: ".($INI["PV-Quelle"]["MinMilliAmpere"] / 1000)." A", "", 2 );
+                  Log::write( "Start,$wbRegler,$wbGeraeteNummer,".$INI["PV-Quelle"]["MinMilliAmpere"], "", 4 );
                   // Flag zurück setzen in die Datenbank "Steuerung"  Measurement "Ladung"  Flag "unterbrechung"
                   $query = "Ladung Unterbrechung=0";
                   $ch = curl_init( 'http://localhost/write?db=steuerung&precision=s' );
                   $rc = datenbank( $ch, $query );
-                  log_schreiben( "Unterbrechung Flag aufgehoben.", "", 4 );
+                  Log::write( "Unterbrechung Flag aufgehoben.", "", 4 );
                 }
                 if ($INI["PV-Quelle"]["MaxEnergie"] > 0) {
                   $ret = befehl_senden( "MaxEnergie", $wbRegler, $wbGeraeteNummer, ($INI["PV-Quelle"]["MaxEnergie"]));
                   // $ret = false;
                   if ($ret == true) {
-                    log_schreiben( "Maximale Energiemenge laut INI Datei setzen. ", "", 3 );
-                    log_schreiben( "MaxEnergie,$wbRegler,$wbGeraeteNummer,".$INI["PV-Quelle"]["MaxEnergie"], "", 4 );
+                    Log::write( "Maximale Energiemenge laut INI Datei setzen. ", "", 3 );
+                    Log::write( "MaxEnergie,$wbRegler,$wbGeraeteNummer,".$INI["PV-Quelle"]["MaxEnergie"], "", 4 );
                   }
                 }
                 else {
-                  log_schreiben( "Option Maximale Energiemenge ist ausgeschaltet.", "", 3 );
+                  Log::write( "Option Maximale Energiemenge ist ausgeschaltet.", "", 3 );
                 }
               }
               else {
-                log_schreiben( "Die Batterie ist nicht voll genug. SOC: ".$SOC." % soll aber mindestens ".$INI["PV-Quelle"]["AbSOC"]." % sein.", "", 3 );
+                Log::write( "Die Batterie ist nicht voll genug. SOC: ".$SOC." % soll aber mindestens ".$INI["PV-Quelle"]["AbSOC"]." % sein.", "", 3 );
               }
             }
             else {
-              log_schreiben( "Die Minimale Solarleistung von ".$INI["PV-Quelle"]["MinSolarleistung"]." Watt ist noch nicht erreicht.", "", 3 );
+              Log::write( "Die Minimale Solarleistung von ".$INI["PV-Quelle"]["MinSolarleistung"]." Watt ist noch nicht erreicht.", "", 3 );
             }
           }
           else {
-            log_schreiben( "Wallbox nicht bereit.", "", 3 );
+            Log::write( "Wallbox nicht bereit.", "", 3 );
           }
         }
         elseif ($Ladestatus == 4 and $Pause == 0) { // Ladung wurde beendet.
           if ($INI["Allgemein"]["Neutral"]) {
-            log_schreiben( "Ladeauswahl auf Neutral gestellt.", "", 4 );
+            Log::write( "Ladeauswahl auf Neutral gestellt.", "", 4 );
             $query = "Wallbox wbSteuerung1=0,wbSteuerung2=0,wbSteuerung3=0";
             $ch = curl_init( 'http://localhost/write?db=steuerung&precision=s' );
             $rc = datenbank( $ch, $query );
-            log_schreiben( print_r( $rc, 1 ), "", 4 );
+            Log::write( print_r( $rc, 1 ), "", 4 );
           }
         }
         else {
-          log_schreiben( "Kabel ist nicht angeschlossen oder nicht verriegelt.", "", 2 );
+          Log::write( "Kabel ist nicht angeschlossen oder nicht verriegelt.", "", 2 );
           goto Ausgang;
         }
       }
@@ -1661,35 +1663,35 @@ for ($i = 1; $i < 7; $i++) {
       //  geladen. Wenn SOC < 50% wird Ladung stoppen.
       *************************************************************************/
       if ($wbSteuerung["wbSteuerung2"] == 1) {
-        log_schreiben( "Ladequelle Solarbatterie.", "", 2 );
-        log_schreiben( "Ladestrom (MinMilliAmpere): ".($INI["Batterie-Quelle"]["MinMilliAmpere"] / 1000)." A", "", 4 );
-        log_schreiben( "Geladen wird bis SOC ".$BatterieKap60."% mit ".($INI["Batterie-Quelle"]["MaxMilliAmpere"] / 1000)." A", "", 3 );
-        log_schreiben( "Ladestatus: ".$Ladestatus, "", 4 );
+        Log::write( "Ladequelle Solarbatterie.", "", 2 );
+        Log::write( "Ladestrom (MinMilliAmpere): ".($INI["Batterie-Quelle"]["MinMilliAmpere"] / 1000)." A", "", 4 );
+        Log::write( "Geladen wird bis SOC ".$BatterieKap60."% mit ".($INI["Batterie-Quelle"]["MaxMilliAmpere"] / 1000)." A", "", 3 );
+        Log::write( "Ladestatus: ".$Ladestatus, "", 4 );
         if ($Kabelstatus == 7) {
           if ($INI["Batterie-Quelle"]["MaxEnergie"] > 0) {
-            log_schreiben( "Maximale Ladeenergie begrenzt auf: ".($INI["Batterie-Quelle"]["MaxEnergie"] / 1000)." kWh", "", 3 );
+            Log::write( "Maximale Ladeenergie begrenzt auf: ".($INI["Batterie-Quelle"]["MaxEnergie"] / 1000)." kWh", "", 3 );
           }
           if ($Ladestatus == 3) { // Es wird geladen.
-            log_schreiben( "Bis jetzt geladen: ".round( $WhLadung, 0 )." Wh (Wenn ein Zähler angeschlossen ist)", "", 2 );
-            log_schreiben( "aktueller Ladestrom: ".($MaxAmpere / 1000)." Ampere.", "", 2 );
+            Log::write( "Bis jetzt geladen: ".round( $WhLadung, 0 )." Wh (Wenn ein Zähler angeschlossen ist)", "", 2 );
+            Log::write( "aktueller Ladestrom: ".($MaxAmpere / 1000)." Ampere.", "", 2 );
             if ($SOC <= $INI["Batterie-Quelle"]["BisSOC"] and $INI["Batterie-Quelle"]["BisSOC"] != 0) {
               $ret = befehl_senden( "Pause", $wbRegler, $wbGeraeteNummer, 0 );
               if ($ret == true) {
-                log_schreiben( "Ladungspause. ", "", 3 );
-                log_schreiben( "Pause, $wbRegler, $wbGeraeteNummer, 0", "", 4 );
+                Log::write( "Ladungspause. ", "", 3 );
+                Log::write( "Pause, $wbRegler, $wbGeraeteNummer, 0", "", 4 );
               }
               // Flag setzen in die Datenbank "Steuerung"  Measurement "Ladung"  Flag "unterbrechung"
               $query = "Ladung Unterbrechung=1";
               $ch = curl_init( 'http://localhost/write?db=steuerung&precision=s' );
               $rc = datenbank( $ch, $query );
-              log_schreiben( "Unterbrechung Flag gesetzt", "", 4 );
-              log_schreiben( "Stop Ladung. Die Batteriekapazität ist nicht ausreichend: ".$SOC." %!", "", 2 );
+              Log::write( "Unterbrechung Flag gesetzt", "", 4 );
+              Log::write( "Stop Ladung. Die Batteriekapazität ist nicht ausreichend: ".$SOC." %!", "", 2 );
             }
             elseif ($INI["Batterie-Quelle"]["BisSOC"] == 0) {
-              log_schreiben( "Die Batterieüberwachung ist ausgeschaltet. BisSOC = 0", "", 3 );
+              Log::write( "Die Batterieüberwachung ist ausgeschaltet. BisSOC = 0", "", 3 );
             }
             else {
-              log_schreiben( "Es wird geladen. Die Batteriekapazität ist ausreichend: ".$SOC."%", "", 3 );
+              Log::write( "Es wird geladen. Die Batteriekapazität ist ausreichend: ".$SOC."%", "", 3 );
             }
             if (date( "i" ) % 4 == 0) {
               // alle 4 Minuten Prüfen ob die Ladung erhöht werden kann.
@@ -1698,7 +1700,7 @@ for ($i = 1; $i < 7; $i++) {
                 // Batterie SOC kleiner 60% (default)
                 if ($MaxAmpere <> $INI["Batterie-Quelle"]["MinMilliAmpere"]) {
                   $Ladestrom = $INI["Batterie-Quelle"]["MinMilliAmpere"];
-                  log_schreiben( "Die Batterie hat weniger als ".$BatterieKap60."% SOC. Es wird mit MinMilliAmpere ".($INI["Batterie-Quelle"]["MinMilliAmpere"] / 1000)." A geladen.", "", 2 );
+                  Log::write( "Die Batterie hat weniger als ".$BatterieKap60."% SOC. Es wird mit MinMilliAmpere ".($INI["Batterie-Quelle"]["MinMilliAmpere"] / 1000)." A geladen.", "", 2 );
                 }
               }
               if ($SOC <= 90) {
@@ -1715,80 +1717,80 @@ for ($i = 1; $i < 7; $i++) {
               if ($Ladestrom > 0) {
                 $ret = befehl_senden( "Stromaenderung", $wbRegler, $wbGeraeteNummer, $Ladestrom );
                 if ($ret == true) {
-                  log_schreiben( "Stromänderung. ".$Ladestrom, "", 2 );
-                  log_schreiben( "Stromäbderung,$wbRegler,$wbGeraeteNummer,".$Ladestrom, "", 4 );
+                  Log::write( "Stromänderung. ".$Ladestrom, "", 2 );
+                  Log::write( "Stromäbderung,$wbRegler,$wbGeraeteNummer,".$Ladestrom, "", 4 );
                 }
               }
             }
           }
           elseif ($Ladestatus == 5) { // Ladung wurde unterbrochen.
             //  Wird nicht bei allen Wallboxtypen benutzt
-            log_schreiben( "Ladung ist unterbrochen, aktuelle Solarleistung: ".$Solarleistung." Watt", "", 3 );
+            Log::write( "Ladung ist unterbrochen, aktuelle Solarleistung: ".$Solarleistung." Watt", "", 3 );
           }
           elseif ($Ladestatus == 4) { // Ladung wurde beendet.
-            log_schreiben( "Ladung vom Fahrzeug oder Wallbox beendet. Bitte das Kabel entfernen.", "", 2 );
+            Log::write( "Ladung vom Fahrzeug oder Wallbox beendet. Bitte das Kabel entfernen.", "", 2 );
           }
           elseif ($Ladestatus == 2) {
             // Sind die Voraussetzungen erfüllt?
             if ($INI["Batterie-Quelle"]["Sonnenaufgang"] == 1 and date( "H:i" ) > date( "H:i", ($Sonnenaufgang + 7200)) and date( "H" ) < 18) {
-              log_schreiben( "Es ist tagsüber, mehr als 1 Stunde nach Sonnenaufgang.", "", 3 );
+              Log::write( "Es ist tagsüber, mehr als 1 Stunde nach Sonnenaufgang.", "", 3 );
               $StartLadung = true;
             }
             elseif ($INI["Batterie-Quelle"]["BisUhrzeit"] < $INI["Batterie-Quelle"]["VonUhrzeit"] and (date( "H:i" ) >= $INI["Batterie-Quelle"]["VonUhrzeit"] or date( "H:i" ) < $INI["Batterie-Quelle"]["BisUhrzeit"])) {
-              log_schreiben( "Nachtschaltung: ".date( "H:i" ), "", 3 );
+              Log::write( "Nachtschaltung: ".date( "H:i" ), "", 3 );
               $StartLadung = true;
             }
             elseif (date( "H:i" ) > $INI["Batterie-Quelle"]["VonUhrzeit"] and date( "H:i" ) < $INI["Batterie-Quelle"]["BisUhrzeit"]) {
-              log_schreiben( "Die Einschaltzeit stimmt: ".date( "H:i" ), "", 3 );
+              Log::write( "Die Einschaltzeit stimmt: ".date( "H:i" ), "", 3 );
               $StartLadung = true;
             }
             else {
-              log_schreiben( "Die Einschaltzeit stimmt nicht überein.", "", 2 );
+              Log::write( "Die Einschaltzeit stimmt nicht überein.", "", 2 );
               $StartLadung = false;
             }
             if ($SOC >= $INI["Batterie-Quelle"]["AbSOC"] and $StartLadung == true) {
-              log_schreiben( "Die Batterie ist voll genug. SOC: ".$SOC, "", 2 );
+              Log::write( "Die Batterie ist voll genug. SOC: ".$SOC, "", 2 );
               $ret = befehl_senden( "Start", $wbRegler, $wbGeraeteNummer, $INI["Batterie-Quelle"]["MaxMilliAmpere"] );
               if ($ret == true) {
-                log_schreiben( "Start Ladung  mit: ".($INI["Batterie-Quelle"]["MinMilliAmpere"] / 1000)." A", "", 2 );
-                log_schreiben( "Start,$wbRegler,$wbGeraeteNummer,".$INI["Batterie-Quelle"]["MaxMilliAmpere"], "", 4 );
+                Log::write( "Start Ladung  mit: ".($INI["Batterie-Quelle"]["MinMilliAmpere"] / 1000)." A", "", 2 );
+                Log::write( "Start,$wbRegler,$wbGeraeteNummer,".$INI["Batterie-Quelle"]["MaxMilliAmpere"], "", 4 );
               }
               if ($INI["Batterie-Quelle"]["MaxEnergie"] > 0) {
                 $ret = befehl_senden( "MaxEnergie", $wbRegler, $wbGeraeteNummer, ($INI["Batterie-Quelle"]["MaxEnergie"]));
                 if ($ret == true) {
-                  log_schreiben( "Maximale Energiemenge setzen. ", "", 2 );
-                  log_schreiben( "MaxEnergie,$wbRegler,$wbGeraeteNummer,".$INI["Batterie-Quelle"]["MaxEnergie"], "", 4 );
+                  Log::write( "Maximale Energiemenge setzen. ", "", 2 );
+                  Log::write( "MaxEnergie,$wbRegler,$wbGeraeteNummer,".$INI["Batterie-Quelle"]["MaxEnergie"], "", 4 );
                   // Flag setzen in die Datenbank "Steuerung"  Measurement "Ladung"  Flag "unterbrechung"
                   $query = "Ladung Unterbrechung=0";
                   $ch = curl_init( 'http://localhost/write?db=steuerung&precision=s' );
                   $rc = datenbank( $ch, $query );
-                  log_schreiben( "Unterbrechung Flag aufgehoben.", "", 4 );
+                  Log::write( "Unterbrechung Flag aufgehoben.", "", 4 );
                 }
               }
               else {
-                log_schreiben( "Option Maximale Energiemenge ausgeschaltet.", "", 3 );
+                Log::write( "Option Maximale Energiemenge ausgeschaltet.", "", 3 );
               }
             }
             else {
-              log_schreiben( "Die Batterie ist nicht voll genug. SOC: ".$SOC." % soll aber mindestens ".$INI["Batterie-Quelle"]["AbSOC"]." % sein.", "", 2 );
+              Log::write( "Die Batterie ist nicht voll genug. SOC: ".$SOC." % soll aber mindestens ".$INI["Batterie-Quelle"]["AbSOC"]." % sein.", "", 2 );
             }
           }
           else {
-            log_schreiben( "Wallbox nicht bereit.", "", 2 );
+            Log::write( "Wallbox nicht bereit.", "", 2 );
           }
         }
         elseif ($Ladestatus == 4 and $Pause == 0) { // Ladung wurde beendet.
           if ($INI["Allgemein"]["Neutral"]) {
             //  Ladeprogramm auf NEUTRAL gesetzt.
-            log_schreiben( "Ladeauswahl auf Neutral gestellt.", "", 4 );
+            Log::write( "Ladeauswahl auf Neutral gestellt.", "", 4 );
             $query = "Wallbox wbSteuerung1=0,wbSteuerung2=0,wbSteuerung3=0";
             $ch = curl_init( 'http://localhost/write?db=steuerung&precision=s' );
             $rc = datenbank( $ch, $query );
-            log_schreiben( print_r( $rc, 1 ), "", 4 );
+            Log::write( print_r( $rc, 1 ), "", 4 );
           }
         }
         else {
-          log_schreiben( "Kabel ist nicht angeschlossen oder nicht verriegelt.", "", 2 );
+          Log::write( "Kabel ist nicht angeschlossen oder nicht verriegelt.", "", 2 );
           goto Ausgang;
         }
       }
@@ -1806,144 +1808,144 @@ for ($i = 1; $i < 7; $i++) {
       //  Außerdem kann die Maximale Gesamtladung angegeben werden. (MaxEnergie)
       *************************************************************************/
       if ($wbSteuerung["wbSteuerung3"] == 1) {
-        log_schreiben( "Ladequelle Netz.", "", 2 );
-        log_schreiben( "Ladestrom (MinMilliAmpere): ".($INI["Netz-Quelle"]["MinMilliAmpere"] / 1000)." A", "", 4 );
-        log_schreiben( "Geladen wird bis SOC ".$NetzKap60."% mit ".($INI["Netz-Quelle"]["MaxMilliAmpere"] / 1000)." A", "", 3 );
-        log_schreiben( "Ladestatus: ".$Ladestatus, "", 4 );
+        Log::write( "Ladequelle Netz.", "", 2 );
+        Log::write( "Ladestrom (MinMilliAmpere): ".($INI["Netz-Quelle"]["MinMilliAmpere"] / 1000)." A", "", 4 );
+        Log::write( "Geladen wird bis SOC ".$NetzKap60."% mit ".($INI["Netz-Quelle"]["MaxMilliAmpere"] / 1000)." A", "", 3 );
+        Log::write( "Ladestatus: ".$Ladestatus, "", 4 );
         if ($Kabelstatus == 7) {
           if ($INI["Netz-Quelle"]["MaxEnergie"] > 0) {
-            log_schreiben( "Maximale Ladeenergie begrenzt auf: ".($INI["Netz-Quelle"]["MaxEnergie"] / 1000)." kWh", "", 2 );
+            Log::write( "Maximale Ladeenergie begrenzt auf: ".($INI["Netz-Quelle"]["MaxEnergie"] / 1000)." kWh", "", 2 );
           }
           if ($Ladestatus == 3) { // Es wird geladen.
-            log_schreiben( "Bis jetzt geladen: ".round( $WhLadung, 0 )." Wh (Wenn ein Zähler angeschlossen ist)", "", 2 );
-            log_schreiben( "aktueller Ladestrom: ".($MaxAmpere / 1000)." Ampere.", "", 2 );
+            Log::write( "Bis jetzt geladen: ".round( $WhLadung, 0 )." Wh (Wenn ein Zähler angeschlossen ist)", "", 2 );
+            Log::write( "aktueller Ladestrom: ".($MaxAmpere / 1000)." Ampere.", "", 2 );
             if ($SOC <= $INI["Netz-Quelle"]["BisSOC"] and $INI["Netz-Quelle"]["BisSOC"] != 0) {
               $ret = befehl_senden( "Pause", $wbRegler, $wbGeraeteNummer, 0 );
               if ($ret == true) {
-                log_schreiben( "Ladungspause. ", "", 4 );
-                log_schreiben( "Pause, $wbRegler, $wbGeraeteNummer, 0", "", 4 );
+                Log::write( "Ladungspause. ", "", 4 );
+                Log::write( "Pause, $wbRegler, $wbGeraeteNummer, 0", "", 4 );
                 // Flag setzen in die Datenbank "Steuerung"  Measurement "Ladung"  Flag "unterbrechung"
                 $query = "Ladung Unterbrechung=1";
                 $ch = curl_init( 'http://localhost/write?db=steuerung&precision=s' );
                 $rc = datenbank( $ch, $query );
-                log_schreiben( "Unterbrechung Flag gesetzt", "", 4 );
+                Log::write( "Unterbrechung Flag gesetzt", "", 4 );
               }
-              log_schreiben( "Stop Ladung. Die Batteriekapazität ist nicht ausreichend: ".$SOC." %!", "", 2 );
+              Log::write( "Stop Ladung. Die Batteriekapazität ist nicht ausreichend: ".$SOC." %!", "", 2 );
             }
             elseif ($INI["Netz-Quelle"]["BisSOC"] == 0) {
-              log_schreiben( "Die Batterieüberwachung ist ausgeschaltet. BisSOC = 0", "", 3 );
+              Log::write( "Die Batterieüberwachung ist ausgeschaltet. BisSOC = 0", "", 3 );
             }
             else {
-              log_schreiben( "Die Batteriekapazität ist ausreichend: ".$SOC."%", "", 3 );
+              Log::write( "Die Batteriekapazität ist ausreichend: ".$SOC."%", "", 3 );
             }
-            log_schreiben( "SOC ".$SOC."% , NetzKap60 ".$NetzKap60."% ", "", 4 );
+            Log::write( "SOC ".$SOC."% , NetzKap60 ".$NetzKap60."% ", "", 4 );
             if (date( "i" ) % 4 == 0) {
               if ($INI["Netz-Quelle"]["BisSOC"] == 0) {
                 $Ladestrom = $INI["Netz-Quelle"]["MaxMilliAmpere"];
-                log_schreiben( "Die Batterieüberwachung ist ausgeschaltet. BisSOC = 0", "", 2 );
+                Log::write( "Die Batterieüberwachung ist ausgeschaltet. BisSOC = 0", "", 2 );
               }
               elseif ($SOC >= $NetzKap60) {
                 if ($MaxAmpere <> $INI["Netz-Quelle"]["MaxMilliAmpere"]) {
                   $Ladestrom = $INI["Netz-Quelle"]["MaxMilliAmpere"];
-                  log_schreiben( "Die Batterie hat mehr als ".$NetzKap60."% SOC. Es wird mit MaxMilliAmpere ".($INI["Netz-Quelle"]["MaxMilliAmpere"] / 1000)." A geladen.", "", 2 );
+                  Log::write( "Die Batterie hat mehr als ".$NetzKap60."% SOC. Es wird mit MaxMilliAmpere ".($INI["Netz-Quelle"]["MaxMilliAmpere"] / 1000)." A geladen.", "", 2 );
                 }
               }
               else {
                 if ($MaxAmpere <> $INI["Netz-Quelle"]["MinMilliAmpere"]) {
                   $Ladestrom = $INI["Netz-Quelle"]["MinMilliAmpere"];
-                  log_schreiben( "Die Batterie hat weniger als ".$NetzKap60."% SOC. Es wird mit MinMilliAmpere ".($INI["Netz-Quelle"]["MinMilliAmpere"] / 1000)." A geladen.", "", 2 );
+                  Log::write( "Die Batterie hat weniger als ".$NetzKap60."% SOC. Es wird mit MinMilliAmpere ".($INI["Netz-Quelle"]["MinMilliAmpere"] / 1000)." A geladen.", "", 2 );
                 }
               }
               if ($Ladestrom > 0) {
                 $ret = befehl_senden( "Stromaenderung", $wbRegler, $wbGeraeteNummer, $Ladestrom );
                 if ($ret == true) {
-                  log_schreiben( "Stromänderung. ".$Ladestrom, "", 2 );
-                  log_schreiben( "Stromäbderung,$wbRegler,$wbGeraeteNummer,".$Ladestrom, "", 4 );
+                  Log::write( "Stromänderung. ".$Ladestrom, "", 2 );
+                  Log::write( "Stromäbderung,$wbRegler,$wbGeraeteNummer,".$Ladestrom, "", 4 );
                 }
               }
             }
           }
           elseif ($Ladestatus == 5) { // Ladung wurde unterbrochen.
             //  Wird nicht bei allen Wallboxtypen benutzt
-            log_schreiben( "Ladung ist unterbrochen, aktuelle Solarleistung: ".$Solarleistung." Watt", "", 3 );
+            Log::write( "Ladung ist unterbrochen, aktuelle Solarleistung: ".$Solarleistung." Watt", "", 3 );
           }
           elseif ($Ladestatus == 4) { // Ladung wurde beendet.
-            log_schreiben( "Ladung vom Fahrzeug oder Wallbox beendet. Bitte das Kabel entfernen.", "", 2 );
+            Log::write( "Ladung vom Fahrzeug oder Wallbox beendet. Bitte das Kabel entfernen.", "", 2 );
           }
           elseif ($Ladestatus == 2) {
             // Sind die Voraussetzungen erfüllt?
             if ($INI["Netz-Quelle"]["Sonnenaufgang"] == 1 and date( "H:i" ) > date( "H:i", ($Sonnenaufgang + 7200)) and date( "H" ) < 18) {
-              log_schreiben( "Es ist tagsüber, mehr als 1 Stunde nach Sonnenaufgang.", "", 3 );
+              Log::write( "Es ist tagsüber, mehr als 1 Stunde nach Sonnenaufgang.", "", 3 );
               $StartLadung = true;
             }
             elseif ($INI["Netz-Quelle"]["BisUhrzeit"] < $INI["Netz-Quelle"]["VonUhrzeit"] and (date( "H:i" ) >= $INI["Netz-Quelle"]["VonUhrzeit"] or date( "H:i" ) < $INI["Netz-Quelle"]["BisUhrzeit"])) {
-              log_schreiben( "Nachtschaltung: ".date( "H:i" ), "", 3 );
+              Log::write( "Nachtschaltung: ".date( "H:i" ), "", 3 );
               $StartLadung = true;
             }
             elseif (date( "H:i" ) > $INI["Netz-Quelle"]["VonUhrzeit"] and date( "H:i" ) < $INI["Netz-Quelle"]["BisUhrzeit"]) {
-              log_schreiben( "Die Einschaltzeit stimmt: ".date( "H:i" ), "", 3 );
+              Log::write( "Die Einschaltzeit stimmt: ".date( "H:i" ), "", 3 );
               $StartLadung = true;
             }
             else {
-              log_schreiben( "Die Einschaltzeit stimmt nicht überein.", "", 2 );
+              Log::write( "Die Einschaltzeit stimmt nicht überein.", "", 2 );
               $StartLadung = false;
             }
             if ($SOC >= $INI["Netz-Quelle"]["AbSOC"] and $StartLadung == true) {
-              log_schreiben( "Die Batterie ist voll genug. SOC: ".$SOC, "", 3 );
+              Log::write( "Die Batterie ist voll genug. SOC: ".$SOC, "", 3 );
               $ret = befehl_senden( "Start", $wbRegler, $wbGeraeteNummer, $INI["Netz-Quelle"]["MaxMilliAmpere"] );
               if ($ret == true) {
-                log_schreiben( "Start Ladung  mit: ".($INI["Netz-Quelle"]["MinMilliAmpere"] / 1000)." A", "", 2 );
-                log_schreiben( "Start,$wbRegler,$wbGeraeteNummer,".$INI["Netz-Quelle"]["MaxMilliAmpere"], "", 4 );
+                Log::write( "Start Ladung  mit: ".($INI["Netz-Quelle"]["MinMilliAmpere"] / 1000)." A", "", 2 );
+                Log::write( "Start,$wbRegler,$wbGeraeteNummer,".$INI["Netz-Quelle"]["MaxMilliAmpere"], "", 4 );
                 // Flag setzen in die Datenbank "Steuerung"  Measurement "Ladung"  Flag "unterbrechung"
                 $query = "Ladung Unterbrechung=0";
                 $ch = curl_init( 'http://localhost/write?db=steuerung&precision=s' );
                 $rc = datenbank( $ch, $query );
-                log_schreiben( "Unterbrechung Flag aufgehoben.", "", 4 );
+                Log::write( "Unterbrechung Flag aufgehoben.", "", 4 );
               }
               if ($INI["Netz-Quelle"]["MaxEnergie"] > 0) {
                 $ret = befehl_senden( "MaxEnergie", $wbRegler, $wbGeraeteNummer, ($INI["Netz-Quelle"]["MaxEnergie"]));
                 if ($ret == true) {
-                  log_schreiben( "Maximale Energiemenge setzen: ".$INI["Netz-Quelle"]["MaxEnergie"]." Wh", "", 2 );
-                  log_schreiben( "MaxEnergie,$wbRegler,$wbGeraeteNummer,".$INI["Netz-Quelle"]["MaxEnergie"], "", 4 );
+                  Log::write( "Maximale Energiemenge setzen: ".$INI["Netz-Quelle"]["MaxEnergie"]." Wh", "", 2 );
+                  Log::write( "MaxEnergie,$wbRegler,$wbGeraeteNummer,".$INI["Netz-Quelle"]["MaxEnergie"], "", 4 );
                 }
               }
               else {
-                log_schreiben( "Option Maximale Energiemenge ausgeschaltet.", "", 3 );
+                Log::write( "Option Maximale Energiemenge ausgeschaltet.", "", 3 );
               }
             }
             else {
-              log_schreiben( "Die Batterie ist nicht voll genug. SOC: ".$SOC." % soll aber mindestens ".$INI["Netz-Quelle"]["AbSOC"]." % sein.", "", 3 );
+              Log::write( "Die Batterie ist nicht voll genug. SOC: ".$SOC." % soll aber mindestens ".$INI["Netz-Quelle"]["AbSOC"]." % sein.", "", 3 );
             }
           }
           else {
-            log_schreiben( "Wallbox nicht bereit.", "", 2 );
+            Log::write( "Wallbox nicht bereit.", "", 2 );
           }
         }
         elseif ($Ladestatus == 4 and $Pause == 0) { // Ladung wurde beendet.
           if ($INI["Allgemein"]["Neutral"]) {
             //  Ladeprogramm auf NEUTRAL gesetzt.
-            log_schreiben( "Ladeauswahl auf Neutral gestellt.", "", 4 );
+            Log::write( "Ladeauswahl auf Neutral gestellt.", "", 4 );
             $query = "Wallbox wbSteuerung1=0,wbSteuerung2=0,wbSteuerung3=0";
             $ch = curl_init( 'http://localhost/write?db=steuerung&precision=s' );
             $rc = datenbank( $ch, $query );
-            log_schreiben( print_r( $rc, 1 ), "", 4 );
+            Log::write( print_r( $rc, 1 ), "", 4 );
           }
         }
         else {
-          log_schreiben( "Kabel ist nicht angeschlossen oder nicht verriegelt.", "", 2 );
+          Log::write( "Kabel ist nicht angeschlossen oder nicht verriegelt.", "", 2 );
           goto Ausgang;
         }
       }
     }
-    log_schreiben( "|", "ENDE", 3 );
+    Log::write( "|", "ENDE", 3 );
   }
   else {
-    log_schreiben( "Es ist keine ".$i.".wallbox.steuerung.ini vorhanden.", "", 4 );
+    Log::write( "Es ist keine ".$i.".wallbox.steuerung.ini vorhanden.", "", 4 );
     continue;
   }
   Ausgang:
 }
-log_schreiben( "---------------------------------------------------------", "ENDE", 1 );
+Log::write( "---------------------------------------------------------", "ENDE", 1 );
 return;
 
 /**************************************************************************
@@ -1956,49 +1958,6 @@ return;
 //  $LogMeldung = Die Meldung ISO Format
 //  $Loglevel=2   Loglevel 1-4   4 = Trace
 **************************************************************************/
-function log_schreiben( $LogMeldung, $Titel = "", $Loglevel = 3, $UTF8 = 0 ) {
-  global $Tracelevel, $Pfad;
-  $LogDateiName = $Pfad."/../log/wallbox.log";
-  if (strlen( $Titel ) < 4) {
-    switch ($Loglevel) {
-
-      case 1:
-        $Titel = "ERRO";
-        break;
-
-      case 2:
-        $Titel = "WARN";
-        break;
-
-      case 3:
-        $Titel = "INFO";
-        break;
-
-      default:
-        $Titel = "    ";
-        break;
-    }
-  }
-  if ($Loglevel <= $Tracelevel) {
-    if ($UTF8) {
-      $LogMeldung = utf8_encode( $LogMeldung );
-    }
-    if ($handle = fopen( $LogDateiName, 'a' )) {
-      //  Schreibe in die geöffnete Datei.
-      //  Bei einem Fehler bis zu 3 mal versuchen.
-      for ($i = 1; $i < 4; $i++) {
-        $rc = fwrite( $handle, date( "d.m. H:i:s" )." ".substr( $Titel, 0, 4 )." ".$LogMeldung."\n" );
-        if ($rc) {
-          break;
-        }
-        sleep( 1 );
-      }
-      fclose( $handle );
-    }
-  }
-  return true;
-}
-
 function datenbank( $ch, $query = "" ) {
   $Ergebnis = array();
   $Ergebnis["Ausgabe"] = false;

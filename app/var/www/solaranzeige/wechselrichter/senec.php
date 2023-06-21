@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -27,16 +26,6 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -44,12 +33,12 @@ if (isset($USBDevice) and !empty($USBDevice)) {
 $Tracelevel = 7; //  1 bis 10  10 = Debug
 $RemoteDaten = true;
 $Start = time( ); // Timestamp festhalten
-$funktionen->log_schreiben( "-----------------   Start  senec.php   --------------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "-----------------   Start  senec.php   --------------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale( LC_TIME, "de_DE.utf8" );
-$funktionen->log_schreiben( "Senec: ".$WR_IP." Port: ".$WR_Port." GeräteID: ".$WR_Adresse, "   ", 7 );
+Log::write( "Senec: ".$WR_IP." Port: ".$WR_Port." GeräteID: ".$WR_Adresse, "   ", 7 );
 
 //  Hardware Version ermitteln.
 $Teile = explode( " ", $Platine );
@@ -62,7 +51,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben( "Hardware Version: ".$Version, "o  ", 8 );
+Log::write( "Hardware Version: ".$Version, "o  ", 8 );
 switch ($Version) {
 
   case "2B":
@@ -86,7 +75,7 @@ switch ($Version) {
 //  pro Tag zu speichern.
 //
 *****************************************************************************/
-$StatusFile = $Pfad."/database/".$GeraeteNummer.".Tagesdaten.txt";
+$StatusFile = $basedir."/database/".$GeraeteNummer.".Tagesdaten.txt";
 $Tagesdaten = array("WattstundenGesamtHeute" => 0, "BatterieGeladenHeute" => 0, "BatterieEntladenHeute" => 0);
 if (!file_exists( $StatusFile )) {
 
@@ -95,7 +84,7 @@ if (!file_exists( $StatusFile )) {
   ***************************************************************************/
   $rc = file_put_contents( $StatusFile, serialize( $Tagesdaten ));
   if ($rc === false) {
-    $funktionen->log_schreiben( "Konnte die Datei ".$StatusFile." nicht anlegen.", 5 );
+    Log::write( "Konnte die Datei ".$StatusFile." nicht anlegen.", 5 );
   }
   $aktuelleDaten["WattstundenGesamtHeute"] = 0;
   $aktuelleDaten["BatterieGeladenHeute"] = 0;
@@ -110,7 +99,7 @@ else {
 $http_daten = array("URL" => "http://".$WR_IP."/lala.cgi", "Port" => $WR_Port, "Header" => array('Content-Type: application/json'));
 $i = 1;
 do {
-  $funktionen->log_schreiben( "Die Daten werden ausgelesen...", "+  ", 9 );
+  Log::write( "Die Daten werden ausgelesen...", "+  ", 9 );
 
   /****************************************************************************
   //  Ab hier wird der BMS  ausgelesen.
@@ -119,77 +108,77 @@ do {
   //
   ****************************************************************************/
   $http_daten["Data"] = '{"PV1":{"POWER_RATIO":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["PV_Begrenzung"] = $funktionen->senec( $rc["PV1"]["POWER_RATIO"] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["PV_Begrenzung"] = Utils::senec( $rc["PV1"]["POWER_RATIO"] );
   $http_daten["Data"] = '{"PM1OBJ1":{"P_TOTAL":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["AC_Leistung"] = round( $funktionen->senec( $rc["PM1OBJ1"]["P_TOTAL"] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["AC_Leistung"] = round( Utils::senec( $rc["PM1OBJ1"]["P_TOTAL"] ), 2 );
   $http_daten["Data"] = '{"PM1OBJ1":{"FREQ":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Frequenz"] = round( $funktionen->senec( $rc["PM1OBJ1"]["FREQ"] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Frequenz"] = round( Utils::senec( $rc["PM1OBJ1"]["FREQ"] ), 2 );
   $http_daten["Data"] = '{"PM1OBJ1":{"U_AC":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["AC_Spannung_R"] = round( $funktionen->senec( $rc["PM1OBJ1"]["U_AC"][0] ), 2 );
-  $aktuelleDaten["AC_Spannung_S"] = round( $funktionen->senec( $rc["PM1OBJ1"]["U_AC"][1] ), 2 );
-  $aktuelleDaten["AC_Spannung_T"] = round( $funktionen->senec( $rc["PM1OBJ1"]["U_AC"][2] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["AC_Spannung_R"] = round( Utils::senec( $rc["PM1OBJ1"]["U_AC"][0] ), 2 );
+  $aktuelleDaten["AC_Spannung_S"] = round( Utils::senec( $rc["PM1OBJ1"]["U_AC"][1] ), 2 );
+  $aktuelleDaten["AC_Spannung_T"] = round( Utils::senec( $rc["PM1OBJ1"]["U_AC"][2] ), 2 );
   $http_daten["Data"] = '{"PM1OBJ1":{"I_AC":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["AC_Strom_R"] = round( $funktionen->senec( $rc["PM1OBJ1"]["I_AC"][0] ), 2 );
-  $aktuelleDaten["AC_Strom_S"] = round( $funktionen->senec( $rc["PM1OBJ1"]["I_AC"][1] ), 2 );
-  $aktuelleDaten["AC_Strom_T"] = round( $funktionen->senec( $rc["PM1OBJ1"]["I_AC"][2] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["AC_Strom_R"] = round( Utils::senec( $rc["PM1OBJ1"]["I_AC"][0] ), 2 );
+  $aktuelleDaten["AC_Strom_S"] = round( Utils::senec( $rc["PM1OBJ1"]["I_AC"][1] ), 2 );
+  $aktuelleDaten["AC_Strom_T"] = round( Utils::senec( $rc["PM1OBJ1"]["I_AC"][2] ), 2 );
   $http_daten["Data"] = '{"PM1OBJ1":{"P_AC":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["AC_Leistung_R"] = round( $funktionen->senec( $rc["PM1OBJ1"]["P_AC"][0] ), 2 );
-  $aktuelleDaten["AC_Leistung_S"] = round( $funktionen->senec( $rc["PM1OBJ1"]["P_AC"][1] ), 2 );
-  $aktuelleDaten["AC_Leistung_T"] = round( $funktionen->senec( $rc["PM1OBJ1"]["P_AC"][2] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["AC_Leistung_R"] = round( Utils::senec( $rc["PM1OBJ1"]["P_AC"][0] ), 2 );
+  $aktuelleDaten["AC_Leistung_S"] = round( Utils::senec( $rc["PM1OBJ1"]["P_AC"][1] ), 2 );
+  $aktuelleDaten["AC_Leistung_T"] = round( Utils::senec( $rc["PM1OBJ1"]["P_AC"][2] ), 2 );
   $http_daten["Data"] = '{"ENERGY":{"GUI_BAT_DATA_FUEL_CHARGE":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat_SOC"] = round( $funktionen->senec( $rc["ENERGY"]["GUI_BAT_DATA_FUEL_CHARGE"] ), 0 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat_SOC"] = round( Utils::senec( $rc["ENERGY"]["GUI_BAT_DATA_FUEL_CHARGE"] ), 0 );
   $http_daten["Data"] = '{"ENERGY":{"GUI_BAT_DATA_POWER":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat_Leistung"] = round( $funktionen->senec( $rc["ENERGY"]["GUI_BAT_DATA_POWER"] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat_Leistung"] = round( Utils::senec( $rc["ENERGY"]["GUI_BAT_DATA_POWER"] ), 2 );
   $http_daten["Data"] = '{"ENERGY":{"GUI_BAT_DATA_VOLTAGE":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat_Spannung"] = round( $funktionen->senec( $rc["ENERGY"]["GUI_BAT_DATA_VOLTAGE"] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat_Spannung"] = round( Utils::senec( $rc["ENERGY"]["GUI_BAT_DATA_VOLTAGE"] ), 2 );
   $http_daten["Data"] = '{"ENERGY":{"GUI_BAT_DATA_CURRENT":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat_Strom"] = round( $funktionen->senec( $rc["ENERGY"]["GUI_BAT_DATA_CURRENT"] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat_Strom"] = round( Utils::senec( $rc["ENERGY"]["GUI_BAT_DATA_CURRENT"] ), 2 );
   $http_daten["Data"] = '{"ENERGY":{"GUI_HOUSE_POW":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Hausverbrauch"] = round( $funktionen->senec( $rc["ENERGY"]["GUI_HOUSE_POW"] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Hausverbrauch"] = round( Utils::senec( $rc["ENERGY"]["GUI_HOUSE_POW"] ), 2 );
   $http_daten["Data"] = '{"ENERGY":{"GUI_INVERTER_POWER":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["PV_Leistung"] = round( $funktionen->senec( $rc["ENERGY"]["GUI_INVERTER_POWER"] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["PV_Leistung"] = round( Utils::senec( $rc["ENERGY"]["GUI_INVERTER_POWER"] ), 2 );
   $http_daten["Data"] = '{"ENERGY":{"GUI_GRID_POW":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Netz_Leistung"] = round( $funktionen->senec( $rc["ENERGY"]["GUI_GRID_POW"] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Netz_Leistung"] = round( Utils::senec( $rc["ENERGY"]["GUI_GRID_POW"] ), 2 );
   $http_daten["Data"] = '{"ENERGY":{"STAT_STATE":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Status"] = round( $funktionen->senec( $rc["ENERGY"]["STAT_STATE"] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Status"] = round( Utils::senec( $rc["ENERGY"]["STAT_STATE"] ), 2 );
   $http_daten["Data"] = '{"ENERGY":{"STAT_HOURS_OF_OPERATION":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Betriebsstunden"] = round( $funktionen->senec( $rc["ENERGY"]["STAT_HOURS_OF_OPERATION"] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Betriebsstunden"] = round( Utils::senec( $rc["ENERGY"]["STAT_HOURS_OF_OPERATION"] ), 2 );
   $http_daten["Data"] = '{"BMS":{"NR_INSTALLED":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Anz_Batterien"] = $funktionen->senec( $rc["BMS"]["NR_INSTALLED"] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Anz_Batterien"] = Utils::senec( $rc["BMS"]["NR_INSTALLED"] );
   $http_daten["Data"] = '{"BMS":{"TOTAL_CURRENT":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Gesamtstrom"] = $funktionen->senec( $rc["BMS"]["TOTAL_CURRENT"] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Gesamtstrom"] = Utils::senec( $rc["BMS"]["TOTAL_CURRENT"] );
   $http_daten["Data"] = '{"STATISTIC":{"LIVE_GRID_IMPORT":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["NetzbezugGesamt"] = round( $funktionen->senec( $rc["STATISTIC"]["LIVE_GRID_IMPORT"] ) * 1000, 1 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["NetzbezugGesamt"] = round( Utils::senec( $rc["STATISTIC"]["LIVE_GRID_IMPORT"] ) * 1000, 1 );
   $http_daten["Data"] = '{"STATISTIC":{"LIVE_GRID_EXPORT":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["EinspeisungGesamt"] = round( $funktionen->senec( $rc["STATISTIC"]["LIVE_GRID_EXPORT"] ) * 1000, 1 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["EinspeisungGesamt"] = round( Utils::senec( $rc["STATISTIC"]["LIVE_GRID_EXPORT"] ) * 1000, 1 );
   $http_daten["Data"] = '{"STATISTIC":{"LIVE_HOUSE_CONS":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["VerbrauchGesamt"] = round( $funktionen->senec( $rc["STATISTIC"]["LIVE_HOUSE_CONS"] ) * 1000, 1 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["VerbrauchGesamt"] = round( Utils::senec( $rc["STATISTIC"]["LIVE_HOUSE_CONS"] ) * 1000, 1 );
   $http_daten["Data"] = '{"STATISTIC":{"LIVE_PV_GEN":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["PV_Gesamtleistung"] = round( $funktionen->senec( $rc["STATISTIC"]["LIVE_PV_GEN"] ) * 1000, 1 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["PV_Gesamtleistung"] = round( Utils::senec( $rc["STATISTIC"]["LIVE_PV_GEN"] ) * 1000, 1 );
   $http_daten["Data"] = '{"STATISTIC":{"CURRENT_STATE":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["GeraeteStatus"] = substr( str_repeat( 0, 4 ).dechex( $funktionen->senec( $rc["STATISTIC"]["CURRENT_STATE"] )), - 4 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["GeraeteStatus"] = substr( str_repeat( 0, 4 ).dechex( Utils::senec( $rc["STATISTIC"]["CURRENT_STATE"] )), - 4 );
 
   /**************************************************************************/
   //  Eingefügt am 29.5.2021
@@ -272,69 +261,69 @@ do {
   $aktuelleDaten["Bat4_Cell_Volt13"] = 0;
   $aktuelleDaten["Bat4_Cell_Volt14"] = 0;
   $http_daten["Data"] = '{"BMS":{"CELL_VOLTAGES_MODULE_A":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat1_Cell_Volt1"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][0] );
-  $aktuelleDaten["Bat1_Cell_Volt2"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][1] );
-  $aktuelleDaten["Bat1_Cell_Volt3"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][2] );
-  $aktuelleDaten["Bat1_Cell_Volt4"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][3] );
-  $aktuelleDaten["Bat1_Cell_Volt5"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][4] );
-  $aktuelleDaten["Bat1_Cell_Volt6"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][5] );
-  $aktuelleDaten["Bat1_Cell_Volt7"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][6] );
-  $aktuelleDaten["Bat1_Cell_Volt8"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][7] );
-  $aktuelleDaten["Bat1_Cell_Volt9"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][8] );
-  $aktuelleDaten["Bat1_Cell_Volt10"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][9] );
-  $aktuelleDaten["Bat1_Cell_Volt11"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][10] );
-  $aktuelleDaten["Bat1_Cell_Volt12"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][11] );
-  $aktuelleDaten["Bat1_Cell_Volt13"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][12] );
-  $aktuelleDaten["Bat1_Cell_Volt14"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][13] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat1_Cell_Volt1"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][0] );
+  $aktuelleDaten["Bat1_Cell_Volt2"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][1] );
+  $aktuelleDaten["Bat1_Cell_Volt3"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][2] );
+  $aktuelleDaten["Bat1_Cell_Volt4"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][3] );
+  $aktuelleDaten["Bat1_Cell_Volt5"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][4] );
+  $aktuelleDaten["Bat1_Cell_Volt6"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][5] );
+  $aktuelleDaten["Bat1_Cell_Volt7"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][6] );
+  $aktuelleDaten["Bat1_Cell_Volt8"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][7] );
+  $aktuelleDaten["Bat1_Cell_Volt9"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][8] );
+  $aktuelleDaten["Bat1_Cell_Volt10"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][9] );
+  $aktuelleDaten["Bat1_Cell_Volt11"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][10] );
+  $aktuelleDaten["Bat1_Cell_Volt12"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][11] );
+  $aktuelleDaten["Bat1_Cell_Volt13"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][12] );
+  $aktuelleDaten["Bat1_Cell_Volt14"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_A"][13] );
   $http_daten["Data"] = '{"BMS":{"CELL_VOLTAGES_MODULE_B":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat2_Cell_Volt1"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][0] );
-  $aktuelleDaten["Bat2_Cell_Volt2"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][1] );
-  $aktuelleDaten["Bat2_Cell_Volt3"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][2] );
-  $aktuelleDaten["Bat2_Cell_Volt4"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][3] );
-  $aktuelleDaten["Bat2_Cell_Volt5"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][4] );
-  $aktuelleDaten["Bat2_Cell_Volt6"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][5] );
-  $aktuelleDaten["Bat2_Cell_Volt7"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][6] );
-  $aktuelleDaten["Bat2_Cell_Volt8"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][7] );
-  $aktuelleDaten["Bat2_Cell_Volt9"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][8] );
-  $aktuelleDaten["Bat2_Cell_Volt10"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][9] );
-  $aktuelleDaten["Bat2_Cell_Volt11"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][10] );
-  $aktuelleDaten["Bat2_Cell_Volt12"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][11] );
-  $aktuelleDaten["Bat2_Cell_Volt13"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][12] );
-  $aktuelleDaten["Bat2_Cell_Volt14"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][13] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat2_Cell_Volt1"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][0] );
+  $aktuelleDaten["Bat2_Cell_Volt2"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][1] );
+  $aktuelleDaten["Bat2_Cell_Volt3"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][2] );
+  $aktuelleDaten["Bat2_Cell_Volt4"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][3] );
+  $aktuelleDaten["Bat2_Cell_Volt5"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][4] );
+  $aktuelleDaten["Bat2_Cell_Volt6"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][5] );
+  $aktuelleDaten["Bat2_Cell_Volt7"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][6] );
+  $aktuelleDaten["Bat2_Cell_Volt8"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][7] );
+  $aktuelleDaten["Bat2_Cell_Volt9"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][8] );
+  $aktuelleDaten["Bat2_Cell_Volt10"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][9] );
+  $aktuelleDaten["Bat2_Cell_Volt11"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][10] );
+  $aktuelleDaten["Bat2_Cell_Volt12"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][11] );
+  $aktuelleDaten["Bat2_Cell_Volt13"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][12] );
+  $aktuelleDaten["Bat2_Cell_Volt14"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_B"][13] );
   $http_daten["Data"] = '{"BMS":{"CELL_VOLTAGES_MODULE_C":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat3_Cell_Volt1"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][0] );
-  $aktuelleDaten["Bat3_Cell_Volt2"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][1] );
-  $aktuelleDaten["Bat3_Cell_Volt3"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][2] );
-  $aktuelleDaten["Bat3_Cell_Volt4"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][3] );
-  $aktuelleDaten["Bat3_Cell_Volt5"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][4] );
-  $aktuelleDaten["Bat3_Cell_Volt6"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][5] );
-  $aktuelleDaten["Bat3_Cell_Volt7"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][6] );
-  $aktuelleDaten["Bat3_Cell_Volt8"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][7] );
-  $aktuelleDaten["Bat3_Cell_Volt9"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][8] );
-  $aktuelleDaten["Bat3_Cell_Volt10"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][9] );
-  $aktuelleDaten["Bat3_Cell_Volt11"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][10] );
-  $aktuelleDaten["Bat3_Cell_Volt12"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][11] );
-  $aktuelleDaten["Bat3_Cell_Volt13"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][12] );
-  $aktuelleDaten["Bat3_Cell_Volt14"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][13] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat3_Cell_Volt1"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][0] );
+  $aktuelleDaten["Bat3_Cell_Volt2"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][1] );
+  $aktuelleDaten["Bat3_Cell_Volt3"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][2] );
+  $aktuelleDaten["Bat3_Cell_Volt4"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][3] );
+  $aktuelleDaten["Bat3_Cell_Volt5"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][4] );
+  $aktuelleDaten["Bat3_Cell_Volt6"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][5] );
+  $aktuelleDaten["Bat3_Cell_Volt7"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][6] );
+  $aktuelleDaten["Bat3_Cell_Volt8"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][7] );
+  $aktuelleDaten["Bat3_Cell_Volt9"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][8] );
+  $aktuelleDaten["Bat3_Cell_Volt10"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][9] );
+  $aktuelleDaten["Bat3_Cell_Volt11"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][10] );
+  $aktuelleDaten["Bat3_Cell_Volt12"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][11] );
+  $aktuelleDaten["Bat3_Cell_Volt13"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][12] );
+  $aktuelleDaten["Bat3_Cell_Volt14"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_C"][13] );
   $http_daten["Data"] = '{"BMS":{"CELL_VOLTAGES_MODULE_D":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat4_Cell_Volt1"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][0] );
-  $aktuelleDaten["Bat4_Cell_Volt2"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][1] );
-  $aktuelleDaten["Bat4_Cell_Volt3"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][2] );
-  $aktuelleDaten["Bat4_Cell_Volt4"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][3] );
-  $aktuelleDaten["Bat4_Cell_Volt5"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][4] );
-  $aktuelleDaten["Bat4_Cell_Volt6"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][5] );
-  $aktuelleDaten["Bat4_Cell_Volt7"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][6] );
-  $aktuelleDaten["Bat4_Cell_Volt8"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][7] );
-  $aktuelleDaten["Bat4_Cell_Volt9"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][8] );
-  $aktuelleDaten["Bat4_Cell_Volt10"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][9] );
-  $aktuelleDaten["Bat4_Cell_Volt11"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][10] );
-  $aktuelleDaten["Bat4_Cell_Volt12"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][11] );
-  $aktuelleDaten["Bat4_Cell_Volt13"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][12] );
-  $aktuelleDaten["Bat4_Cell_Volt14"] = $funktionen->senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][13] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat4_Cell_Volt1"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][0] );
+  $aktuelleDaten["Bat4_Cell_Volt2"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][1] );
+  $aktuelleDaten["Bat4_Cell_Volt3"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][2] );
+  $aktuelleDaten["Bat4_Cell_Volt4"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][3] );
+  $aktuelleDaten["Bat4_Cell_Volt5"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][4] );
+  $aktuelleDaten["Bat4_Cell_Volt6"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][5] );
+  $aktuelleDaten["Bat4_Cell_Volt7"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][6] );
+  $aktuelleDaten["Bat4_Cell_Volt8"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][7] );
+  $aktuelleDaten["Bat4_Cell_Volt9"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][8] );
+  $aktuelleDaten["Bat4_Cell_Volt10"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][9] );
+  $aktuelleDaten["Bat4_Cell_Volt11"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][10] );
+  $aktuelleDaten["Bat4_Cell_Volt12"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][11] );
+  $aktuelleDaten["Bat4_Cell_Volt13"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][12] );
+  $aktuelleDaten["Bat4_Cell_Volt14"] = Utils::senec( $rc["BMS"]["CELL_VOLTAGES_MODULE_D"][13] );
 
   /*****************************************************************************/
 
@@ -365,84 +354,84 @@ do {
   $aktuelleDaten["Bat4_Cell_Temp6"] = 0;
 
   $http_daten["Data"] = '{"BMS":{"CELL_TEMPERATURES_MODULE_A":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat1_Cell_Temp1"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_A"][0] );
-  $aktuelleDaten["Bat1_Cell_Temp2"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_A"][1] );
-  $aktuelleDaten["Bat1_Cell_Temp3"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_A"][2] );
-  $aktuelleDaten["Bat1_Cell_Temp4"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_A"][3] );
-  $aktuelleDaten["Bat1_Cell_Temp5"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_A"][4] );
-  $aktuelleDaten["Bat1_Cell_Temp6"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_A"][5] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat1_Cell_Temp1"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_A"][0] );
+  $aktuelleDaten["Bat1_Cell_Temp2"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_A"][1] );
+  $aktuelleDaten["Bat1_Cell_Temp3"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_A"][2] );
+  $aktuelleDaten["Bat1_Cell_Temp4"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_A"][3] );
+  $aktuelleDaten["Bat1_Cell_Temp5"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_A"][4] );
+  $aktuelleDaten["Bat1_Cell_Temp6"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_A"][5] );
   $http_daten["Data"] = '{"BMS":{"CELL_TEMPERATURES_MODULE_B":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat2_Cell_Temp1"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_B"][0] );
-  $aktuelleDaten["Bat2_Cell_Temp2"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_B"][1] );
-  $aktuelleDaten["Bat2_Cell_Temp3"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_B"][2] );
-  $aktuelleDaten["Bat2_Cell_Temp4"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_B"][3] );
-  $aktuelleDaten["Bat2_Cell_Temp5"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_B"][4] );
-  $aktuelleDaten["Bat2_Cell_Temp6"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_B"][5] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat2_Cell_Temp1"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_B"][0] );
+  $aktuelleDaten["Bat2_Cell_Temp2"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_B"][1] );
+  $aktuelleDaten["Bat2_Cell_Temp3"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_B"][2] );
+  $aktuelleDaten["Bat2_Cell_Temp4"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_B"][3] );
+  $aktuelleDaten["Bat2_Cell_Temp5"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_B"][4] );
+  $aktuelleDaten["Bat2_Cell_Temp6"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_B"][5] );
   $http_daten["Data"] = '{"BMS":{"CELL_TEMPERATURES_MODULE_C":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat3_Cell_Temp1"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_C"][0] );
-  $aktuelleDaten["Bat3_Cell_Temp2"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_C"][1] );
-  $aktuelleDaten["Bat3_Cell_Temp3"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_C"][2] );
-  $aktuelleDaten["Bat3_Cell_Temp4"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_C"][3] );
-  $aktuelleDaten["Bat3_Cell_Temp5"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_C"][4] );
-  $aktuelleDaten["Bat3_Cell_Temp6"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_C"][5] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat3_Cell_Temp1"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_C"][0] );
+  $aktuelleDaten["Bat3_Cell_Temp2"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_C"][1] );
+  $aktuelleDaten["Bat3_Cell_Temp3"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_C"][2] );
+  $aktuelleDaten["Bat3_Cell_Temp4"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_C"][3] );
+  $aktuelleDaten["Bat3_Cell_Temp5"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_C"][4] );
+  $aktuelleDaten["Bat3_Cell_Temp6"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_C"][5] );
   $http_daten["Data"] = '{"BMS":{"CELL_TEMPERATURES_MODULE_D":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat4_Cell_Temp1"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_D"][0] );
-  $aktuelleDaten["Bat4_Cell_Temp2"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_D"][1] );
-  $aktuelleDaten["Bat4_Cell_Temp3"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_D"][2] );
-  $aktuelleDaten["Bat4_Cell_Temp4"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_D"][3] );
-  $aktuelleDaten["Bat4_Cell_Temp5"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_D"][4] );
-  $aktuelleDaten["Bat4_Cell_Temp6"] = $funktionen->senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_D"][5] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat4_Cell_Temp1"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_D"][0] );
+  $aktuelleDaten["Bat4_Cell_Temp2"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_D"][1] );
+  $aktuelleDaten["Bat4_Cell_Temp3"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_D"][2] );
+  $aktuelleDaten["Bat4_Cell_Temp4"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_D"][3] );
+  $aktuelleDaten["Bat4_Cell_Temp5"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_D"][4] );
+  $aktuelleDaten["Bat4_Cell_Temp6"] = Utils::senec( $rc["BMS"]["CELL_TEMPERATURES_MODULE_D"][5] );
 
   /*****************************************************************************/
 
   $http_daten["Data"] = '{"TEMPMEASURE":{"BATTERY_TEMP":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Batterie_Temperatur"] = round( $funktionen->senec( $rc["TEMPMEASURE"]["BATTERY_TEMP"] ), 1 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Batterie_Temperatur"] = round( Utils::senec( $rc["TEMPMEASURE"]["BATTERY_TEMP"] ), 1 );
   $http_daten["Data"] = '{"TEMPMEASURE":{"CASE_TEMP":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Gehaeuse_Temperatur"] = round( $funktionen->senec( $rc["TEMPMEASURE"]["CASE_TEMP"] ), 1 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Gehaeuse_Temperatur"] = round( Utils::senec( $rc["TEMPMEASURE"]["CASE_TEMP"] ), 1 );
   $http_daten["Data"] = '{"TEMPMEASURE":{"MCU_TEMP":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["CPU_Temperatur"] = round( $funktionen->senec( $rc["TEMPMEASURE"]["MCU_TEMP"] ), 1 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["CPU_Temperatur"] = round( Utils::senec( $rc["TEMPMEASURE"]["MCU_TEMP"] ), 1 );
   $http_daten["Data"] = '{"FAN_SPEED":{"INV_LV":""}}';
-  $rc = $funktionen->http_read( $http_daten );
+  $rc = Utils::http_read( $http_daten );
   if (isset($rc["FAN_SPEED"]["INV_LV"])) {
-    $aktuelleDaten["FAN_Speed"] = $funktionen->senec( $rc["FAN_SPEED"]["INV_LV"] );
+    $aktuelleDaten["FAN_Speed"] = Utils::senec( $rc["FAN_SPEED"]["INV_LV"] );
   }
   $http_daten["Data"] = '{"BMS":{"CYCLES":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Ladezyklen_BMS1"] = $funktionen->senec( $rc["BMS"]["CYCLES"][0] );
-  $aktuelleDaten["Ladezyclen_BMS2"] = $funktionen->senec( $rc["BMS"]["CYCLES"][1] );
-  $aktuelleDaten["Ladezyklen_BMS3"] = $funktionen->senec( $rc["BMS"]["CYCLES"][2] );
-  $aktuelleDaten["Ladezyklen_BMS4"] = $funktionen->senec( $rc["BMS"]["CYCLES"][3] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Ladezyklen_BMS1"] = Utils::senec( $rc["BMS"]["CYCLES"][0] );
+  $aktuelleDaten["Ladezyclen_BMS2"] = Utils::senec( $rc["BMS"]["CYCLES"][1] );
+  $aktuelleDaten["Ladezyklen_BMS3"] = Utils::senec( $rc["BMS"]["CYCLES"][2] );
+  $aktuelleDaten["Ladezyklen_BMS4"] = Utils::senec( $rc["BMS"]["CYCLES"][3] );
   //------------------------------
   //  Eingefügt Jan. 2022
   $http_daten["Data"] = '{"BMS":{"CURRENT":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat1_Strom"] = round( $funktionen->senec( $rc["BMS"]["CURRENT"][0] ), 2 );
-  $aktuelleDaten["Bat2_Strom"] = round( $funktionen->senec( $rc["BMS"]["CURRENT"][1] ), 2 );
-  $aktuelleDaten["Bat3_Strom"] = round( $funktionen->senec( $rc["BMS"]["CURRENT"][2] ), 2 );
-  $aktuelleDaten["Bat4_Strom"] = round( $funktionen->senec( $rc["BMS"]["CURRENT"][3] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat1_Strom"] = round( Utils::senec( $rc["BMS"]["CURRENT"][0] ), 2 );
+  $aktuelleDaten["Bat2_Strom"] = round( Utils::senec( $rc["BMS"]["CURRENT"][1] ), 2 );
+  $aktuelleDaten["Bat3_Strom"] = round( Utils::senec( $rc["BMS"]["CURRENT"][2] ), 2 );
+  $aktuelleDaten["Bat4_Strom"] = round( Utils::senec( $rc["BMS"]["CURRENT"][3] ), 2 );
   $http_daten["Data"] = '{"BMS":{"VOLTAGE":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat1_Spannung"] = round( $funktionen->senec( $rc["BMS"]["VOLTAGE"][0] ), 2 );
-  $aktuelleDaten["Bat2_Spannung"] = round( $funktionen->senec( $rc["BMS"]["VOLTAGE"][1] ), 2 );
-  $aktuelleDaten["Bat3_Spannung"] = round( $funktionen->senec( $rc["BMS"]["VOLTAGE"][2] ), 2 );
-  $aktuelleDaten["Bat4_Spannung"] = round( $funktionen->senec( $rc["BMS"]["VOLTAGE"][3] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat1_Spannung"] = round( Utils::senec( $rc["BMS"]["VOLTAGE"][0] ), 2 );
+  $aktuelleDaten["Bat2_Spannung"] = round( Utils::senec( $rc["BMS"]["VOLTAGE"][1] ), 2 );
+  $aktuelleDaten["Bat3_Spannung"] = round( Utils::senec( $rc["BMS"]["VOLTAGE"][2] ), 2 );
+  $aktuelleDaten["Bat4_Spannung"] = round( Utils::senec( $rc["BMS"]["VOLTAGE"][3] ), 2 );
   $http_daten["Data"] = '{"BMS":{"SOC":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Bat1_SOC"] = round( $funktionen->senec( $rc["BMS"]["SOC"][0] ), 2 );
-  $aktuelleDaten["Bat2_SOC"] = round( $funktionen->senec( $rc["BMS"]["SOC"][1] ), 2 );
-  $aktuelleDaten["Bat3_SOC"] = round( $funktionen->senec( $rc["BMS"]["SOC"][2] ), 2 );
-  $aktuelleDaten["Bat4_SOC"] = round( $funktionen->senec( $rc["BMS"]["SOC"][3] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Bat1_SOC"] = round( Utils::senec( $rc["BMS"]["SOC"][0] ), 2 );
+  $aktuelleDaten["Bat2_SOC"] = round( Utils::senec( $rc["BMS"]["SOC"][1] ), 2 );
+  $aktuelleDaten["Bat3_SOC"] = round( Utils::senec( $rc["BMS"]["SOC"][2] ), 2 );
+  $aktuelleDaten["Bat4_SOC"] = round( Utils::senec( $rc["BMS"]["SOC"][3] ), 2 );
   //------------------------------
   $http_daten["Data"] = '{"BAT1":{"NSP2_FW":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Firmware"] = $funktionen->senec( $rc["BAT1"]["NSP2_FW"] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Firmware"] = Utils::senec( $rc["BAT1"]["NSP2_FW"] );
   if ($aktuelleDaten["Netz_Leistung"] < 0) {
     $aktuelleDaten["Einspeisung"] = abs( $aktuelleDaten["Netz_Leistung"] );
     $aktuelleDaten["Bezug"] = 0;
@@ -463,26 +452,26 @@ do {
   $aktuelleDaten["Softwareversion"] = 0;
   $aktuelleDaten["Anz_Wallboxen"] = 0;
   $http_daten["Data"] = '{"PV1":{"MPP_CUR":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["MPPT1_Strom"] = round( $funktionen->senec( $rc["PV1"]["MPP_CUR"]["0"] ), 2 );
-  $aktuelleDaten["MPPT2_Strom"] = round( $funktionen->senec( $rc["PV1"]["MPP_CUR"]["1"] ), 2 );
-  $aktuelleDaten["MPPT3_Strom"] = round( $funktionen->senec( $rc["PV1"]["MPP_CUR"]["2"] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["MPPT1_Strom"] = round( Utils::senec( $rc["PV1"]["MPP_CUR"]["0"] ), 2 );
+  $aktuelleDaten["MPPT2_Strom"] = round( Utils::senec( $rc["PV1"]["MPP_CUR"]["1"] ), 2 );
+  $aktuelleDaten["MPPT3_Strom"] = round( Utils::senec( $rc["PV1"]["MPP_CUR"]["2"] ), 2 );
   $http_daten["Data"] = '{"PV1":{"MPP_VOL":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["MPPT1_Spannung"] = round( $funktionen->senec( $rc["PV1"]["MPP_VOL"]["0"] ), 2 );
-  $aktuelleDaten["MPPT2_Spannung"] = round( $funktionen->senec( $rc["PV1"]["MPP_VOL"]["1"] ), 2 );
-  $aktuelleDaten["MPPT3_Spannung"] = round( $funktionen->senec( $rc["PV1"]["MPP_VOL"]["2"] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["MPPT1_Spannung"] = round( Utils::senec( $rc["PV1"]["MPP_VOL"]["0"] ), 2 );
+  $aktuelleDaten["MPPT2_Spannung"] = round( Utils::senec( $rc["PV1"]["MPP_VOL"]["1"] ), 2 );
+  $aktuelleDaten["MPPT3_Spannung"] = round( Utils::senec( $rc["PV1"]["MPP_VOL"]["2"] ), 2 );
   $http_daten["Data"] = '{"PV1":{"MPP_POWER":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["MPPT1_Leistung"] = round( $funktionen->senec( $rc["PV1"]["MPP_POWER"]["0"] ), 2 );
-  $aktuelleDaten["MPPT2_Leistung"] = round( $funktionen->senec( $rc["PV1"]["MPP_POWER"]["1"] ), 2 );
-  $aktuelleDaten["MPPT3_Leistung"] = round( $funktionen->senec( $rc["PV1"]["MPP_POWER"]["2"] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["MPPT1_Leistung"] = round( Utils::senec( $rc["PV1"]["MPP_POWER"]["0"] ), 2 );
+  $aktuelleDaten["MPPT2_Leistung"] = round( Utils::senec( $rc["PV1"]["MPP_POWER"]["1"] ), 2 );
+  $aktuelleDaten["MPPT3_Leistung"] = round( Utils::senec( $rc["PV1"]["MPP_POWER"]["2"] ), 2 );
   $http_daten["Data"] = '{"WIZARD":{"APPLICATION_VERSION":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Softwareversion"] = $funktionen->senec( $rc["WIZARD"]["APPLICATION_VERSION"] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Softwareversion"] = Utils::senec( $rc["WIZARD"]["APPLICATION_VERSION"] );
   $http_daten["Data"] = '{"WIZARD":{"SETUP_NUMBER_WALLBOXES":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Anz_Wallboxen"] = $funktionen->senec( $rc["WIZARD"]["SETUP_NUMBER_WALLBOXES"] );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Anz_Wallboxen"] = Utils::senec( $rc["WIZARD"]["SETUP_NUMBER_WALLBOXES"] );
 
   /****************************************************************************
   //  ENDE REGLER AUSLESEN      ENDE REGLER AUSLESEN      ENDE REGLER AUSLESEN
@@ -890,23 +879,23 @@ do {
   $aktuelleDaten["WB_Status"] = 0;
   // Es gibt 4 Wallbox Gesamtzähler. Hier wird nur der erste ausgelesen [0]
   $http_daten["Data"] = '{"STATISTIC":{"LIVE_WB_ENERGY":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Wallbox_Gesamtleistung"] = round( $funktionen->senec( $rc["STATISTIC"]["LIVE_WB_ENERGY"][0]) * 1000, 1 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Wallbox_Gesamtleistung"] = round( Utils::senec( $rc["STATISTIC"]["LIVE_WB_ENERGY"][0]) * 1000, 1 );
   $http_daten["Data"] = '{"WALLBOX":{"APPARENT_CHARGING_POWER":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["Wallbox_Leistung"] = round( $funktionen->senec( $rc["WALLBOX"]["APPARENT_CHARGING_POWER"][0] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["Wallbox_Leistung"] = round( Utils::senec( $rc["WALLBOX"]["APPARENT_CHARGING_POWER"][0] ), 2 );
   $http_daten["Data"] = '{"WALLBOX":{"L1_CHARGING_CURRENT":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["L1_Leistung"] = round( $funktionen->senec( $rc["WALLBOX"]["L1_CHARGING_CURRENT"][0] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["L1_Leistung"] = round( Utils::senec( $rc["WALLBOX"]["L1_CHARGING_CURRENT"][0] ), 2 );
   $http_daten["Data"] = '{"WALLBOX":{"L2_CHARGING_CURRENT":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["L2_Leistung"] = round( $funktionen->senec( $rc["WALLBOX"]["L2_CHARGING_CURRENT"][0] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["L2_Leistung"] = round( Utils::senec( $rc["WALLBOX"]["L2_CHARGING_CURRENT"][0] ), 2 );
   $http_daten["Data"] = '{"WALLBOX":{"L3_CHARGING_CURRENT":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["L3_Leistung"] = round( $funktionen->senec( $rc["WALLBOX"]["L3_CHARGING_CURRENT"][0] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["L3_Leistung"] = round( Utils::senec( $rc["WALLBOX"]["L3_CHARGING_CURRENT"][0] ), 2 );
   $http_daten["Data"] = '{"WALLBOX":{"STATE":""}}';
-  $rc = $funktionen->http_read( $http_daten );
-  $aktuelleDaten["WB_Status"] = round( $funktionen->senec( $rc["WALLBOX"]["STATE"][0] ), 2 );
+  $rc = Utils::http_read( $http_daten );
+  $aktuelleDaten["WB_Status"] = round( Utils::senec( $rc["WALLBOX"]["STATE"][0] ), 2 );
 
   /****************************************************************************
   //  Die Daten werden für die Speicherung vorbereitet.
@@ -916,13 +905,13 @@ do {
   $aktuelleDaten["Produkt"] = "Senec";
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"] + 10);
   if ($i == 1)
-    $funktionen->log_schreiben( var_export( $aktuelleDaten, 1 ), "   ", 8 );
+    Log::write( var_export( $aktuelleDaten, 1 ), "   ", 8 );
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( "/var/www/html/senec_math.php" )) {
-    include 'senec_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists($basedir."/custom/senec_math.php" )) {
+    include $basedir.'/custom/senec_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -931,8 +920,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -967,9 +956,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test( );
+      $rc = InfluxDB::influx_remote_test( );
       if ($rc) {
-        $rc = $funktionen->influx_remote( $aktuelleDaten );
+        $rc = InfluxDB::influx_remote( $aktuelleDaten );
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -979,27 +968,27 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
   }
   else {
-    $rc = $funktionen->influx_local( $aktuelleDaten );
+    $rc = InfluxDB::influx_local( $aktuelleDaten );
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (8 - (time( ) - $Start));
-    $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+    Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
     if ($Zeitspanne > 0) {
       sleep( $Zeitspanne );
     }
     break;
   }
   else {
-    $funktionen->log_schreiben( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
+    Log::write( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
     sleep( floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 8 );
+    Log::write( "Schleife ".$i." Ausgang...", "   ", 8 );
     break;
   }
   $i++;
@@ -1011,8 +1000,8 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-    require ($Pfad."/homematic.php");
+    Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -1021,13 +1010,13 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-    require ($Pfad."/meldungen_senden.php");
+    Log::write( "Nachrichten versenden...", "   ", 8 );
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+  Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 }
 else {
-  $funktionen->log_schreiben( "Keine gültigen Daten empfangen.", "!! ", 6 );
+  Log::write( "Keine gültigen Daten empfangen.", "!! ", 6 );
 }
 
 /*****************************************************************************
@@ -1048,7 +1037,7 @@ if (file_exists( $StatusFile )) {
   if (date( "H:i" ) == "00:00" or date( "H:i" ) == "00:01") {
     $Tagesdaten = array("WattstundenGesamtHeute" => 0, "BatterieGeladenHeute" => 0, "BatterieEntladenHeute" => 0);
     $rc = file_put_contents( $StatusFile, serialize( $Tagesdaten ));
-    $funktionen->log_schreiben( "WattstundenGesamtHeute  gesetzt.", "o- ", 5 );
+    Log::write( "WattstundenGesamtHeute  gesetzt.", "o- ", 5 );
   }
 
   /***************************************************************************
@@ -1064,10 +1053,10 @@ if (file_exists( $StatusFile )) {
     $Tagesdaten["BatterieEntladenHeute"] = round( ($Tagesdaten["BatterieEntladenHeute"] + abs( $aktuelleDaten["Bat_Leistung"] ) / 60), 2 );
   }
   $rc = file_put_contents( $StatusFile, serialize( $Tagesdaten ));
-  $funktionen->log_schreiben( "WattstundenGesamtHeute: ".round( $Tagesdaten["WattstundenGesamtHeute"], 2 ), "   ", 5 );
-  $funktionen->log_schreiben( "BatterieGeladenHeute: ".round( $Tagesdaten["BatterieGeladenHeute"], 2 ), "   ", 5 );
-  $funktionen->log_schreiben( "BatterieEntladenHeute: ".round( $Tagesdaten["BatterieEntladenHeute"], 2 ), "   ", 5 );
+  Log::write( "WattstundenGesamtHeute: ".round( $Tagesdaten["WattstundenGesamtHeute"], 2 ), "   ", 5 );
+  Log::write( "BatterieGeladenHeute: ".round( $Tagesdaten["BatterieGeladenHeute"], 2 ), "   ", 5 );
+  Log::write( "BatterieEntladenHeute: ".round( $Tagesdaten["BatterieEntladenHeute"], 2 ), "   ", 5 );
 }
-Ausgang:$funktionen->log_schreiben( "-----------------   Stop   senec.php   -------------------- ", "|--", 6 );
+Ausgang:Log::write( "-----------------   Stop   senec.php   -------------------- ", "|--", 6 );
 return;
 ?>

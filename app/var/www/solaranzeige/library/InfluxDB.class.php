@@ -94,7 +94,7 @@ class InfluxDB {
           break;
         }
         elseif ($rc_info["http_code"] == 401) {
-          $funktionen->log_schreiben("Influx UserID oder Kennwort ist falsch.", "*  ", 5);
+          Log::write("Influx UserID oder Kennwort ist falsch.", "*  ", 5);
           break;
         }
         elseif (empty($Ausgabe["error"])) {
@@ -115,7 +115,7 @@ class InfluxDB {
     if (!isset($daten["DB_nein"])) {
       // Wenn es diese Variable gibt, sollen die Werte nicht abgespeichert werden.
       Log::write("Aktuelle Daten: \n".print_r($daten, 1), "   ", 9);
-      $query = $this->query_erzeugen($daten);
+      $query = InfluxDB::query_erzeugen($daten);
       if (isset($daten["ZusatzQuery"])) {
         $query = $daten["ZusatzQuery"]."\n".$query;
       }
@@ -221,7 +221,7 @@ class InfluxDB {
           break;
         }
         elseif ($rc_info["http_code"] == 401) {
-          $funktionen->log_schreiben("Influx UserID oder Kennwort ist falsch.", "*  ", 5);
+          Log::write("Influx UserID oder Kennwort ist falsch.", "*  ", 5);
           break;
         }
         elseif (empty($Ausgabe["error"])) {
@@ -239,9 +239,9 @@ class InfluxDB {
       unset($ch);
     }
     // Nur beim Victron Laderegler wird Nachts nicht gesendet.
-    if ($this->tageslicht("hamburg") or $daten["InfluxDaylight"] === false) {
+    if (Utils::tageslicht("hamburg") or $daten["InfluxDaylight"] === false) {
       Log::write("Aktuelle Daten: \n".print_r($daten, 1), "   ", 9);
-      $query = $this->query_erzeugen($daten);
+      $query = InfluxDB::query_erzeugen($daten);
       if (isset($daten["ZusatzQuery"])) {
         $query = $daten["ZusatzQuery"]."\n".$query;
       }
@@ -353,7 +353,7 @@ class InfluxDB {
   //
   //
   **************************************************************************/
-  function demo_daten_erzeugen($Regler) {
+  public static function demo_daten_erzeugen($Regler) {
     $aktuelleDaten = array('Firmware' => 1.0, 'Produkt' => "Solaranzeige", 'Batteriespannung' => 0, 'Batterieentladestrom' => 0, 'Batterieladestrom' => 0, 'Batteriekapazitaet' => 0, 'BatterieladestromMaxHeute' => 0, 'Verbraucherstrom' => 0, 'SolarspannungMaxHeute' => 0, 'WattstundenGesamtHeute' => 0, 'WattstundenGesamt' => 0, 'AmperestundenGesamt' => 0, 'Ladestatus' => 0, 'Netzspannung' => 0, 'Netzfrequenz' => 0, 'AC_Ausgangsspannung' => 0, 'AC_Ausgangsfrequenz' => 0, 'AC_Scheinleistung' => 0, 'AC_Wirkleistung' => 0, 'AC_Ausgangslast' => 0, 'AC_Ausgangsstrom' => 0, 'AC_Leistung' => 0, 'Ausgangslast' => 0, 'Solarstrom' => 0, 'Solarspannung' => 0, 'Solarleistung' => 0, 'maxWattHeute' => 0, 'maxAmpHeute' => 0, 'Temperatur' => 0, 'Optionen' => 0, 'Modus' => "B", 'DeviceStatus' => 0, 'ErrorCodes' => 0, 'Regler' => $Regler, 'Objekt' => "Solaranzeige", 'Timestamp' => time(), 'Monat' => date("n"), 'Woche' => date("W"), 'Wochentag' => strftime("%A", time()), 'Datum' => date("d.m.Y"), 'Uhrzeit' => date("H:i:s"), 'Demodaten' => true, 'InfluxAdresse' => 'localhost', 'InfluxUser' => 'admin', 'InfluxPassword' => 'solaranzeige', 'InfluxDBName' => 'solaranzeige');
     return $aktuelleDaten;
   }
@@ -363,7 +363,7 @@ class InfluxDB {
   //
   //
   **************************************************************************/
-  function query_erzeugen($daten) {
+  public static function query_erzeugen($daten) {
     $Summe = 0;
     $now = time();
     $gmt_offset = 1 + date("I");
@@ -4385,106 +4385,6 @@ class InfluxDB {
         break;
     }
     return $query;
-  }
-
-
-  /******************************************************************
-  //
-  //  Auslesen des Fronius Symo Wechselrichter
-  //  $Benutzer =  UserID:Kennwort
-  ******************************************************************/
-  function read($host, $port, $DataString, $Header = "", $Benutzer = "") {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-    curl_setopt($ch, CURLOPT_URL, "http://".$host."/".$DataString);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    if ($Header <> "") {
-      curl_setopt($ch, CURLOPT_HTTPHEADER, $Header);
-    }
-    if ($Benutzer <> "") {
-      curl_setopt($ch, CURLOPT_USERPWD, $Benutzer);
-    }
-    curl_setopt($ch, CURLOPT_PORT, $port);
-    //  In $result wird ein XML Dokument zurück gegeben!
-    //  Dort steht drin ob die Zentrale den Wert übernommen hat.
-    $result = curl_exec($ch);
-    $rc_info = curl_getinfo($ch);
-    if ($rc_info["http_code"] == 404) {
-      Log::write("Datenabfrage falsch! info: ".var_export($rc_info, 1), "   ", 9);
-      return false;
-    }
-    elseif ($rc_info["http_code"] != 200) {
-      Log::write("Datenabfrage falsch! info: ".var_export($rc_info, 1), "   ", 5);
-      return false;
-    }
-    else {
-      Log::write("http://".$host."/".$DataString, "   ", 10);
-      Log::write("Daten zum Gerät gesendet. \n Antwort: ".$result, "   ", 9);
-    }
-    $Ausgabe = json_decode(utf8_encode($result), true);
-    return $Ausgabe;
-  }
-
-  /**************************************************************************
-  //  HTTP POST / GET Request
-  //  [Request"] = POST
-  //  ["Data"]   = Daten
-  //  ["Header"] = Header
-  //  ["Port"]   = Port
-  //  ["Benutzer"] = UserID:Kennwort
-  //
-  **************************************************************************/
-  function http_read($abfrage) {
-    if (!isset($abfrage["Request"])) {
-      $abfrage["Request"] = "POST";
-    }
-    $ch = curl_init($abfrage["URL"]);
-    $i = 1;
-    Log::write("Curl  ".print_r($abfrage, 1), "   ", 10);
-    do {
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $abfrage["Request"]);
-      curl_setopt($ch, CURLOPT_TIMEOUT, 5); //timeout in second s
-      curl_setopt($ch, CURLOPT_PORT, $abfrage["Port"]);
-      if ($abfrage["Request"] == "POST") {
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $abfrage["Data"]);
-      }
-      if (isset($abfrage["Header"])) {
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $abfrage["Header"]);
-      }
-      if (isset($abfrage["Benutzer"])) {
-        curl_setopt($ch, CURLOPT_USERPWD, $abfrage["Benutzer"]);
-      }
-      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-      $result = curl_exec($ch);
-      $rc_info = curl_getinfo($ch);
-      $Ausgabe = json_decode($result, true);
-      if (curl_errno($ch)) {
-        Log::write("Curl Fehler! HTTP Daten nicht vom Gerät gelesen! No. ".curl_errno($ch), "   ", 5);
-      }
-      elseif ($rc_info["http_code"] == 200 or $rc_info["http_code"] == 204) {
-        break;
-      }
-      elseif (empty($Ausgabe["error"])) {
-        Log::write("HTTP Fehler -> nochmal versuchen.", "   ", 5);
-        $i++;
-        continue;
-      }
-      if ($abfrage["Request"] == "POST") {
-        Log::write("Daten nicht vom Gerät gelesen! => [ ".$Ausgabe["error"]." ]", "   ", 5);
-        Log::write("Daten => [ ".print_r($abfrage, 1)." ]", "   ", 5);
-        Log::write("Daten nicht von dem Gerät gelesen! info: ".var_export($rc_info, 1), "   ", 9);
-      }
-      $i++;
-      sleep(1);
-    } while ($i < 3);
-    curl_close($ch);
-    if ($abfrage["Request"] == "POST") {
-      return $Ausgabe;
-    }
-    else {
-      return $rc_info;
-    }
   }
 }
 ?>

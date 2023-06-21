@@ -16,17 +16,10 @@ setlocale( LC_TIME, NULL ); // Damit der Wochentag in Deutsch geschrieben wird.
 $basedir = dirname(__FILE__,2);
 require($basedir."/library/base.inc.php");
 
-if (is_file($basedir."/config/1.user.config.php")) {
-  require($basedir."/config/1.user.config.php");
-} else {
-  require($basedir."/config/user.config.php");
-}
-
 $Tracelevel = 7; //  1 bis 10  10 = Debug
 $Ergebnis = array();
-$funktionen = new funktionen( );
 usleep(rand(1000000, 45000000)); // 0-45s
-$funktionen->log_schreiben( "---------------- Start wetterdaten.php --------------------", "|--", 6 );
+Log::write( "---------------- Start wetterdaten.php --------------------", "|--", 6 );
 
 /*********************************************************************
 //  WETTERDATEN     WETTERDATEN     WETTERDATEN     WETTERDATEN
@@ -48,12 +41,12 @@ if ($Wetterdaten === true and strlen( $APPID ) == 32 and $StandortID > 0) {
     if ($rc_info["http_code"] == 200) {
       break;
     }
-    $funktionen->log_schreiben( "Verbindung zum Wetterserver 'openweathermap.org' zur Zeit gestört. 6 Sekunden warten. i: ".$i, 6 );
-    $funktionen->log_schreiben( var_export( $rc_info, 1 ), 6 );
+    Log::write( "Verbindung zum Wetterserver 'openweathermap.org' zur Zeit gestört. 6 Sekunden warten. i: ".$i, 6 );
+    Log::write( var_export( $rc_info, 1 ), 6 );
     sleep( 6 );
   }
   if ($i >= 4) {
-    $funktionen->log_schreiben( "---------------- Exit 1 wetterdaten.php -------------------", "|--", 6 );
+    Log::write( "---------------- Exit 1 wetterdaten.php -------------------", "|--", 6 );
     exit;
   }
   $Ergebnis = json_decode( $result, true );
@@ -83,12 +76,12 @@ if ($Wetterdaten === true and strlen( $APPID ) == 32 and $StandortID > 0) {
     $aktuellesWetter["Schnee"] = $Ergebnis["snow"]["1h"];
   else
     $aktuellesWetter["Schnee"] = 0;
-  $funktionen->log_schreiben( "Ort: ".$Ergebnis["name"].",  ".$Ergebnis["coord"]["lat"]." N,  ".$Ergebnis["coord"]["lon"]." O,  ID: ".$Ergebnis["id"], "0+ ", 7 );
-  $funktionen->log_schreiben( "Aktuelles Wetter\n".var_export( $aktuellesWetter, 1 ), "   ", 9 );
-  $funktionen->log_schreiben( "Bericht: ".$Ergebnis["dt"], "   ", 9 );
-  $funktionen->log_schreiben( "Sonnenaufgang: ".$Ergebnis["sys"]["sunrise"], "   ", 9 );
-  $funktionen->log_schreiben( "Sonnenuntergang: ".$Ergebnis["sys"]["sunset"], "   ", 9 );
-  $funktionen->log_schreiben( "\nAktuelles Wetter\n".var_export( $Ergebnis, 1 ), "   ", 10 );
+  Log::write( "Ort: ".$Ergebnis["name"].",  ".$Ergebnis["coord"]["lat"]." N,  ".$Ergebnis["coord"]["lon"]." O,  ID: ".$Ergebnis["id"], "0+ ", 7 );
+  Log::write( "Aktuelles Wetter\n".var_export( $aktuellesWetter, 1 ), "   ", 9 );
+  Log::write( "Bericht: ".$Ergebnis["dt"], "   ", 9 );
+  Log::write( "Sonnenaufgang: ".$Ergebnis["sys"]["sunrise"], "   ", 9 );
+  Log::write( "Sonnenuntergang: ".$Ergebnis["sys"]["sunset"], "   ", 9 );
+  Log::write( "\nAktuelles Wetter\n".var_export( $Ergebnis, 1 ), "   ", 10 );
 
   /****************************************************************************
   //  InfluxDB  Zugangsdaten ...stehen in der user.config.php
@@ -116,14 +109,14 @@ if ($Wetterdaten === true and strlen( $APPID ) == 32 and $StandortID > 0) {
   *********************************************************************/
   if ($InfluxDB_remote) {
     $rc = wetterdaten_speichern( $aktuelleDaten );
-    $funktionen->log_schreiben( "Remote: ".$rc, "|  ", 7 );
+    Log::write( "Remote: ".$rc, "|  ", 7 );
     if ($InfluxDB_local) {
       $aktuelleDaten["InfluxAdresse"] = "localhost";
       $aktuelleDaten["InfluxPort"] = "8086";
       $aktuelleDaten["InfluxDBName"] = $InfluxDBLokal;
       $aktuelleDaten["InfluxSSL"] = false;
       $rc = wetterdaten_speichern( $aktuelleDaten );
-      $funktionen->log_schreiben( "Lokal: ".$rc, "|* ", 7 );
+      Log::write( "Lokal: ".$rc, "|* ", 7 );
     }
   }
   else {
@@ -132,12 +125,12 @@ if ($Wetterdaten === true and strlen( $APPID ) == 32 and $StandortID > 0) {
     $aktuelleDaten["InfluxDBName"] = $InfluxDBLokal;
     $aktuelleDaten["InfluxSSL"] = false;
     $rc = wetterdaten_speichern( $aktuelleDaten );
-    $funktionen->log_schreiben( "Lokal: ".$rc, "|**", 7 );
+    Log::write( "Lokal: ".$rc, "|**", 7 );
   }
   $aktuelleDaten = array();
 }
 else {
-  $funktionen->log_schreiben( "Wetterdaten ausgeschaltet.", "o--", 6 );
+  Log::write( "Wetterdaten ausgeschaltet.", "o--", 6 );
 }
 
 /*********************************************************************
@@ -166,20 +159,20 @@ if (date( "G" ) > 4 and date( "G" ) < 19 and date( "i" ) == 20) {
       if ($rc_info["http_code"] == 200) {
         break;
       }
-      $funktionen->log_schreiben( "Verbindung zum Wetterserver 'Solarprognose.de' zur Zeit gestört. x Sekunden warten. i: ".$i, 6 );
+      Log::write( "Verbindung zum Wetterserver 'Solarprognose.de' zur Zeit gestört. x Sekunden warten. i: ".$i, 6 );
       sleep(rand(5, 100));     // 5-100s
     }
     if ($i >= 3) {
-      $funktionen->log_schreiben( "---------------- Exit 3 wetterdaten.php -------------------", "|--", 6 );
-      $funktionen->log_schreiben( var_export( $rc_info, 1 ), 6 );
+      Log::write( "---------------- Exit 3 wetterdaten.php -------------------", "|--", 6 );
+      Log::write( var_export( $rc_info, 1 ), 6 );
       exit;
     }
     $Einzelwerte = json_decode( $result, true );
     if ($Einzelwerte["status"] <> 0) {
-      $funktionen->log_schreiben( "Fehler! Solarprognose: ".$Einzelwerte["message"], "   ", 6 );
+      Log::write( "Fehler! Solarprognose: ".$Einzelwerte["message"], "   ", 6 );
     }
     else {
-      $funktionen->log_schreiben( "Verbindung zum Wetterserver 'Solarprognose.de' erfolgreich.", "   ", 7 );
+      Log::write( "Verbindung zum Wetterserver 'Solarprognose.de' erfolgreich.", "   ", 7 );
     }
     if (isset($Einzelwerte["data"])) {
       $Keys = array_keys( $Einzelwerte["data"] );
@@ -188,10 +181,10 @@ if (date( "G" ) > 4 and date( "G" ) < 19 and date( "i" ) == 20) {
         // Sommer und Winterzeit wird schon vom Prognose Server umgeschaltet!
         if (date("I") == 1) {
           $aktuelleDaten["Timestamp"] = (strval( intval( $Keys[$i] )));
-          $funktionen->log_schreiben( "Sommerzeit!", "   ", 7 );
+          Log::write( "Sommerzeit!", "   ", 7 );
         }
         else {
-          $funktionen->log_schreiben( "Winterzeit!", "   ", 7 );
+          Log::write( "Winterzeit!", "   ", 7 );
           //
           $aktuelleDaten["Timestamp"] = (strval( intval( $Keys[$i] )) + 3600);   // Neu 4.3.2023
           //  $aktuelleDaten["Timestamp"] = (strval( intval( $Keys[$i] )));
@@ -199,7 +192,7 @@ if (date( "G" ) > 4 and date( "G" ) < 19 and date( "i" ) == 20) {
         $aktuelleDaten["Prognose_Watt"] = $Einzelwerte["data"][$Keys[$i]][0] * 1000;
         $aktuelleDaten["Prognose_kWh"] = $Einzelwerte["data"][$Keys[$i]][1] * 1000;
         $aktuelleDaten["Query"] = "Wetterprognose Datum=\"".date( "d.m.Y", $aktuelleDaten["Timestamp"] )."\",Prognose_W=".$aktuelleDaten['Prognose_Watt'].",Prognose_Wh=".$aktuelleDaten['Prognose_kWh']." ".$aktuelleDaten["Timestamp"];
-        $funktionen->log_schreiben( print_r( $aktuelleDaten, 1 ), "   ", 8 );
+        Log::write( print_r( $aktuelleDaten, 1 ), "   ", 8 );
 
         /*********************************************************************
         //  Daten werden in die Influx Datenbank gespeichert.
@@ -220,14 +213,14 @@ if (date( "G" ) > 4 and date( "G" ) < 19 and date( "i" ) == 20) {
         $aktuelleDaten["InfluxSSL"] = $InfluxSSL;
         if ($InfluxDB_remote) {
           $rc = wetterdaten_speichern( $aktuelleDaten );
-          $funktionen->log_schreiben( "Remote: ".$rc, "|  ", 7 );
+          Log::write( "Remote: ".$rc, "|  ", 7 );
           if ($InfluxDB_local) {
             $aktuelleDaten["InfluxAdresse"] = "localhost";
             $aktuelleDaten["InfluxPort"] = "8086";
             $aktuelleDaten["InfluxDBName"] = $InfluxDBLokal;
             $aktuelleDaten["InfluxSSL"] = false;
             $rc = wetterdaten_speichern( $aktuelleDaten );
-            $funktionen->log_schreiben( "Lokal: ".$rc, "|* ", 7 );
+            Log::write( "Lokal: ".$rc, "|* ", 7 );
           }
         }
         else {
@@ -236,25 +229,25 @@ if (date( "G" ) > 4 and date( "G" ) < 19 and date( "i" ) == 20) {
           $aktuelleDaten["InfluxDBName"] = $InfluxDBLokal;
           $aktuelleDaten["InfluxSSL"] = false;
           $rc = wetterdaten_speichern( $aktuelleDaten );
-          $funktionen->log_schreiben( "Remote: ".$rc, "|**", 7 );
+          Log::write( "Remote: ".$rc, "|**", 7 );
         }
       }
     }
   }
   elseif (strtoupper( $Prognosedaten ) == "USER" or strtoupper( $Prognosedaten ) == "USER") {
-    if (is_file( $Pfad."/prognose.php" )) {
-      $funktionen->log_schreiben( "Die eigene Wetterprognose wird benutzt", "   ", 7 );
+    if (is_file( $basedir."/custom/prognose.php" )) {
+      Log::write( "Die eigene Wetterprognose wird benutzt", "   ", 7 );
       // Wird eine eigene Prognose genutzt?
-      require ($Pfad."/prognose.php");
+      require ($basedir."/custom/prognose.php");
     }
   }
   else {
-    $funktionen->log_schreiben( "AccessToken ist: ".strlen( $AccessToken )." Zeichen lang. (Nötig sind 32 Zeichen)", "   ", 6 );
-    $funktionen->log_schreiben( "PrognoseID: ".$PrognoseID, "   ", 6 );
-    $funktionen->log_schreiben( "Wetterprognose ausgeschaltet.", "   ", 5 );
+    Log::write( "AccessToken ist: ".strlen( $AccessToken )." Zeichen lang. (Nötig sind 32 Zeichen)", "   ", 6 );
+    Log::write( "PrognoseID: ".$PrognoseID, "   ", 6 );
+    Log::write( "Wetterprognose ausgeschaltet.", "   ", 5 );
   }
 }
-$funktionen->log_schreiben( "---------------- Stop  wetterdaten.php ---------------------", "|--", 6 );
+Log::write( "---------------- Stop  wetterdaten.php ---------------------", "|--", 6 );
 exit;
 function wetterdaten_speichern( $daten ) {
   if (isset($daten["InfluxSSL"]) and $daten["InfluxSSL"] == true) {

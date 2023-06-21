@@ -8,13 +8,8 @@ $zentralerTimestamp = time();
 
 $basedir = dirname(__FILE__,2);
 require_once($basedir."/library/base.inc.php");
-require_once($basedir."/config/user.config.php");
 
-if (!isset($InfluxDBLokal)) {
-  $InfluxDBLokal = "solaranzeige";
-}
-
-$Platine = getEnvPlattform();
+$Platine = Utils::getEnvPlattform();
 
 /****************************************************************************
 //  Erst einmal prüfen ob der Script schon läuft
@@ -512,9 +507,9 @@ switch ($Regler) {
     /************************************************************************
     //  User PHP Script, falls gewünscht oder nötig
     ************************************************************************/
-    if ( file_exists ($basedir."/config/user_device.php")) {
+    if ( file_exists ($basedir."/custom/user_device.php")) {
       Log::write("Datei 'user_device.php' gefunden.","   ",7);
-      require($basedir."/config/user_device.php"); // Vom Benutzer selber geschriebene Datei.
+      require($basedir."/custom/user_device.php"); // Vom Benutzer selber geschriebene Datei.
     } else {
       Log::write("Angegebener Regler ungültig. ".$Regler,"   ",2);
       require($basedir."/services/fehler.php");

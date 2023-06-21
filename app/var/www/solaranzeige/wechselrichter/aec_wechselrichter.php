@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -26,16 +25,6 @@
 //  Achtung! Der Regler sendet zwischendurch immer wieder asynchrone Daten!
 //
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -46,8 +35,8 @@ $Device = "WR"; // WR = Wechselrichter
 $Version = "";
 $aktuelleDaten = array("Firmware" => 0, "Produkt" => 0, "Geraetestatus" => 0, "Solarspannung" => 0, "Solarstrom" => 0, "Solarleistung" => 0, "AC_Ausgangsspannung" => 0, "AC_Ausgangsstrom" => 0, "AC_Leistung" => 0, "Temperatur" => 0);
 $Start = time( ); // Timestamp festhalten
-$funktionen->log_schreiben( "---------   Start  aec_wechselrichter.php    ----------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "---------   Start  aec_wechselrichter.php    ----------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale( LC_TIME, "de_DE.utf8" );
 //  Hardware Version ermitteln.
@@ -61,7 +50,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben( "Hardware Version: ".$Version, "o  ", 8 );
+Log::write( "Hardware Version: ".$Version, "o  ", 8 );
 switch ($Version) {
 
   case "2B":
@@ -86,21 +75,21 @@ switch ($Version) {
 //  Achtung! Dieser Wert wird jeden Tag um Mitternacht auf 0 gesetzt.
 //
 *****************************************************************************/
-$StatusFile = $Pfad."/database/".$GeraeteNummer.".WhProTag.txt";
+$StatusFile = $basedir."/database/".$GeraeteNummer.".WhProTag.txt";
 if (file_exists( $StatusFile )) {
 
   /***************************************************************************
   //  Daten einlesen ...
   ***************************************************************************/
   $aktuelleDaten["WattstundenGesamtHeute"] = file_get_contents( $StatusFile );
-  $funktionen->log_schreiben( "WattstundenGesamtHeute: ".round( $aktuelleDaten["WattstundenGesamtHeute"], 2 ), "   ", 8 );
+  Log::write( "WattstundenGesamtHeute: ".round( $aktuelleDaten["WattstundenGesamtHeute"], 2 ), "   ", 8 );
   if (empty($aktuelleDaten["WattstundenGesamtHeute"])) {
     $aktuelleDaten["WattstundenGesamtHeute"] = 0;
   }
   if (date( "H:i" ) == "00:00" or date( "H:i" ) == "00:01") { // Jede Nacht 0 Uhr
     $aktuelleDaten["WattstundenGesamtHeute"] = 0; //  Tageszähler löschen
     $rc = file_put_contents( $StatusFile, "0" );
-    $funktionen->log_schreiben( "WattstundenGesamtHeute gelöscht.", "    ", 5 );
+    Log::write( "WattstundenGesamtHeute gelöscht.", "    ", 5 );
   }
 }
 else {
@@ -110,25 +99,25 @@ else {
   ***************************************************************************/
   $rc = file_put_contents( $StatusFile, "0" );
   if ($rc === false) {
-    $funktionen->log_schreiben( "Konnte die Datei whProTag_aec.txt nicht anlegen.", "XX ", 5 );
+    Log::write( "Konnte die Datei whProTag_aec.txt nicht anlegen.", "XX ", 5 );
   }
 }
 if ($HF2211) {
   // HF2211 WLAN Gateway wird benutzt
   $USB1 = fsockopen( $WR_IP, $WR_Port, $errno, $errstr, 5 ); // 5 Sekunden Timeout
   if ($USB1 === false)   {
-    $funktionen->log_schreiben( "Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
-    $funktionen->log_schreiben( "Exit.... ", "XX ", 3 );
+    Log::write( "Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
+    Log::write( "Exit.... ", "XX ", 3 );
     goto Ausgang;
   }
 }
 else {
   //  Nach dem Öffnen des Port muss sofort der Regler ausgelesen werden, sonst
   //  sendet er asynchrone Daten!
-  $USB1 = $funktionen->openUSB( $USBRegler );
+  $USB1 = USB::openUSB( $USBRegler );
   if (!is_resource( $USB1 )) {
-    $funktionen->log_schreiben( "USB Port kann nicht geöffnet werden. [1]", "XX ", 7 );
-    $funktionen->log_schreiben( "Exit.... ", "XX ", 7 );
+    Log::write( "USB Port kann nicht geöffnet werden. [1]", "XX ", 7 );
+    Log::write( "Exit.... ", "XX ", 7 );
     goto Ausgang;
   }
 }
@@ -139,20 +128,20 @@ else {
 $Zahl = substr( $Seriennummer, - 5 );
 $InverterAdresse = ((int)$Zahl%32) + 1;
 if ($InverterAdresse < 10) {
-  $Reglertyp = $funktionen->aec_inverter_lesen( $USB1, "#0".$InverterAdresse."9" );
+  $Reglertyp = AEC::aec_inverter_lesen( $USB1, "#0".$InverterAdresse."9" );
   $InverterAdresse = "0".$InverterAdresse;
 }
 else {
-  $Reglertyp = $funktionen->aec_inverter_lesen( $USB1, "#".$InverterAdresse."9" );
+  $Reglertyp = AEC::aec_inverter_lesen( $USB1, "#".$InverterAdresse."9" );
 }
 if (empty($Reglertyp)) {
-  $funktionen->log_schreiben( "Der Wechselrichter kann zur Zeit nicht abgefragt werden.", "   ", 4 );
-  $funktionen->log_schreiben( "Die Spannung von den Solarpanelen ist wahrscheinlich zu gering.", "   ", 9 );
+  Log::write( "Der Wechselrichter kann zur Zeit nicht abgefragt werden.", "   ", 4 );
+  Log::write( "Die Spannung von den Solarpanelen ist wahrscheinlich zu gering.", "   ", 9 );
 }
 else {
   $Reglertyp = substr( $Reglertyp, 5, - 3 );
-  $funktionen->log_schreiben( "Reglertyp: ".$Reglertyp, "   ", 9 );
-  $funktionen->log_schreiben( "Die Inverteradresse = ".$InverterAdresse, "   ", 9 );
+  Log::write( "Reglertyp: ".$Reglertyp, "   ", 9 );
+  Log::write( "Die Inverteradresse = ".$InverterAdresse, "   ", 9 );
 
   /***************************************************************************
   //  Einen Befehl an den Wechselrichter senden
@@ -166,11 +155,11 @@ else {
   //  Gibt es mehr als 5 Minuten kein Zugriff auf den Wechselrichter
   //  werden die Werte wieder zurück gesetzt.
   ***************************************************************************/
-  if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
-    $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
-    $Inhalt = file_get_contents( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+  if (file_exists( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" )) {
+    Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
+    $Inhalt = file_get_contents( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
     $Befehle = explode( "\n", trim( $Inhalt ));
-    $funktionen->log_schreiben( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
+    Log::write( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
     for ($i = 0; $i < count( $Befehle ); $i++) {
       if ($i >= 4) {
         //  Es werden nur maximal 5 Befehle pro Datei verarbeitet!
@@ -185,11 +174,11 @@ else {
       //  QPI ist nur zum Testen ...
       //  Siehe Dokument:  Befehle_senden.pdf
       *********************************************************************************/
-      if (file_exists( $Pfad."/befehle.ini.php" )) {
-        $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 9 );
-        $INI_File = parse_ini_file( $Pfad.'/befehle.ini.php', true );
+      if (file_exists( $basedir."/config/befehle.ini" )) {
+        Log::write( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 9 );
+        $INI_File = parse_ini_file( $basedir."/config/befehle.ini", true );
         $Regler5 = $INI_File["Regler5"];
-        $funktionen->log_schreiben( "Befehlsliste: ".print_r( $Regler5, 1 ), "|- ", 10 );
+        Log::write( "Befehlsliste: ".print_r( $Regler5, 1 ), "|- ", 10 );
         foreach ($Regler5 as $Template) {
           $Subst = $Befehle[$i];
           $l = strlen( $Template );
@@ -203,13 +192,13 @@ else {
           }
         }
         if ($Template != $Subst) {
-          $funktionen->log_schreiben( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
-          $funktionen->log_schreiben( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
+          Log::write( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
+          Log::write( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
           break;
         }
       }
       else {
-        $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
+        Log::write( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
         break;
       }
       $Wert = false;
@@ -219,31 +208,31 @@ else {
       //
       // $USB1 als device gesetzt
       // reicht Befehl aus /pipe/1.befehl.steuerung durch
-      // alt:  $Wert = $funktionen->aec_inverter_lesen($USB,"#".$InverterAdresse."L ".str_pad(substr($Befehle[$i],1), 3, '0', STR_PAD_LEFT ));
-      $Wert = $funktionen->aec_inverter_lesen( $USB1, "#".$InverterAdresse.$Befehle[$i] );
+      // alt:  $Wert = AEC::aec_inverter_lesen($USB,"#".$InverterAdresse."L ".str_pad(substr($Befehle[$i],1), 3, '0', STR_PAD_LEFT ));
+      $Wert = AEC::aec_inverter_lesen( $USB1, "#".$InverterAdresse.$Befehle[$i] );
       if ($Wert === false) {
         //
-        // alt: $funktionen->log_schreiben("Befehlsausführung erfolglos! #".$InverterAdresse."L ".str_pad(substr($Befehle[$i],1), 3, '0', STR_PAD_LEFT ),"    ",5);
-        $funktionen->log_schreiben( "Befehlsausführung erfolglos! #".$InverterAdresse.$Befehle[$i], "    ", 5 );
+        // alt: Log::write("Befehlsausführung erfolglos! #".$InverterAdresse."L ".str_pad(substr($Befehle[$i],1), 3, '0', STR_PAD_LEFT ),"    ",5);
+        Log::write( "Befehlsausführung erfolglos! #".$InverterAdresse.$Befehle[$i], "    ", 5 );
       }
       else {
-        // alt: $funktionen->log_schreiben("Befehl ".$Befehle[$i]." erfolgreich gesendet!","    ",7);
-        $funktionen->log_schreiben( "Befehl ".$Befehle[$i]." erfolgreich gesendet! WR-Antwort: ".$Wert, "    ", 7 );
-        // alt: $funktionen->log_schreiben("Befehlsausführung OK. #".$InverterAdresse."L ".str_pad(substr($Befehle[$i],1), 3, '0', STR_PAD_LEFT ),"    ",8);
-        $funktionen->log_schreiben( "Befehlsausführung OK. #".$InverterAdresse.$Befehle[$i], "    ", 8 );
+        // alt: Log::write("Befehl ".$Befehle[$i]." erfolgreich gesendet!","    ",7);
+        Log::write( "Befehl ".$Befehle[$i]." erfolgreich gesendet! WR-Antwort: ".$Wert, "    ", 7 );
+        // alt: Log::write("Befehlsausführung OK. #".$InverterAdresse."L ".str_pad(substr($Befehle[$i],1), 3, '0', STR_PAD_LEFT ),"    ",8);
+        Log::write( "Befehlsausführung OK. #".$InverterAdresse.$Befehle[$i], "    ", 8 );
       }
     }
-    $rc = unlink( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+    $rc = unlink( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
     if ($rc) {
-      $funktionen->log_schreiben( "Datei  /../pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 9 );
+      Log::write( "Datei  /../pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 9 );
     }
   }
   else {
-    $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
+    Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
   }
   $i = 1;
   do {
-    $funktionen->log_schreiben( "Die Daten werden ausgelesen...", "+  ", 9 );
+    Log::write( "Die Daten werden ausgelesen...", "+  ", 9 );
 
     /**************************************************************************
     //  Ab hier wird der Regler ausgelesen.
@@ -260,21 +249,21 @@ else {
     //
     **************************************************************************/
     do { // Die zurückgelieferten Daten müssen 58 Zeichen haben! Könnte sich einmal ändern!
-      $Daten = $funktionen->aec_inverter_lesen( $USB1, "#".$InverterAdresse."0" );
+      $Daten = AEC::aec_inverter_lesen( $USB1, "#".$InverterAdresse."0" );
       if (strlen( $Daten ) < 58) {
         // Wenn der Datenstring nicht komplett ist, kann man damit nichts anfangen.... Exit...
-        $funktionen->log_schreiben( "Fehler! Datenlänge: ".strlen( $Daten )." Daten: ".$Daten." Loop: ".$i, "   ", 2 );
-        $funktionen->log_schreiben( "Exit....", "   ", 2 );
+        Log::write( "Fehler! Datenlänge: ".strlen( $Daten )." Daten: ".$Daten." Loop: ".$i, "   ", 2 );
+        Log::write( "Exit....", "   ", 2 );
         goto Ausgang;
       }
-      $rc = $funktionen->aec_inverter_lesen( $USB1 );
+      $rc = AEC::aec_inverter_lesen( $USB1 );
     } while (($Daten === false or strlen( $Daten ) < 58) and ($Start + 55) > time( ));
     // } while ($Daten === false);
-    $funktionen->log_schreiben( "Datenlänge: ".strlen( $Daten ), "   ", 9 );
+    Log::write( "Datenlänge: ".strlen( $Daten ), "   ", 9 );
     $Daten = trim( $Daten );
-    $funktionen->log_schreiben( substr( $Daten, 0, - 2 ), "   ", 10 );
+    Log::write( substr( $Daten, 0, - 2 ), "   ", 10 );
     if ($i == 1) {
-      $funktionen->log_schreiben( substr( $Daten, 0, - 2 ), "   ", 6 );
+      Log::write( substr( $Daten, 0, - 2 ), "   ", 6 );
     }
     $aktuelleDaten["Firmware"] = 0;
     $aktuelleDaten["Produkt"] = $Reglertyp;
@@ -288,14 +277,14 @@ else {
     $aktuelleDaten["Temperatur"] = trim( substr( $Daten, 45, 3 )); // Gerätetemperatur
     $aktuelleDaten["WattstundenGesamtHeute"] = trim( substr( $Daten, 49, 6 )); // Tagesenergie
     do { // Die zurückgelieferten Daten müssen 73 Zeichen haben! Könnte sich einmal ändern!
-      $Daten = $funktionen->aec_inverter_lesen( $USB1, "#".$InverterAdresse."F" );
+      $Daten = AEC::aec_inverter_lesen( $USB1, "#".$InverterAdresse."F" );
       if (strlen( $Daten ) < 73) {
         // Wenn der Datenstring nicht komplett ist, kann man damit nichts anfangen.... Exit...
-        $funktionen->log_schreiben( "Fehler! Datenlänge: ".strlen( $Daten )." Daten: ".$Daten." Loop: ".$i, "   ", 2 );
-        $funktionen->log_schreiben( "Exit....", "   ", 2 );
+        Log::write( "Fehler! Datenlänge: ".strlen( $Daten )." Daten: ".$Daten." Loop: ".$i, "   ", 2 );
+        Log::write( "Exit....", "   ", 2 );
         goto Ausgang;
       }
-      $rc = $funktionen->aec_inverter_lesen( $USB1 );
+      $rc = AEC::aec_inverter_lesen( $USB1 );
     } while (($Daten === false or strlen( $Daten ) < 73) and ($Start + 55) > time( ));
     // } while ($Daten === false );
     $aktuelleDaten["FehlerCode"] = trim( substr( $Daten, 61, 3 ));
@@ -311,7 +300,7 @@ else {
     if ((trim( substr( $Daten, 5, 5 )) - $FehlerZeit) < 60) {
       // Der Fehler ist in der letzten Minute aufgetreten.
       $FehlermeldungText = "Allgemeiner Fehler aufgetreten. Fehler Nummer: ".$aktuelleDaten["FehlerCode"];
-      $funktionen->log_schreiben( $FehlermeldungText, "** ", 5 );
+      Log::write( $FehlermeldungText, "** ", 5 );
     }
 
     /**************************************************************************
@@ -321,13 +310,13 @@ else {
     $aktuelleDaten["Objekt"] = $Objekt;
     $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"] + 10);
     if ($i == 1)
-      $funktionen->log_schreiben( var_export( $aktuelleDaten, 1 ), "   ", 8 );
+      Log::write( var_export( $aktuelleDaten, 1 ), "   ", 8 );
 
     /**************************************************************************
     //  User PHP Script, falls gewünscht oder nötig
     **************************************************************************/
-    if (file_exists( "/var/www/html/aec_wechselrichter_meter_math.php" )) {
-      include 'aec_wechselrichter_math.php'; // Falls etwas neu berechnet werden muss.
+    if (file_exists($basedir."/custom/aec_wechselrichter_meter_math.php" )) {
+      include $basedir.'/custom/aec_wechselrichter_math.php'; // Falls etwas neu berechnet werden muss.
     }
 
     /**************************************************************************
@@ -335,8 +324,8 @@ else {
     //  an den mqtt-Broker Mosquitto gesendet.
     **************************************************************************/
     if ($MQTT and strtoupper($MQTTAuswahl) != "OPENWB") {
-      $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-      require ($Pfad."/mqtt_senden.php");
+      Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+      require($basedir."/services/mqtt_senden.php");
     }
 
     /**************************************************************************
@@ -371,9 +360,9 @@ else {
     if ($InfluxDB_remote) {
       // Test ob die Remote Verbindung zur Verfügung steht.
       if ($RemoteDaten) {
-        $rc = $funktionen->influx_remote_test( );
+        $rc = InfluxDB::influx_remote_test( );
         if ($rc) {
-          $rc = $funktionen->influx_remote( $aktuelleDaten );
+          $rc = InfluxDB::influx_remote( $aktuelleDaten );
           if ($rc) {
             $RemoteDaten = false;
           }
@@ -383,28 +372,28 @@ else {
         }
       }
       if ($InfluxDB_local) {
-        $rc = $funktionen->influx_local( $aktuelleDaten );
+        $rc = InfluxDB::influx_local( $aktuelleDaten );
       }
     }
     elseif ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
-    if (is_file( $Pfad."/1.user.config.php" )) {
+    if (is_file( $basedir."/config/1.user.config.php" )) {
       // Ausgang Multi-Regler-Version
       $Zeitspanne = (7 - (time( ) - $Start));
-      $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+      Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
       if ($Zeitspanne > 0) {
         sleep( $Zeitspanne );
       }
       break;
     }
     else {
-      $funktionen->log_schreiben( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
+      Log::write( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
       sleep( floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1)));
     }
     if ($Wiederholungen <= $i or $i >= 6) {
-      $funktionen->log_schreiben( "OK. Daten gelesen.", "   ", 8 );
-      $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 8 );
+      Log::write( "OK. Daten gelesen.", "   ", 8 );
+      Log::write( "Schleife ".$i." Ausgang...", "   ", 8 );
       break;
     }
     $i++;
@@ -417,8 +406,8 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-    require ($Pfad."/homematic.php");
+    Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -427,13 +416,13 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-    require ($Pfad."/meldungen_senden.php");
+    Log::write( "Nachrichten versenden...", "   ", 8 );
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+  Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 }
 else {
-  $funktionen->log_schreiben( "Keine gültigen Daten empfangen.", "!! ", 6 );
+  Log::write( "Keine gültigen Daten empfangen.", "!! ", 6 );
 }
 
 /*****************************************************************************
@@ -458,8 +447,8 @@ if (file_exists( $StatusFile )) {
     $whProTag = ($whProTag + ($aktuelleDaten["AC_Leistung"] / 60));
   }
   $rc = file_put_contents( $StatusFile, $whProTag );
-  $funktionen->log_schreiben( "WattstundenGesamtHeute: ".round( $whProTag, 2 ), "   ", 5 );
+  Log::write( "WattstundenGesamtHeute: ".round( $whProTag, 2 ), "   ", 5 );
 }
-Ausgang:$funktionen->log_schreiben( "---------   Stop   aec_wechselrichter.php    ----------------- ", "|--", 6 );
+Ausgang:Log::write( "---------   Stop   aec_wechselrichter.php    ----------------- ", "|--", 6 );
 return;
 ?>

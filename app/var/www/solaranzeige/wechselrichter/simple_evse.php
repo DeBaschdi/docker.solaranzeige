@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -25,17 +24,6 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
-
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -48,9 +36,9 @@ $Version = "";
 $Antwort="";
 $Subst = "";
 $Start = time();  // Timestamp festhalten
-$funktionen->log_schreiben("-------------   Start  simple_evse.php   _--------------------- ","|--",6);
+Log::write("-------------   Start  simple_evse.php   _--------------------- ","|--",6);
 
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 
@@ -69,7 +57,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",8);
+Log::write("Hardware Version: ".$Version,"o  ",8);
 
 switch($Version) {
   case "2B":
@@ -88,8 +76,8 @@ switch($Version) {
 
 $COM1 = fsockopen($WR_IP, $WR_Port, $errno, $errstr, 5);
 if (!is_resource($COM1)) {
-  $funktionen->log_schreiben("Kein Kontakt zur Wallbox ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
-  $funktionen->log_schreiben("Exit.... ","XX ",3);
+  Log::write("Kein Kontakt zur Wallbox ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
+  Log::write("Exit.... ","XX ",3);
   goto Ausgang;
 }
 
@@ -101,12 +89,12 @@ if (!is_resource($COM1)) {
 //  
 //
 ***************************************************************************/
-if (file_exists($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung")) {
+if (file_exists("/var/www/pipe/".$GeraeteNummer.".befehl.steuerung")) {
 
-  $funktionen->log_schreiben("Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----","|- ",5);
-  $Inhalt = file_get_contents($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung");
+  Log::write("Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----","|- ",5);
+  $Inhalt = file_get_contents("/var/www/pipe/".$GeraeteNummer.".befehl.steuerung");
   $Befehle = explode("\n",trim($Inhalt));
-  $funktionen->log_schreiben("Befehle: ".print_r($Befehle,1),"|- ",9);
+  Log::write("Befehle: ".print_r($Befehle,1),"|- ",9);
 
   for ($i = 0; $i < count($Befehle); $i++) {
 
@@ -122,18 +110,18 @@ if (file_exists($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung")) {
     //  QPI ist nur zum Testen ...
     //  Siehe Dokument:  Befehle_senden.pdf
     *********************************************************************************/
-    if (file_exists($Pfad."/befehle.ini.php")) {
-      $funktionen->log_schreiben("Die Befehlsliste 'befehle.ini.php' ist vorhanden----","|- ",9);
-      $INI_File =  parse_ini_file($Pfad.'/befehle.ini.php', true);
+    if (file_exists($basedir."/config/befehle.ini")) {
+      Log::write("Die Befehlsliste 'befehle.ini.php' ist vorhanden----","|- ",9);
+      $INI_File =  parse_ini_file($basedir."/config/befehle.ini", true);
       $Regler37 = $INI_File["Regler37"];
-      $funktionen->log_schreiben("Befehlsliste: ".print_r($Regler37,1),"|- ",7);
+      Log::write("Befehlsliste: ".print_r($Regler37,1),"|- ",7);
 
 
       foreach ($Regler37 as $Template) {
         $Subst = $Befehle[$i];
         $l = strlen($Template);
         for ($p = 1; $p < $l; ++$p) {
-          $funktionen->log_schreiben("Template: ".$Template." Subst: ".$Subst." l: ".$l,"|- ",10);
+          Log::write("Template: ".$Template." Subst: ".$Subst." l: ".$l,"|- ",10);
           if ($Template[$p] == "#") {
             $Subst[$p] = "#";
           }
@@ -143,13 +131,13 @@ if (file_exists($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung")) {
         }
       }
       if ($Template != $Subst) {
-        $funktionen->log_schreiben("Dieser Befehl ist nicht zugelassen. ".$Befehle[$i],"|o ",3);
-        $funktionen->log_schreiben("Die Verarbeitung der Befehle wird abgebrochen.","|o ",3);
+        Log::write("Dieser Befehl ist nicht zugelassen. ".$Befehle[$i],"|o ",3);
+        Log::write("Die Verarbeitung der Befehle wird abgebrochen.","|o ",3);
         break;
       }
     }
     else {
-      $funktionen->log_schreiben("Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----","|- ",3);
+      Log::write("Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----","|- ",3);
       break;
     }
 
@@ -166,27 +154,27 @@ if (file_exists($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung")) {
       $URL  = "setStatus?".$Teile[0]."=".$Teile[1];
     }
 
-    $Daten = $funktionen->read($WR_IP,$WR_Port,$URL);
+    $Daten = Utils::read($WR_IP,$WR_Port,$URL);
 
-    $funktionen->log_schreiben("Befehl: '".$Teile[0]."=".$Teile[1]."' gesendet!","    ",7);
-    $funktionen->log_schreiben("URL: ".$URL,"    ",8);
+    Log::write("Befehl: '".$Teile[0]."=".$Teile[1]."' gesendet!","    ",7);
+    Log::write("URL: ".$URL,"    ",8);
 
   }
-  $rc = unlink($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung");
+  $rc = unlink("/var/www/pipe/".$GeraeteNummer.".befehl.steuerung");
   if ($rc) {
-    $funktionen->log_schreiben("Datei  /../pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.","    ",9);
+    Log::write("Datei  /../pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.","    ",9);
   }
   sleep(3);
 }
 else {
-  $funktionen->log_schreiben("Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----","|- ",9);
+  Log::write("Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----","|- ",9);
 }
 
 
 
 $i = 1;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...","+  ",9);
+  Log::write("Die Daten werden ausgelesen...","+  ",9);
 
   /****************************************************************************
   //  Ab hier wird die Wallbox ausgelesen.
@@ -195,12 +183,12 @@ do {
 
   $URL  = "getParameters";
 
-  $Daten = $funktionen->read($WR_IP,$WR_Port,$URL);
+  $Daten = Utils::read($WR_IP,$WR_Port,$URL);
 
   if ($Daten === false) {
-    $funktionen->log_schreiben("Parameter sind falsch... nochmal lesen.","   ",3);
+    Log::write("Parameter sind falsch... nochmal lesen.","   ",3);
     if ($i >= 2) {
-      $funktionen->log_schreiben(var_export($funktionen->read($WR_IP,$WR_Port,$URL),1),"o=>",9   );
+      Log::write(var_export(Utils::read($WR_IP,$WR_Port,$URL),1),"o=>",9   );
       break;
     }
     $i++;
@@ -235,9 +223,9 @@ do {
 
   if ($aktuelleDaten["aktuelleLeistung"] == 51430 ) {
     // Das kommt vor...  Firmwarefehler?
-    $funktionen->log_schreiben("Parameter sind falsch... nochmal lesen.","   ",3);
+    Log::write("Parameter sind falsch... nochmal lesen.","   ",3);
     if ($i >= 2) {
-      $funktionen->log_schreiben(var_export($funktionen->read($WR_IP,$WR_Port,$URL),1),"o=>",9   );
+      Log::write(var_export(Utils::read($WR_IP,$WR_Port,$URL),1),"o=>",9   );
       break;
     }
     $i++;
@@ -248,12 +236,12 @@ do {
 
   $URL  = "getLog";
 
-  $Daten = $funktionen->read($WR_IP,$WR_Port,$URL);
+  $Daten = Utils::read($WR_IP,$WR_Port,$URL);
 
   if ($Daten === false) {
-    $funktionen->log_schreiben("Parameter sind falsch... nochmal lesen.","   ",3);
+    Log::write("Parameter sind falsch... nochmal lesen.","   ",3);
     if ($i >= 2) {
-      $funktionen->log_schreiben(var_export($funktionen->read($WR_IP,$WR_Port,$URL),1),"o=>",9   );
+      Log::write(var_export(Utils::read($WR_IP,$WR_Port,$URL),1),"o=>",9   );
       break;
     }
     $i++;
@@ -294,14 +282,14 @@ do {
 
 
   if ($i == 1) 
-    $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",8);
+    Log::write(var_export($aktuelleDaten,1),"   ",8);
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/simple_evse_math.php")) {
-    include 'simple_evse_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/simple_evse_math.php")) {
+    include $basedir.'/custom/simple_evse_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
 
@@ -311,8 +299,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -352,9 +340,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -364,31 +352,31 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
 
 
 
 
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time() - $Start));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+    Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
     sleep(floor((56 - (time() - $Start))/($Wiederholungen-$i+1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",5);
+    Log::write("Schleife ".$i." Ausgang...","   ",5);
     break;
   }
 
@@ -405,8 +393,8 @@ if (1 == 1) {
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
     $aktuelleDaten["Solarspannung"] = $aktuelleDaten["Solarspannung1"];
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-    require($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -415,14 +403,14 @@ if (1 == 1) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-    require($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...","   ",8);
+    require($basedir."/services/meldungen_senden.php");
   }
 
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);
+  Log::write("OK. Datenübertragung erfolgreich.","   ",7);
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.","!! ",6);
+  Log::write("Keine gültigen Daten empfangen.","!! ",6);
 }
 
 
@@ -430,7 +418,7 @@ fclose($COM1);
 
 Ausgang:
 
-$funktionen->log_schreiben("-------------   Stop   simple_evse.php   ---------------------- ","|--",6);
+Log::write("-------------   Stop   simple_evse.php   ---------------------- ","|--",6);
 
 return;
 

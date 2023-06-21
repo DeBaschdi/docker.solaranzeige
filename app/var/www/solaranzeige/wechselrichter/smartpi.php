@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -25,16 +24,6 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -43,8 +32,8 @@ $Tracelevel = 7; //  1 bis 10  10 = Debug
 $RemoteDaten = true;
 $Device = "SM"; // SM = SmartMeter
 $Start = time( ); // Timestamp festhalten
-$funktionen->log_schreiben( "-------------   Start  smartpi.php   --------------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "-------------   Start  smartpi.php   --------------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale( LC_TIME, "de_DE.utf8" );
@@ -59,7 +48,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben( "Hardware Version: ".$Version, "o  ", 8 );
+Log::write( "Hardware Version: ".$Version, "o  ", 8 );
 switch ($Version) {
 
   case "2B":
@@ -84,7 +73,7 @@ switch ($Version) {
 //  pro Tag zu speichern.
 //
 *****************************************************************************/
-$StatusFile = $Pfad . "/database/" . $GeraeteNummer . ".Tagesdaten.txt";
+$StatusFile = $basedir . "/database/" . $GeraeteNummer . ".Tagesdaten.txt";
 $Tagesdaten = array("BezugGesamtHeute" => 0, "EinspeisungGesamtHeute" => 0);
 if (!file_exists( $StatusFile )) {
 
@@ -93,7 +82,7 @@ if (!file_exists( $StatusFile )) {
   ***************************************************************************/
   $rc = file_put_contents( $StatusFile, serialize( $Tagesdaten ));
   if ($rc === false) {
-    $funktionen->log_schreiben( "Konnte die Datei " . $StatusFile . " nicht anlegen.", 5 );
+    Log::write( "Konnte die Datei " . $StatusFile . " nicht anlegen.", 5 );
   }
   $aktuelleDaten["Wh_Bezug"] = 0;
   $aktuelleDaten["Wh_Einspeisung"] = 0;
@@ -115,26 +104,26 @@ else {
 
 $COM = fsockopen( $WR_IP, $WR_Port, $errno, $errstr, 5 );
 if (!is_resource( $COM )) {
-  $funktionen->log_schreiben( "Kein Kontakt zur Wallbox ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
-  $funktionen->log_schreiben( "Exit.... ", "XX ", 3 );
+  Log::write( "Kein Kontakt zur Wallbox ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
+  Log::write( "Exit.... ", "XX ", 3 );
   goto Ausgang;
 }
 
 
 $i = 1;
 do {
-  $funktionen->log_schreiben( "Die Daten werden ausgelesen...", "+  ", 9 );
+  Log::write( "Die Daten werden ausgelesen...", "+  ", 9 );
 
   /****************************************************************************
   //  Ab hier wird die Wallbox ausgelesen.
   //
   ****************************************************************************/
   $URL = "api/all/power/now";
-  $Daten = $funktionen->read( $WR_IP, $WR_Port, $URL );
+  $Daten = Utils::read( $WR_IP, $WR_Port, $URL );
   if ($Daten === false) {
-    $funktionen->log_schreiben( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
+    Log::write( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
     if ($i >= 2) {
-      $funktionen->log_schreiben( var_export( $funktionen->read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
+      Log::write( var_export( Utils::read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
       break;
     }
     $i++;
@@ -156,11 +145,11 @@ do {
 
 
   $URL = "api/all/current/now";
-  $Daten = $funktionen->read( $WR_IP, $WR_Port, $URL );
+  $Daten = Utils::read( $WR_IP, $WR_Port, $URL );
   if ($Daten === false) {
-    $funktionen->log_schreiben( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
+    Log::write( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
     if ($i >= 2) {
-      $funktionen->log_schreiben( var_export( $funktionen->read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
+      Log::write( var_export( Utils::read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
       break;
     }
     $i++;
@@ -174,11 +163,11 @@ do {
 
 
   $URL = "api/all/voltage/now";
-  $Daten = $funktionen->read( $WR_IP, $WR_Port, $URL );
+  $Daten = Utils::read( $WR_IP, $WR_Port, $URL );
   if ($Daten === false) {
-    $funktionen->log_schreiben( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
+    Log::write( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
     if ($i >= 2) {
-      $funktionen->log_schreiben( var_export( $funktionen->read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
+      Log::write( var_export( Utils::read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
       break;
     }
     $i++;
@@ -191,11 +180,11 @@ do {
   $aktuelleDaten["AC_Spannung_N"] = $Daten["datasets"]["0"]["phases"]["3"]["values"]["0"]["data"];
 
   $URL = "api/all/cosphi/now";
-  $Daten = $funktionen->read( $WR_IP, $WR_Port, $URL );
+  $Daten = Utils::read( $WR_IP, $WR_Port, $URL );
   if ($Daten === false) {
-    $funktionen->log_schreiben( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
+    Log::write( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
     if ($i >= 2) {
-      $funktionen->log_schreiben( var_export( $funktionen->read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
+      Log::write( var_export( Utils::read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
       break;
     }
     $i++;
@@ -209,11 +198,11 @@ do {
 
 
   $URL = "api/all/frequency/now";
-  $Daten = $funktionen->read( $WR_IP, $WR_Port, $URL );
+  $Daten = Utils::read( $WR_IP, $WR_Port, $URL );
   if ($Daten === false) {
-    $funktionen->log_schreiben( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
+    Log::write( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
     if ($i >= 2) {
-      $funktionen->log_schreiben( var_export( $funktionen->read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
+      Log::write( var_export( Utils::read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
       break;
     }
     $i++;
@@ -257,13 +246,13 @@ do {
   $aktuelleDaten["Modell"] = "SmartPi";
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"] + 10);
   if ($i == 1)
-    $funktionen->log_schreiben( var_export( $aktuelleDaten, 1 ), "   ", 8 );
+    Log::write( var_export( $aktuelleDaten, 1 ), "   ", 8 );
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( "/var/www/html/smartpi_math.php" )) {
-    include 'smartpi_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists($basedir."/custom/smartpi_math.php" )) {
+    include $basedir.'/custom/smartpi_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -272,8 +261,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -309,9 +298,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test( );
+      $rc = InfluxDB::influx_remote_test( );
       if ($rc) {
-        $rc = $funktionen->influx_remote( $aktuelleDaten );
+        $rc = InfluxDB::influx_remote( $aktuelleDaten );
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -321,27 +310,27 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
   }
   else {
-    $rc = $funktionen->influx_local( $aktuelleDaten );
+    $rc = InfluxDB::influx_local( $aktuelleDaten );
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time( ) - $Start));
-    $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+    Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
     if ($Zeitspanne > 0) {
       sleep( $Zeitspanne );
     }
     break;
   }
   else {
-    $funktionen->log_schreiben( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
+    Log::write( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
     sleep( floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 5 );
+    Log::write( "Schleife ".$i." Ausgang...", "   ", 5 );
     break;
   }
   $i++;
@@ -354,8 +343,8 @@ if (1 == 1) {
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
     $aktuelleDaten["Solarspannung"] = $aktuelleDaten["Solarspannung1"];
-    $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-    require ($Pfad."/homematic.php");
+    Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -364,13 +353,13 @@ if (1 == 1) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-    require ($Pfad."/meldungen_senden.php");
+    Log::write( "Nachrichten versenden...", "   ", 8 );
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+  Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 }
 else {
-  $funktionen->log_schreiben( "Keine gültigen Daten empfangen.", "!! ", 6 );
+  Log::write( "Keine gültigen Daten empfangen.", "!! ", 6 );
 }
 fclose( $COM );
 
@@ -390,7 +379,7 @@ if (file_exists( $StatusFile )) {
   if (date( "H:i" ) == "00:00" or date( "H:i" ) == "00:01") {
     $Tagesdaten = array("BezugGesamtHeute" => 0, "EinspeisungGesamtHeute" => 0);
     $rc = file_put_contents( $StatusFile, serialize( $Tagesdaten ));
-    $funktionen->log_schreiben( "BezugGesamtHeute  gesetzt.", "o- ", 5 );
+    Log::write( "BezugGesamtHeute  gesetzt.", "o- ", 5 );
   }
 
   /***************************************************************************
@@ -400,11 +389,11 @@ if (file_exists( $StatusFile )) {
   $Tagesdaten["BezugGesamtHeute"] = ($Tagesdaten["BezugGesamtHeute"] + ($aktuelleDaten["Bezug"]) / 60);
   $Tagesdaten["EinspeisungGesamtHeute"] = ($Tagesdaten["EinspeisungGesamtHeute"] + ($aktuelleDaten["Einspeisung"]) / 60);
   $rc = file_put_contents( $StatusFile, serialize( $Tagesdaten ));
-  $funktionen->log_schreiben( "BezugGesamtHeute: " . round( $Tagesdaten["BezugGesamtHeute"], 2 ), "   ", 5 );
-  $funktionen->log_schreiben( "EinspeisungGesamtHeute: " . round( $Tagesdaten["EinspeisungGesamtHeute"], 2 ), "   ", 5 );
+  Log::write( "BezugGesamtHeute: " . round( $Tagesdaten["BezugGesamtHeute"], 2 ), "   ", 5 );
+  Log::write( "EinspeisungGesamtHeute: " . round( $Tagesdaten["EinspeisungGesamtHeute"], 2 ), "   ", 5 );
 }
 
 
-Ausgang:$funktionen->log_schreiben( "-------------   Stop   smartpi.php   ---------------------- ", "|--", 6 );
+Ausgang:Log::write( "-------------   Stop   smartpi.php   ---------------------- ", "|--", 6 );
 return;
 ?>

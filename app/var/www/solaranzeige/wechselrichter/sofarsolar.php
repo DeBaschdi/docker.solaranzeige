@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -51,16 +50,6 @@
 //
 //
 ***************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -69,8 +58,8 @@ $Tracelevel = 7; //  1 bis 10  10 = Debug
 $Version = "";
 $RemoteDaten = true;
 $Start = time( ); // Timestamp festhalten
-$funktionen->log_schreiben( "----------------------   Start  sofarsolar.php   --------------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "----------------------   Start  sofarsolar.php   --------------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 $aktuelleDaten["KeineSonne"] = false;
@@ -80,7 +69,7 @@ setlocale( LC_TIME, "de_DE.utf8" );
 //  $Platine = "Raspberry Pi Model B Plus Rev 1.2";
 $Teile = explode( " ", $Platine );
 if ($Teile[1] == "Pi") {
-  $funktionen->log_schreiben( "Hardware Version: ".$Platine, "o  ", 8 );
+  Log::write( "Hardware Version: ".$Platine, "o  ", 8 );
   $Version = trim( $Teile[2] );
   if ($Teile[3] == "Model") {
     $Version .= trim( $Teile[4] );
@@ -118,16 +107,16 @@ elseif (strlen( $WR_Adresse ) == 2) {
 else {
   $WR_ID = dechex( $WR_Adresse );
 }
-$funktionen->log_schreiben( "WR_ID: ".$WR_ID, "+  ", 8 );
-$USB1 = $funktionen->openUSB( $USBRegler );
+Log::write( "WR_ID: ".$WR_ID, "+  ", 8 );
+$USB1 = USB::openUSB( $USBRegler );
 if (!is_resource( $USB1 )) {
-  $funktionen->log_schreiben( "USB Port kann nicht geöffnet werden. [1]", "XX ", 7 );
-  $funktionen->log_schreiben( "Exit.... ", "XX ", 7 );
+  Log::write( "USB Port kann nicht geöffnet werden. [1]", "XX ", 7 );
+  Log::write( "Exit.... ", "XX ", 7 );
   goto Ausgang;
 }
 $i = 1;
 do {
-  $funktionen->log_schreiben( "Die Daten werden ausgelesen...", "+  ", 9 );
+  Log::write( "Die Daten werden ausgelesen...", "+  ", 9 );
 
   /****************************************************************************
   //  Ab hier wird der Regler ausgelesen.
@@ -141,21 +130,21 @@ do {
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterAddress"] = str_pad( "0044", 4, "0", STR_PAD_LEFT );
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+  $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
   if ($rc == false) {
-    $funktionen->log_schreiben( "Das Gerät kann nicht ausgelesen werden.", "   ", 7 );
+    Log::write( "Das Gerät kann nicht ausgelesen werden.", "   ", 7 );
     goto Ausgang;
   }
   $aktuelleDaten["Service"]["ModbusProtokollVersion"] = substr( $rc["data"], 0, 4 );
-  $funktionen->log_schreiben( "Modbus Protokoll Version: ".$aktuelleDaten["Service"]["ModbusProtokollVersion"], "   ", 7 );
+  Log::write( "Modbus Protokoll Version: ".$aktuelleDaten["Service"]["ModbusProtokollVersion"], "   ", 7 );
   $Befehl["DeviceID"] = $WR_ID;
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterAddress"] = str_pad( "444", 4, "0", STR_PAD_LEFT );
   $Befehl["RegisterCount"] = "0016";
-  $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
-  $aktuelleDaten["Service"]["Seriennummer.Text"] = $funktionen->hex2string( substr( $rc["data"], 4, 28 ));
-  $funktionen->log_schreiben( "Modell: ".$funktionen->hex2string( substr( $rc["data"], 6, 4 )), "   ", 7 );
-  switch ($funktionen->hex2string( substr( $rc["data"], 6, 4 ))) {
+  $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+  $aktuelleDaten["Service"]["Seriennummer.Text"] = Utils::hex2string( substr( $rc["data"], 4, 28 ));
+  Log::write( "Modell: ".Utils::hex2string( substr( $rc["data"], 6, 4 )), "   ", 7 );
+  switch (Utils::hex2string( substr( $rc["data"], 6, 4 ))) {
 
     case "A1":
       $Protokoll = 1;
@@ -250,84 +239,84 @@ do {
     default:
       $Protokoll = 0;
       $aktuelleDaten["Service"]["Modell.Text"] = "unbekannt";
-      $funktionen->log_schreiben( "Das Modell ist noch nicht bekannt: ".$funktionen->hex2string( substr( $rc["data"], 6, 4 )), "   ", 7 );
+      Log::write( "Das Modell ist noch nicht bekannt: ".Utils::hex2string( substr( $rc["data"], 6, 4 )), "   ", 7 );
       break;
   }
   //***************************************
   if ($Protokoll == 2) {
     $aktuelleDaten["Info"]["Produkt.Text"] = hexdec( substr( $rc["data"], 0, 4 ));
-    $aktuelleDaten["Service"]["Seriennummer.Text"] = $funktionen->hex2string( substr( $rc["data"], 4, 28 ));
-    $aktuelleDaten["Service"]["Hardware.Text"] = $funktionen->hex2string( substr( $rc["data"], 32, 8 ));
-    $aktuelleDaten["Info"]["Firmware.Text"] = $funktionen->hex2string( substr( $rc["data"], 40, 48 ));
+    $aktuelleDaten["Service"]["Seriennummer.Text"] = Utils::hex2string( substr( $rc["data"], 4, 28 ));
+    $aktuelleDaten["Service"]["Hardware.Text"] = Utils::hex2string( substr( $rc["data"], 32, 8 ));
+    $aktuelleDaten["Info"]["Firmware.Text"] = Utils::hex2string( substr( $rc["data"], 40, 48 ));
     $aktuelleDaten["Service"]["ModellID"] = hexdec( substr( $rc["data"], 0, 4 ));
-    $funktionen->log_schreiben( "Seriennummer: ".$aktuelleDaten["Service"]["Seriennummer.Text"], "   ", 7 );
+    Log::write( "Seriennummer: ".$aktuelleDaten["Service"]["Seriennummer.Text"], "   ", 7 );
     //
     //***************************************
     $Befehl["DeviceID"] = $WR_ID;
     $Befehl["BefehlFunctionCode"] = "03";
     $Befehl["RegisterAddress"] = str_pad( "404", 4, "0", STR_PAD_LEFT );
     $Befehl["RegisterCount"] = "0020";
-    $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+    $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
     $aktuelleDaten["Service"]["DeviceStatus"] = hexdec( substr( $rc["data"], 0, 4 ));
     $aktuelleDaten["Service"]["FehlerCode"] = hexdec( substr( $rc["data"], 4, 4 ));
     // 409 - 20
     // 40E - 40
     // 413 - 60
-    $aktuelleDaten["Service"]["TempInnen"] = $funktionen->hexdecs( substr( $rc["data"], 80, 4 ));
+    $aktuelleDaten["Service"]["TempInnen"] = Utils::hexdecs( substr( $rc["data"], 80, 4 ));
     // 419 - 84
-    $aktuelleDaten["Service"]["TempKuehler"] = $funktionen->hexdecs( substr( $rc["data"], 88, 4 ));
+    $aktuelleDaten["Service"]["TempKuehler"] = Utils::hexdecs( substr( $rc["data"], 88, 4 ));
     // 41B - 92
     // 41C - 96
     // 41D - 100
     // 41E - 104
     // 41F - 108
-    $aktuelleDaten["Service"]["TempWR"] = $funktionen->hexdecs( substr( $rc["data"], 112, 4 ));
+    $aktuelleDaten["Service"]["TempWR"] = Utils::hexdecs( substr( $rc["data"], 112, 4 ));
     //
     //***************************************
     $Befehl["DeviceID"] = $WR_ID;
     $Befehl["BefehlFunctionCode"] = "03";
     $Befehl["RegisterAddress"] = str_pad( "484", 4, "0", STR_PAD_LEFT );
     $Befehl["RegisterCount"] = "0039";
-    $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+    $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
     $aktuelleDaten["AC"]["Frequenz"] = hexdec( substr( $rc["data"], 0, 4 )) / 100;
-    $aktuelleDaten["AC"]["WRLeistungTotal"] = $funktionen->hexdecs( substr( $rc["data"], 4, 4 )) * 10;
-    //$aktuelleDaten["AC"]["WRBlindleistungTotal"] = $funktionen->hexdecs( substr( $rc["data"], 8, 4 )) * 10;
-    //$aktuelleDaten["AC"]["WRScheinleistungTotal"] = $funktionen->hexdecs( substr( $rc["data"], 12, 4 )) * 10;
-    $aktuelleDaten["AC"]["Einspeisung_Bezug"] = $funktionen->hexdecs( substr( $rc["data"], 16, 4 )) * 10;
+    $aktuelleDaten["AC"]["WRLeistungTotal"] = Utils::hexdecs( substr( $rc["data"], 4, 4 )) * 10;
+    //$aktuelleDaten["AC"]["WRBlindleistungTotal"] = Utils::hexdecs( substr( $rc["data"], 8, 4 )) * 10;
+    //$aktuelleDaten["AC"]["WRScheinleistungTotal"] = Utils::hexdecs( substr( $rc["data"], 12, 4 )) * 10;
+    $aktuelleDaten["AC"]["Einspeisung_Bezug"] = Utils::hexdecs( substr( $rc["data"], 16, 4 )) * 10;
     $aktuelleDaten["AC"]["SpannungL1"] = hexdec( substr( $rc["data"], 36, 4 )) / 10;
     $aktuelleDaten["AC"]["WRStromL1"] = hexdec( substr( $rc["data"], 40, 4 )) / 100;
-    $aktuelleDaten["AC"]["WRLeistungL1"] = $funktionen->hexdecs( substr( $rc["data"], 44, 4 )) * 10;
-    //$aktuelleDaten["AC"]["WRBlindleistungL1"] = $funktionen->hexdecs( substr( $rc["data"], 48, 4 )) * 10;
+    $aktuelleDaten["AC"]["WRLeistungL1"] = Utils::hexdecs( substr( $rc["data"], 44, 4 )) * 10;
+    //$aktuelleDaten["AC"]["WRBlindleistungL1"] = Utils::hexdecs( substr( $rc["data"], 48, 4 )) * 10;
     $aktuelleDaten["AC"]["NETZStromL1"] = hexdec( substr( $rc["data"], 56, 4 )) / 100;
-    $aktuelleDaten["AC"]["NETZLeistungL1"] = $funktionen->hexdecs( substr( $rc["data"], 60, 4 )) * 10;
-    //$aktuelleDaten["AC"]["NETZBlindleistungL1"] = $funktionen->hexdecs( substr( $rc["data"], 64, 4 )) * 10;
+    $aktuelleDaten["AC"]["NETZLeistungL1"] = Utils::hexdecs( substr( $rc["data"], 60, 4 )) * 10;
+    //$aktuelleDaten["AC"]["NETZBlindleistungL1"] = Utils::hexdecs( substr( $rc["data"], 64, 4 )) * 10;
     $aktuelleDaten["AC"]["SpannungL2"] = hexdec( substr( $rc["data"], 80, 4 )) / 10;
     $aktuelleDaten["AC"]["WRStromL2"] = hexdec( substr( $rc["data"], 84, 4 )) / 100;
-    $aktuelleDaten["AC"]["WRLeistungL2"] = $funktionen->hexdecs( substr( $rc["data"], 88, 4 )) * 10;
-    //$aktuelleDaten["AC"]["WRBlindleistungL2"] = $funktionen->hexdecs( substr( $rc["data"], 92, 4 )) * 10;
+    $aktuelleDaten["AC"]["WRLeistungL2"] = Utils::hexdecs( substr( $rc["data"], 88, 4 )) * 10;
+    //$aktuelleDaten["AC"]["WRBlindleistungL2"] = Utils::hexdecs( substr( $rc["data"], 92, 4 )) * 10;
     $aktuelleDaten["AC"]["NETZStromL2"] = hexdec( substr( $rc["data"], 100, 4 )) / 100;
-    $aktuelleDaten["AC"]["NETZLeistungL2"] = $funktionen->hexdecs( substr( $rc["data"], 104, 4 )) * 10;
-    //$aktuelleDaten["AC"]["NETZBlindleistungL2"] = $funktionen->hexdecs( substr( $rc["data"], 108, 4 )) * 10;
+    $aktuelleDaten["AC"]["NETZLeistungL2"] = Utils::hexdecs( substr( $rc["data"], 104, 4 )) * 10;
+    //$aktuelleDaten["AC"]["NETZBlindleistungL2"] = Utils::hexdecs( substr( $rc["data"], 108, 4 )) * 10;
     $aktuelleDaten["AC"]["SpannungL3"] = hexdec( substr( $rc["data"], 124, 4 )) / 10;
     $aktuelleDaten["AC"]["WRStromL3"] = hexdec( substr( $rc["data"], 128, 4 )) / 100;
-    $aktuelleDaten["AC"]["WRLeistungL3"] = $funktionen->hexdecs( substr( $rc["data"], 132, 4 )) * 10;
-    //$aktuelleDaten["AC"]["WRBlindleistungL3"] = $funktionen->hexdecs( substr( $rc["data"], 136, 4 )) * 10;
+    $aktuelleDaten["AC"]["WRLeistungL3"] = Utils::hexdecs( substr( $rc["data"], 132, 4 )) * 10;
+    //$aktuelleDaten["AC"]["WRBlindleistungL3"] = Utils::hexdecs( substr( $rc["data"], 136, 4 )) * 10;
     $aktuelleDaten["AC"]["NETZStromL3"] = hexdec( substr( $rc["data"], 144, 4 )) / 100;
-    $aktuelleDaten["AC"]["NETZLeistungL3"] = $funktionen->hexdecs( substr( $rc["data"], 148, 4 )) * 10;
-    //$aktuelleDaten["AC"]["NETZBlindleistungL3"] = $funktionen->hexdecs( substr( $rc["data"], 152, 4 )) * 10;
+    $aktuelleDaten["AC"]["NETZLeistungL3"] = Utils::hexdecs( substr( $rc["data"], 148, 4 )) * 10;
+    //$aktuelleDaten["AC"]["NETZBlindleistungL3"] = Utils::hexdecs( substr( $rc["data"], 152, 4 )) * 10;
     $Befehl["DeviceID"] = $WR_ID;
     $Befehl["BefehlFunctionCode"] = "03";
     $Befehl["RegisterAddress"] = str_pad( "4AF", 4, "0", STR_PAD_LEFT );
     $Befehl["RegisterCount"] = "0001";
-    $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
-    $aktuelleDaten["AC"]["Hausverbrauch"] = $funktionen->hexdecs( substr( $rc["data"], 0, 4 )) * 10;
+    $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+    $aktuelleDaten["AC"]["Hausverbrauch"] = Utils::hexdecs( substr( $rc["data"], 0, 4 )) * 10;
     //***************************************
     $Befehl["DeviceID"] = $WR_ID;
     $Befehl["BefehlFunctionCode"] = "03";
     $Befehl["RegisterAddress"] = str_pad( "504", 4, "0", STR_PAD_LEFT );
     $Befehl["RegisterCount"] = "0020";
-    $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
-    $aktuelleDaten["EPS"]["Leistung"] = $funktionen->hexdecs( substr( $rc["data"], 0, 4 )) * 10;
+    $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+    $aktuelleDaten["EPS"]["Leistung"] = Utils::hexdecs( substr( $rc["data"], 0, 4 )) * 10;
     // 505 - 4
     // 506 - 8
     $aktuelleDaten["EPS"]["Frequenz"] = hexdec( substr( $rc["data"], 12, 4 )) / 100;
@@ -335,7 +324,7 @@ do {
     // 509 - 20
     $aktuelleDaten["EPS"]["Spannung_R"] = hexdec( substr( $rc["data"], 24, 4 )) / 10;
     $aktuelleDaten["EPS"]["Strom_R"] = hexdec( substr( $rc["data"], 28, 4 )) / 100;
-    $aktuelleDaten["EPS"]["Leistung_R"] = $funktionen->hexdecs( substr( $rc["data"], 32, 4 )) * 10;
+    $aktuelleDaten["EPS"]["Leistung_R"] = Utils::hexdecs( substr( $rc["data"], 32, 4 )) * 10;
     // 50D - 36
     // 50E - 40
     // 50F - 44
@@ -343,7 +332,7 @@ do {
     // 511 - 52
     $aktuelleDaten["EPS"]["Spannung_S"] = hexdec( substr( $rc["data"], 56, 4 )) / 10;
     $aktuelleDaten["EPS"]["Strom_S"] = hexdec( substr( $rc["data"], 60, 4 )) / 100;
-    $aktuelleDaten["EPS"]["Leistung_S"] = $funktionen->hexdecs( substr( $rc["data"], 64, 4 )) * 10;
+    $aktuelleDaten["EPS"]["Leistung_S"] = Utils::hexdecs( substr( $rc["data"], 64, 4 )) * 10;
     // 515 - 68
     // 516 - 72
     // 517 - 76
@@ -351,7 +340,7 @@ do {
     // 515 - 84
     $aktuelleDaten["EPS"]["Spannung_T"] = hexdec( substr( $rc["data"], 88, 4 )) / 10;
     $aktuelleDaten["EPS"]["Strom_T"] = hexdec( substr( $rc["data"], 92, 4 )) / 100;
-    $aktuelleDaten["EPS"]["Leistung_T"] = $funktionen->hexdecs( substr( $rc["data"], 96, 4 )) * 10;
+    $aktuelleDaten["EPS"]["Leistung_T"] = Utils::hexdecs( substr( $rc["data"], 96, 4 )) * 10;
     // 50D - 100
     // 50E - 104
     // 50F - 108
@@ -361,7 +350,7 @@ do {
     $Befehl["BefehlFunctionCode"] = "03";
     $Befehl["RegisterAddress"] = str_pad( "584", 4, "0", STR_PAD_LEFT );
     $Befehl["RegisterCount"] = "000C";
-    $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+    $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
     $aktuelleDaten["PV1"]["Spannung"] = hexdec( substr( $rc["data"], 0, 4 )) / 10;
     $aktuelleDaten["PV1"]["Strom"] = hexdec( substr( $rc["data"], 4, 4 )) / 100;
     $aktuelleDaten["PV1"]["Leistung"] = hexdec( substr( $rc["data"], 8, 4 )) * 10;
@@ -380,7 +369,7 @@ do {
     $Befehl["BefehlFunctionCode"] = "03";
     $Befehl["RegisterAddress"] = str_pad( "5C4", 4, "0", STR_PAD_LEFT );
     $Befehl["RegisterCount"] = "0001";
-    $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+    $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
     $aktuelleDaten["PV"]["Leistung"] = hexdec( substr( $rc["data"], 0, 4 )) * 100;
     //
     //***************************************
@@ -388,19 +377,19 @@ do {
     $Befehl["BefehlFunctionCode"] = "03";
     $Befehl["RegisterAddress"] = str_pad( "604", 4, "0", STR_PAD_LEFT );
     $Befehl["RegisterCount"] = "0010";
-    $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+    $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
     $aktuelleDaten["Batterie"]["Spannung"] = hexdec( substr( $rc["data"], 0, 4 )) / 10;
-    $aktuelleDaten["Batterie"]["Strom"] = $funktionen->hexdecs( substr( $rc["data"], 4, 4 )) / 100;
-    $aktuelleDaten["Batterie"]["Leistung"] = $funktionen->hexdecs( substr( $rc["data"], 8, 4 )) * 10;
-    $aktuelleDaten["Batterie"]["Temperatur"] = $funktionen->hexdecs( substr( $rc["data"], 12, 4 ));
+    $aktuelleDaten["Batterie"]["Strom"] = Utils::hexdecs( substr( $rc["data"], 4, 4 )) / 100;
+    $aktuelleDaten["Batterie"]["Leistung"] = Utils::hexdecs( substr( $rc["data"], 8, 4 )) * 10;
+    $aktuelleDaten["Batterie"]["Temperatur"] = Utils::hexdecs( substr( $rc["data"], 12, 4 ));
     $aktuelleDaten["Batterie"]["SOC"] = hexdec( substr( $rc["data"], 16, 4 ));
     $aktuelleDaten["Batterie"]["SOH"] = hexdec( substr( $rc["data"], 20, 4 ));
     $aktuelleDaten["Batterie"]["Zyklus"] = hexdec( substr( $rc["data"], 24, 4 ));
     if (hexdec( substr( $rc["data"], 28, 4 )) > 0) {
       $aktuelleDaten["Batterie2"]["Spannung"] = hexdec( substr( $rc["data"], 28, 4 )) / 10;
-      $aktuelleDaten["Batterie2"]["Strom"] = $funktionen->hexdecs( substr( $rc["data"], 32, 4 )) / 100;
-      $aktuelleDaten["Batterie2"]["Leistung"] = $funktionen->hexdecs( substr( $rc["data"], 36, 4 )) * 10;
-      $aktuelleDaten["Batterie2"]["Temperatur"] = $funktionen->hexdecs( substr( $rc["data"], 40, 4 ));
+      $aktuelleDaten["Batterie2"]["Strom"] = Utils::hexdecs( substr( $rc["data"], 32, 4 )) / 100;
+      $aktuelleDaten["Batterie2"]["Leistung"] = Utils::hexdecs( substr( $rc["data"], 36, 4 )) * 10;
+      $aktuelleDaten["Batterie2"]["Temperatur"] = Utils::hexdecs( substr( $rc["data"], 40, 4 ));
       $aktuelleDaten["Batterie2"]["SOC"] = hexdec( substr( $rc["data"], 44, 4 ));
       $aktuelleDaten["Batterie2"]["SOH"] = hexdec( substr( $rc["data"], 48, 4 ));
       $aktuelleDaten["Batterie2"]["Zyklus"] = hexdec( substr( $rc["data"], 52, 4 ));
@@ -411,8 +400,8 @@ do {
     $Befehl["BefehlFunctionCode"] = "03";
     $Befehl["RegisterAddress"] = str_pad( "667", 4, "0", STR_PAD_LEFT );
     $Befehl["RegisterCount"] = "0003";
-    $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
-    $aktuelleDaten["Batterie"]["Leistung"] = $funktionen->hexdecs( substr( $rc["data"], 0, 4 )) * 100;
+    $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+    $aktuelleDaten["Batterie"]["Leistung"] = Utils::hexdecs( substr( $rc["data"], 0, 4 )) * 100;
     $aktuelleDaten["Batterie"]["SOC"] = hexdec( substr( $rc["data"], 4, 4 ));
     $aktuelleDaten["Batterie"]["SOH"] = hexdec( substr( $rc["data"], 8, 4 ));
     //
@@ -421,7 +410,7 @@ do {
     $Befehl["BefehlFunctionCode"] = "03";
     $Befehl["RegisterAddress"] = str_pad( "684", 4, "0", STR_PAD_LEFT );
     $Befehl["RegisterCount"] = "0033";
-    $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+    $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
     $aktuelleDaten["Summen"]["WattstundenGesamtHeute"] = hexdec( substr( $rc["data"], 0, 8 )) * 10;
     $aktuelleDaten["Summen"]["WattstundenGesamt"] = hexdec( substr( $rc["data"], 8, 8 )) * 100;
     $aktuelleDaten["Summen"]["HausverbrauchHeute"] = hexdec( substr( $rc["data"], 16, 8 )) * 10;
@@ -440,7 +429,7 @@ do {
     $Befehl["BefehlFunctionCode"] = "03";
     $Befehl["RegisterAddress"] = str_pad( "900D", 4, "0", STR_PAD_LEFT );
     $Befehl["RegisterCount"] = "0001";
-    $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+    $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
     $aktuelleDaten["Batterie"]["Anz_BatteriePacks"] = hexdec( substr( $rc["data"], 0, 2 ));
     //
     //***************************************
@@ -448,7 +437,7 @@ do {
     $Befehl["BefehlFunctionCode"] = "03";
     $Befehl["RegisterAddress"] = str_pad( "9051", 4, "0", STR_PAD_LEFT );
     $Befehl["RegisterCount"] = "0012";
-    $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+    $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
     $aktuelleDaten["BattInfo"]["Zellspannung1"] = (hexdec( substr( $rc["data"], 0, 4 )) / 1000);
     $aktuelleDaten["BattInfo"]["Zellspannung2"] = (hexdec( substr( $rc["data"], 4, 4 )) / 1000);
     $aktuelleDaten["BattInfo"]["Zellspannung3"] = (hexdec( substr( $rc["data"], 8, 4 )) / 1000);
@@ -547,19 +536,19 @@ do {
     $Befehl["BefehlFunctionCode"] = "04";
     $Befehl["RegisterAddress"] = str_pad( "2000", 4, "0", STR_PAD_LEFT );
     $Befehl["RegisterCount"] = "0010";
-    $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+    $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
     $aktuelleDaten["Info"]["Produkt.Text"] = hexdec( substr( $rc["data"], 0, 4 ));
-    $aktuelleDaten["Service"]["Seriennummer.Text"] = $funktionen->hex2string( substr( $rc["data"], 4, 28 ));
-    $aktuelleDaten["Info"]["Firmware.Text"] = $funktionen->hex2string( substr( $rc["data"], 32, 8 ));
-    $aktuelleDaten["Service"]["Hardware.Text"] = $funktionen->hex2string( substr( $rc["data"], 40, 8 ));
-    $funktionen->log_schreiben( "Seriennummer: ".$aktuelleDaten["Service"]["Seriennummer.Text"], "   ", 7 );
+    $aktuelleDaten["Service"]["Seriennummer.Text"] = Utils::hex2string( substr( $rc["data"], 4, 28 ));
+    $aktuelleDaten["Info"]["Firmware.Text"] = Utils::hex2string( substr( $rc["data"], 32, 8 ));
+    $aktuelleDaten["Service"]["Hardware.Text"] = Utils::hex2string( substr( $rc["data"], 40, 8 ));
+    Log::write( "Seriennummer: ".$aktuelleDaten["Service"]["Seriennummer.Text"], "   ", 7 );
     //
     //***************************************
     $Befehl["DeviceID"] = $WR_ID;
     $Befehl["BefehlFunctionCode"] = "03";
     $Befehl["RegisterAddress"] = str_pad( "0", 4, "0", STR_PAD_LEFT );
     $Befehl["RegisterCount"] = "0030";
-    $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
+    $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl, $Timer );
     $aktuelleDaten["Service"]["Status"] = hexdec( substr( $rc["data"], 0, 4 )); // 0
     $aktuelleDaten["Service"]["Fehler1"] = hexdec( substr( $rc["data"], 4, 4 )); // 1
     $aktuelleDaten["Service"]["Fehler2"] = hexdec( substr( $rc["data"], 8, 4 ));
@@ -602,10 +591,10 @@ do {
     }
   }
   else {
-    $funktionen->log_schreiben( "Dieses Protokoll ist noch nicht implementiert.", "   ", 5 );
+    Log::write( "Dieses Protokoll ist noch nicht implementiert.", "   ", 5 );
     goto Ausgang;
   }
-  $funktionen->log_schreiben( "Auslesen des Gerätes beendet.", "   ", 8 );
+  Log::write( "Auslesen des Gerätes beendet.", "   ", 8 );
 
   /**************************************************************************
   //  Falls ein ErrorCode vorliegt, wird er hier in einen lesbaren
@@ -621,13 +610,13 @@ do {
   $aktuelleDaten["Info"]["Objekt.Text"] = $Objekt;
   $aktuelleDaten["Info"]["Produkt.Text"] = "SofarSolar";
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"] + 10);
-  $funktionen->log_schreiben( print_r( $aktuelleDaten, 1 ), "   ", 8 );
+  Log::write( print_r( $aktuelleDaten, 1 ), "   ", 8 );
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( "/var/www/html/sofarsolar_math.php" )) {
-    include 'sofarsolar_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists($basedir."/custom/sofarsolar_math.php" )) {
+    include $basedir.'/custom/sofarsolar_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -636,8 +625,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT and strtoupper( $MQTTAuswahl ) != "OPENWB") {
-    $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -661,9 +650,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test( );
+      $rc = InfluxDB::influx_remote_test( );
       if ($rc) {
-        $rc = $funktionen->influx_remote( $aktuelleDaten );
+        $rc = InfluxDB::influx_remote( $aktuelleDaten );
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -673,27 +662,27 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
   }
   else {
-    $rc = $funktionen->influx_local( $aktuelleDaten );
+    $rc = InfluxDB::influx_local( $aktuelleDaten );
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (9 - (time( ) - $Start));
-    $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+    Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
     if ($Zeitspanne > 0) {
       sleep( $Zeitspanne );
     }
     break;
   }
   else {
-    $funktionen->log_schreiben( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
+    Log::write( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
     sleep( floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 8 );
+    Log::write( "Schleife ".$i." Ausgang...", "   ", 8 );
     break;
   }
   $i++;
@@ -705,8 +694,8 @@ if (isset($aktuelleDaten["Service"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-    require ($Pfad."/homematic.php");
+    Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -715,19 +704,19 @@ if (isset($aktuelleDaten["Service"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-    require ($Pfad."/meldungen_senden.php");
+    Log::write( "Nachrichten versenden...", "   ", 8 );
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+  Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 }
 else {
-  $funktionen->log_schreiben( "Keine gültigen Daten empfangen.", "!! ", 6 );
+  Log::write( "Keine gültigen Daten empfangen.", "!! ", 6 );
 }
 
 /***********/
 Ausgang:
 
 /***********/
-$funktionen->log_schreiben( "----------------------   Stop   sofarsolar.php   --------------------- ", "|--", 6 );
+Log::write( "----------------------   Stop   sofarsolar.php   --------------------- ", "|--", 6 );
 return;
 ?>

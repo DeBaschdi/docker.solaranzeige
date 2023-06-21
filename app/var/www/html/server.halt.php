@@ -3,14 +3,12 @@
 //  Den Raspberry stoppen, damit er ausgeschaltet werden kann.
 //  
 ******************************************************************************/
-require("phpinc/funktionen.inc.php");
+$basedir = dirname(__FILE__,3)."/solaranzeige";
+require($basedir."/library/base.inc.php");
 
 $Tracelevel = 8; //  1 bis 10  10 = Debug
 
-$funktionen = new funktionen();
-
-
-$funktionen->log_schreiben("Der Raspberry Pi wird herunter gefahren.",5);
+Log::write("Der Raspberry Pi wird herunter gefahren.",5);
 
 $fh = fopen("/var/www/pipe/halt.server",'w');
 fwrite($fh,"Reboot now\n");

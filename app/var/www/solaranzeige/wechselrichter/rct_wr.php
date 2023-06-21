@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -27,17 +26,6 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
-
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -48,14 +36,14 @@ $RemoteDaten = true;
 $Device = "WR"; // WR = Wechselrichter
 $Version = "";
 $Start = time();  // Timestamp festhalten
-$funktionen->log_schreiben("-------------   Start  rct_wr.php    -------------------------- ","|--",6);
+Log::write("-------------   Start  rct_wr.php    -------------------------- ","|--",6);
 
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 
 setlocale(LC_TIME,"de_DE.utf8");
-$funktionen->log_schreiben( "RCT: ".$WR_IP." Port: ".$WR_Port." GeräteID: ".$WR_Adresse, "   ", 7 ); 
+Log::write( "RCT: ".$WR_IP." Port: ".$WR_Port." GeräteID: ".$WR_Adresse, "   ", 7 ); 
 
 
 //  Hardware Version ermitteln.
@@ -69,7 +57,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",8);
+Log::write("Hardware Version: ".$Version,"o  ",8);
 
 switch($Version) {
   case "2B":
@@ -88,14 +76,14 @@ switch($Version) {
 
 $COM1 = fsockopen($WR_IP, $WR_Port, $errno, $errstr, 5);   // 5 = Timeout in Sekunden
 if (!is_resource($COM1)) {
-  $funktionen->log_schreiben("Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
-  $funktionen->log_schreiben("Exit.... ","XX ",9);
+  Log::write("Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
+  Log::write("Exit.... ","XX ",9);
   goto Ausgang;
 }
 
 $i = 1;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...","+  ",7);
+  Log::write("Die Daten werden ausgelesen...","+  ",7);
 
   /****************************************************************************
   //  Ab hier wird der Wechselrichter ausgelesen.
@@ -134,27 +122,27 @@ do {
 
     $ID = "CF053085";
     // rct_auslesen($COM,$Command,$Laenge,$ID,$Form = "float") {
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["AC_Spannung_R"] = $Ergebnis["Wert"];
     }
     else {
-      $funktionen->log_schreiben("Lesefehler...","+  ",7);
+      Log::write("Lesefehler...","+  ",7);
       goto Ausgang;
     }
 
     $ID = "54B4684E";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["AC_Spannung_S"] = $Ergebnis["Wert"];
     }
     else {
-      $funktionen->log_schreiben("Lesefehler....","+  ",7);
+      Log::write("Lesefehler....","+  ",7);
       goto Ausgang;
     }
 
     $ID = "2545E22D2D";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["AC_Spannung_T"] = $Ergebnis["Wert"];
     }
@@ -163,7 +151,7 @@ do {
     }
 
     $ID = "B55BA2CE";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["PV1_Spannung"] = $Ergebnis["Wert"];
     }
@@ -172,7 +160,7 @@ do {
     }
 
     $ID = "B0041187";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["PV2_Spannung"] = $Ergebnis["Wert"];
     }
@@ -181,7 +169,7 @@ do {
     }
 
     $ID = "DB11855B";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["PV1_Leistung"] = $Ergebnis["Wert"];
     }
@@ -190,7 +178,7 @@ do {
     }
 
     $ID = "0CB5D21B";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["PV2_Leistung"] = $Ergebnis["Wert"];
     }
@@ -199,7 +187,7 @@ do {
     }
 
     $ID = "BD55905F";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["WattstundenGesamtHeute"] = $Ergebnis["Wert"];
     }
@@ -209,7 +197,7 @@ do {
 
 
     $ID = "1AC87AA0";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["Hausverbrauch"] = $Ergebnis["Wert"];
     }
@@ -219,7 +207,7 @@ do {
 
 
     $ID = "27BE51D9";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["AC_Leistung_R"] = $Ergebnis["Wert"];
     }
@@ -228,7 +216,7 @@ do {
     }
 
     $ID = "F5584F90";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["AC_Leistung_S"] = $Ergebnis["Wert"];
     }
@@ -237,7 +225,7 @@ do {
     }
 
     $ID = "B221BCFA";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["AC_Leistung_T"] = $Ergebnis["Wert"];
     }
@@ -249,7 +237,7 @@ do {
 
 
     $ID = "A7FA5C5D";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["Batterie_Spannung"] = $Ergebnis["Wert"];
     }
@@ -258,7 +246,7 @@ do {
     }
 
     $ID = "959930BF";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["SOC"] = round(($Ergebnis["Wert"]*100),1);
     }
@@ -267,7 +255,7 @@ do {
     }
 
     $ID = "8B9FF008";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["SOC_Zielwert"] = round(($Ergebnis["Wert"]*100),1);
     }
@@ -275,10 +263,10 @@ do {
       goto Ausgang;
     }
 
-    $funktionen->log_schreiben("SOC Zielwert: ".$aktuelleDaten["SOC_Zielwert"],"   ",10);
+    Log::write("SOC Zielwert: ".$aktuelleDaten["SOC_Zielwert"],"   ",10);
 
     $ID = "BF9B6042";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,"String");
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,"String");
     if (is_array($Ergebnis)) {
       $aktuelleDaten["Softwareversion"] = ($Ergebnis["Wert"]);
     }
@@ -286,11 +274,11 @@ do {
       goto Ausgang;
     }
 
-    $funktionen->log_schreiben("Softwareversion: ".$aktuelleDaten["Softwareversion"],"   ",2);
+    Log::write("Softwareversion: ".$aktuelleDaten["Softwareversion"],"   ",2);
 
 
     $ID = "400F015B";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["Batterie_Leistung"] = $Ergebnis["Wert"];
     }
@@ -309,7 +297,7 @@ do {
 
 
     $ID = "902AFAFB";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["Temperatur"] = $Ergebnis["Wert"];
     }
@@ -318,7 +306,7 @@ do {
     }
 
     $ID = "5F33284E";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,"U32");
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,"U32");
     if (is_array($Ergebnis)) {
       $aktuelleDaten["DeviceStatus"] = $Ergebnis["Wert"];
     }
@@ -327,7 +315,7 @@ do {
     }
 
     $ID = "37F9D5CA";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,"Hex");
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,"Hex");
     if (is_array($Ergebnis)) {
       $aktuelleDaten["FehlerCode"] = $Ergebnis["Wert"];
     }
@@ -336,7 +324,7 @@ do {
     }
 
     $ID = "B1EF67CE";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,"float");
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,"float");
     if (is_array($Ergebnis)) {
       $aktuelleDaten["WattstundenGesamt"] = $Ergebnis["Wert"];
     }
@@ -345,7 +333,7 @@ do {
     }
 
     $ID = "7924ABD9";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,"String");
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,"String");
     if (is_array($Ergebnis)) {
       $aktuelleDaten["Firmware"] = $Ergebnis["Wert"];
     }
@@ -355,7 +343,7 @@ do {
 
 
     $ID = "1C4A665F";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,"float");
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,"float");
     if (is_array($Ergebnis)) {
       $aktuelleDaten["AC_Frequenz"] = $Ergebnis["Wert"];
     }
@@ -366,7 +354,7 @@ do {
 
 
     $ID = "FBD94C1F";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,"float");
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,"float");
     if (is_array($Ergebnis)) {
       $aktuelleDaten["Batterie_Ah"] = $Ergebnis["Wert"];
     }
@@ -376,7 +364,7 @@ do {
 
 
     $ID = "91617C58";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["GridPower"] = $Ergebnis["Wert"];
     }
@@ -385,7 +373,7 @@ do {
     }
 
     $ID = "E96F1844";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["ExternalPower"] = $Ergebnis["Wert"];
     }
@@ -394,7 +382,7 @@ do {
     }
 
     $ID = "C0DF2978";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,"U32");
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,"U32");
     if (is_array($Ergebnis)) {
       $aktuelleDaten["BatZyklen"] = $Ergebnis["Wert"];
     }
@@ -403,7 +391,7 @@ do {
     }
 
     $ID = "FC724A9E";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["PV1_EnergieGesamt"] = $Ergebnis["Wert"];
     }
@@ -412,7 +400,7 @@ do {
     }
 
     $ID = "68EEFD3D";
-    $Ergebnis = $funktionen->rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
+    $Ergebnis = RCT::rct_auslesen($COM1,$Command,$Laenge,$ID,$Form);
     if (is_array($Ergebnis)) {
       $aktuelleDaten["PV2_EnergieGesamt"] = $Ergebnis["Wert"];
     }
@@ -445,10 +433,10 @@ do {
     $aktuelleDaten["Effizienz"] = 0;      // Dummy, diesen Wert liefert das Gerät nicht
     $aktuelleDaten["Batterie_Status"] = 0;// Dummy, diesen Wert liefert das Gerät nicht
     $aktuelleDaten["Produkt"] = "RCT Wechselrichter";
-    $funktionen->log_schreiben("Seriennummer: ".$aktuelleDaten["Firmware"],"   ",2);
+    Log::write("Seriennummer: ".$aktuelleDaten["Firmware"],"   ",2);
 
 
-    $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",8);
+    Log::write(var_export($aktuelleDaten,1),"   ",8);
 
   /****************************************************************************
   //  ENDE REGLER AUSLESEN      ENDE REGLER AUSLESEN      ENDE REGLER AUSLESEN
@@ -474,14 +462,14 @@ do {
   $aktuelleDaten["Objekt"] = $Objekt;
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"]+10);
 
-  $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",8);
+  Log::write(var_export($aktuelleDaten,1),"   ",8);
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/rct_wr_math.php")) {
-    include 'rct_wr_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/rct_wr_math.php")) {
+    include $basedir.'/custom/rct_wr_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
 
@@ -492,8 +480,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -531,9 +519,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -543,32 +531,32 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
 
 
 
 
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time() - $Start));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+    Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
     sleep(floor((56 - (time() - $Start))/($Wiederholungen-$i+1)));
   }
   if ($Wiederholungen <= $i or $i >= 1) {  
     //  Die RCT Wechselrichter dürfen nur einmal pro Minute ausgelesen werden!
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",5);
+    Log::write("Schleife ".$i." Ausgang...","   ",5);
     break;
   }
 
@@ -583,8 +571,8 @@ do {
 //  übertragen.
 *********************************************************************/
 if (isset($Homematic) and $Homematic == true) {
-  $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-  require($Pfad."/homematic.php");
+  Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+  require($basedir."/services/homematic.php");
 }
 
 /*********************************************************************
@@ -593,11 +581,11 @@ if (isset($Homematic) and $Homematic == true) {
 //  Gerät aktiviert sein.
 *********************************************************************/
 if (isset($Messenger) and $Messenger == true) {
-  $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-  require($Pfad."/meldungen_senden.php");
+  Log::write("Nachrichten versenden...","   ",8);
+  require($basedir."/services/meldungen_senden.php");
 }
 
-$funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);
+Log::write("OK. Datenübertragung erfolgreich.","   ",7);
 
 
 
@@ -605,7 +593,7 @@ Ausgang:
 
 fclose($COM1);
 
-$funktionen->log_schreiben("-------------   Stop   rct_wr.php    -------------------------- ","|--",6);
+Log::write("-------------   Stop   rct_wr.php    -------------------------- ","|--",6);
 
 return;
 

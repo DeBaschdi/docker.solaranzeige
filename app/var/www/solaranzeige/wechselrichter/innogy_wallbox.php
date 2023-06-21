@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -27,16 +26,6 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -45,15 +34,15 @@ $Tracelevel = 7; //  1 bis 10  10 = Debug
 $RemoteDaten = true;
 $Version = "";
 $Start = time( ); // Timestamp festhalten
-$funktionen->log_schreiben( "-------------   Start  innogy_wallbox.php   --------------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "-------------   Start  innogy_wallbox.php   --------------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale( LC_TIME, "de_DE.utf8" );
 //  Hardware Version ermitteln.
 $Teile = explode( " ", $Platine );
 if ($Teile[1] == "Pi") {
-  $funktionen->log_schreiben( "Hardware Version: ".$Platine, "o  ", 7 );
+  Log::write( "Hardware Version: ".$Platine, "o  ", 7 );
   $Version = trim( $Teile[2] );
   if ($Teile[3] == "Model") {
     $Version .= trim( $Teile[4] );
@@ -98,14 +87,14 @@ else {
 //  pro Ladung zu speichern.
 //
 *****************************************************************************/
-$StatusFile = $Pfad."/database/".$GeraeteNummer.".WhProLadung.txt";
+$StatusFile = $basedir."/database/".$GeraeteNummer.".WhProLadung.txt";
 if (file_exists( $StatusFile )) {
 
   /***************************************************************************
   //  Daten einlesen ...
   ***************************************************************************/
   $aktuelleDaten["WattstundenProLadung"] = file_get_contents( $StatusFile );
-  $funktionen->log_schreiben( "WattstundenProLadung: ".round( $aktuelleDaten["WattstundenProLadung"], 2 ), "   ", 8 );
+  Log::write( "WattstundenProLadung: ".round( $aktuelleDaten["WattstundenProLadung"], 2 ), "   ", 8 );
   if (empty($aktuelleDaten["WattstundenProLadung"])) {
     $aktuelleDaten["WattstundenProLadung"] = 0;
   }
@@ -116,16 +105,16 @@ else {
   ***************************************************************************/
   $rc = file_put_contents( $StatusFile, "0" );
   if ($rc === false) {
-    $funktionen->log_schreiben( "Konnte die Datei WhProLadung.txt nicht anlegen.", "XX ", 5 );
+    Log::write( "Konnte die Datei WhProLadung.txt nicht anlegen.", "XX ", 5 );
   }
 }
 
 
 $COM1 = fsockopen( $WR_IP, $WR_Port, $errno, $errstr, 15 ); // normal 15
 if (!is_resource( $COM1 )) {
-  $funktionen->log_schreiben( "Kein Kontakt zur Wallbox oder Port nicht offen. IP: ".$WR_IP."  Port: ".$WR_Port, "ERR", 3 );
-  $funktionen->log_schreiben( "Fehlermeldungen: ".$errno."   ".$errstr, "ERR", 5 );
-  $funktionen->log_schreiben( "Exit.... ", "ERR", 3 );
+  Log::write( "Kein Kontakt zur Wallbox oder Port nicht offen. IP: ".$WR_IP."  Port: ".$WR_Port, "ERR", 3 );
+  Log::write( "Fehlermeldungen: ".$errno."   ".$errstr, "ERR", 5 );
+  Log::write( "Exit.... ", "ERR", 3 );
   goto Ausgang;
 }
 
@@ -138,11 +127,11 @@ if (!is_resource( $COM1 )) {
 //  Per HTTP  start_1      amp_6
 //
 ***************************************************************************/
-if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
-  $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
-  $Inhalt = file_get_contents( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+if (file_exists( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" )) {
+  Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
+  $Inhalt = file_get_contents( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
   $Befehle = explode( "\n", trim( $Inhalt ));
-  $funktionen->log_schreiben( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
+  Log::write( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
   for ($i = 0; $i < count( $Befehle ); $i++) {
     if ($i >= 6) {
       //  Es werden nur maximal 5 Befehle pro Datei verarbeitet!
@@ -157,16 +146,16 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
     //  curr_6000 ist nur zum Testen ...
     //  Siehe Dokument:  Befehle_senden.pdf
     *********************************************************************************/
-    if (file_exists( $Pfad."/befehle.ini.php" )) {
-      $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 9 );
-      $INI_File = parse_ini_file( $Pfad.'/befehle.ini.php', true );
+    if (file_exists( $basedir."/config/befehle.ini" )) {
+      Log::write( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 9 );
+      $INI_File = parse_ini_file( $basedir."/config/befehle.ini", true );
       $Regler78 = $INI_File["Regler78"];
-      $funktionen->log_schreiben( "Befehlsliste: ".print_r( $Regler78, 1 ), "|- ", 9 );
+      Log::write( "Befehlsliste: ".print_r( $Regler78, 1 ), "|- ", 9 );
       foreach ($Regler78 as $Template) {
         $Subst = $Befehle[$i];
         $l = strlen( $Template );
         for ($p = 1; $p < $l;++$p) {
-          $funktionen->log_schreiben( "Template: ".$Template." Subst: ".$Subst." l: ".$l, "|- ", 10 );
+          Log::write( "Template: ".$Template." Subst: ".$Subst." l: ".$l, "|- ", 10 );
           if ($Template[$p] == "#") {
             $Subst[$p] = "#";
           }
@@ -176,13 +165,13 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
         }
       }
       if ($Template != $Subst) {
-        $funktionen->log_schreiben( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
-        $funktionen->log_schreiben( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
+        Log::write( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
+        Log::write( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
         break;
       }
     }
     else {
-      $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
+      Log::write( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
       break;
     }
     $Teile = explode( "_", $Befehle[$i] );
@@ -193,39 +182,39 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
     //  $Teile[1] = Wert
     //  GeraeteAdresse.Befehl.Register.Laenge.Wert
     if (strtolower( $Teile[0] ) == "start") {
-      $funktionen->log_schreiben( "Start Wallbox.", "    ", 7 );
+      Log::write( "Start Wallbox.", "    ", 7 );
       // WB auf aktiv stellen
-      $rc = $funktionen->modbus_tcp_schreiben( $COM1, "01", "10", "1028", "0001", "0001");
+      $rc = ModBus::modbus_tcp_schreiben( $COM1, "01", "10", "1028", "0001", "0001");
       //  Alle 3 Phasen auf 6 Ampere stellen
-      $rc = $funktionen->modbus_tcp_schreiben( $COM1, "01", "10", "1012", "0006", "40c0000040c0000040c00000");
+      $rc = ModBus::modbus_tcp_schreiben( $COM1, "01", "10", "1012", "0006", "40c0000040c0000040c00000");
       // Nur mit einer Phase laden. Funktioniert noch nicht.
-      //$rc = $funktionen->modbus_tcp_schreiben( $COM1, "01", "10", "1012", "0006", "40c000000000000000000000");
+      //$rc = ModBus::modbus_tcp_schreiben( $COM1, "01", "10", "1012", "0006", "40c000000000000000000000");
     }
     if (strtolower( $Teile[0] ) == "stop") {
-      $funktionen->log_schreiben( "Stop Wallbox.", "    ", 7 );
+      Log::write( "Stop Wallbox.", "    ", 7 );
       // Alle 3 Phasen auf 0 Ampere stellen
-      $rc = $funktionen->modbus_tcp_schreiben( $COM1, "01", "10", "1012", "0006", "000000000000000000000000");
+      $rc = ModBus::modbus_tcp_schreiben( $COM1, "01", "10", "1012", "0006", "000000000000000000000000");
     }
     if (strtolower( $Teile[0] ) == "amp") {
-      $funktionen->log_schreiben( "Stromänderung auf ".$Teile[1]." Ampere.", "    ", 7 );
+      Log::write( "Stromänderung auf ".$Teile[1]." Ampere.", "    ", 7 );
       $Ampere =  $Teile[1];
       $AmpHex = bin2hex(pack('G',$Ampere));
       //  Float 32 >> 11 = 41300000 = 11 Ampere
-      $rc =$funktionen->modbus_tcp_schreiben( $COM1, "01", "10", "1012", "0006", $AmpHex.$AmpHex.$AmpHex);
+      $rc =ModBus::modbus_tcp_schreiben( $COM1, "01", "10", "1012", "0006", $AmpHex.$AmpHex.$AmpHex);
     }
     if ($rc) {
-      $funktionen->log_schreiben( "Befehl erfolgreich gesendet.", "    ", 5 );
+      Log::write( "Befehl erfolgreich gesendet.", "    ", 5 );
     }
     sleep( 1 );
   }
-  $rc = unlink( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+  $rc = unlink( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
   if ($rc) {
-    $funktionen->log_schreiben( "Datei  /../pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 9 );
+    Log::write( "Datei  /../pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 9 );
   }
 
 }
 else {
-  $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
+  Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
 }
 
 
@@ -258,56 +247,56 @@ do {
   //
   ***************************************************************************/
 
-  $funktionen->log_schreiben( "Abfrage: ", "   ", 9 );
+  Log::write( "Abfrage: ", "   ", 9 );
 
   $Timebase = 10000; // Je nach Dongle Firmware zwischen 60000 und 200000
 
 
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "04", "0000", "0019", "String", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "04", "0000", "0019", "String", $Timebase );
   if ($rc == false) {
-    $funktionen->log_schreiben( "Es werden keine Daten empfangen.", "ERR", 1 );
+    Log::write( "Es werden keine Daten empfangen.", "ERR", 1 );
     goto Ausgang;
   }
   $aktuelleDaten["Produkt"] = trim( $rc["Wert"] );
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "04", "0025", "0019", "String", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "04", "0025", "0019", "String", $Timebase );
   $aktuelleDaten["Seriennummer"] = trim( $rc["Wert"] );
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "04", "0200", "0019", "String", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "04", "0200", "0019", "String", $Timebase );
   $aktuelleDaten["Firmware"] = trim( $rc["Wert"] );
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "04", "0100", "0019", "String", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "04", "0100", "0019", "String", $Timebase );
   $aktuelleDaten["Hersteller"] = trim( $rc["Wert"] );
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "04", "0275", "0002", "String", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "04", "0275", "0002", "String", $Timebase );
   $aktuelleDaten["Status"] = substr( $rc["Wert"], 0, 1 );
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "04", "0300", "0001", "U16", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "04", "0300", "0001", "U16", $Timebase );
   $aktuelleDaten["Kabelstatus"] = trim( $rc["Wert"] );
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "04", "1000", "0002", "Float32", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "04", "1000", "0002", "Float32", $Timebase );
   $aktuelleDaten["MaxLadestrom"] = trim( $rc["Wert"] );
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "04", "1000", "0002", "Float32", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "04", "1000", "0002", "Float32", $Timebase );
   $aktuelleDaten["MaxLadestrom_R"] = $rc["Wert"];
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "04", "1002", "0002", "Float32", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "04", "1002", "0002", "Float32", $Timebase );
   $aktuelleDaten["MaxLadsterom_S"] = $rc["Wert"];
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "04", "1004", "0002", "Float32", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "04", "1004", "0002", "Float32", $Timebase );
   $aktuelleDaten["MaxLadestrom_T"] = $rc["Wert"];
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "04", "1006", "0002", "Float32", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "04", "1006", "0002", "Float32", $Timebase );
   $aktuelleDaten["Strom_R"] = floor( $rc["Wert"] * 10 )/10;
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "04", "1008", "0002", "Float32", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "04", "1008", "0002", "Float32", $Timebase );
   $aktuelleDaten["Strom_S"] = floor( $rc["Wert"] * 10 )/10;
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "04", "1010", "0002", "Float32", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "04", "1010", "0002", "Float32", $Timebase );
   $aktuelleDaten["Strom_T"] = floor( $rc["Wert"] * 10 )/10;
 
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "03", "1012", "0002", "Float32", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "03", "1012", "0002", "Float32", $Timebase );
   $aktuelleDaten["SetStrom_R"] = $rc["Wert"];
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "03", "1014", "0002", "Float32", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "03", "1014", "0002", "Float32", $Timebase );
   $aktuelleDaten["SetStrom_S"] = $rc["Wert"];
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "03", "1016", "0002", "Float32", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "03", "1016", "0002", "Float32", $Timebase );
   $aktuelleDaten["SetStrom_T"] = $rc["Wert"];
 
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "03", "1025", "0001", "U16", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "03", "1025", "0001", "U16", $Timebase );
   $aktuelleDaten["Setup_L1"] = $rc["Wert"];
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "03", "1026", "0001", "U16", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "03", "1026", "0001", "U16", $Timebase );
   $aktuelleDaten["Setup_L2"] = $rc["Wert"];
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "03", "1027", "0001", "U16", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "03", "1027", "0001", "U16", $Timebase );
   $aktuelleDaten["Setup_L3"] = $rc["Wert"];
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "03", "1028", "0001", "U16", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "03", "1028", "0001", "U16", $Timebase );
   $aktuelleDaten["Station_aktiv"] = $rc["Wert"];
 
   /**************************************************************************
@@ -339,10 +328,10 @@ do {
   if ($aktuelleDaten["Kabelstatus"] != 3 and $aktuelleDaten["WattstundenProLadung"] > 0) {
     $aktuelleDaten["WattstundenProLadung"] = 0; // Zähler pro Ladung zurücksetzen
     $rc = file_put_contents( $StatusFile, "0" );
-    $funktionen->log_schreiben( "WattstundenProLadung gelöscht.", "    ", 5 );
+    Log::write( "WattstundenProLadung gelöscht.", "    ", 5 );
   }
 
-  // $funktionen->log_schreiben( var_export( $rc, 1 ), "   ", 7 );
+  // Log::write( var_export( $rc, 1 ), "   ", 7 );
 
 
 
@@ -362,13 +351,13 @@ do {
   $aktuelleDaten["WattstundenGesamtHeute"] = 0; // dummy
 
   if (date("Ymd") < "20230128") {
-    $funktionen->log_schreiben( var_export( $aktuelleDaten, 1 ), "   ", 7 );
+    Log::write( var_export( $aktuelleDaten, 1 ), "   ", 7 );
   }
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( "/var/www/html/innogy_wallbox_math.php" )) {
-    include 'innogy_wallbox_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists($basedir."/custom/innogy_wallbox_math.php" )) {
+    include $basedir.'/custom/innogy_wallbox_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -377,12 +366,12 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+    require($basedir."/services/mqtt_senden.php");
   }
 
 
-  $funktionen->log_schreiben( var_export( $aktuelleDaten, 1 ), "   ", 8 );
+  Log::write( var_export( $aktuelleDaten, 1 ), "   ", 8 );
 
   /****************************************************************************
   //  Zeit und Datum
@@ -416,9 +405,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test( );
+      $rc = InfluxDB::influx_remote_test( );
       if ($rc) {
-        $rc = $funktionen->influx_remote( $aktuelleDaten );
+        $rc = InfluxDB::influx_remote( $aktuelleDaten );
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -428,27 +417,27 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
   }
   else {
-    $rc = $funktionen->influx_local( $aktuelleDaten );
+    $rc = InfluxDB::influx_local( $aktuelleDaten );
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (9 - (time( ) - $Start));
-    $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+    Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
     if ($Zeitspanne > 0) {
       sleep( $Zeitspanne );
     }
     break;
   }
   else {
-    $funktionen->log_schreiben( "Schleife: ".($i)." Zeitspanne: ".(floor( ((9 * $i) - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
+    Log::write( "Schleife: ".($i)." Zeitspanne: ".(floor( ((9 * $i) - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
     sleep( floor( ((9 * $i) - (time( ) - $Start)) / ($Wiederholungen - $i + 1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 5 );
+    Log::write( "Schleife ".$i." Ausgang...", "   ", 5 );
     break;
   }
   $i++;
@@ -462,8 +451,8 @@ if (isset($aktuelleDaten["Firmware"])) {
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
     $aktuelleDaten["Solarspannung"] = $aktuelleDaten["Solarspannung1"];
-    $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-    require ($Pfad."/homematic.php");
+    Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -472,13 +461,13 @@ if (isset($aktuelleDaten["Firmware"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-    require ($Pfad."/meldungen_senden.php");
+    Log::write( "Nachrichten versenden...", "   ", 8 );
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+  Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 }
 else {
-  $funktionen->log_schreiben( "Keine gültigen Daten empfangen.", "!! ", 6 );
+  Log::write( "Keine gültigen Daten empfangen.", "!! ", 6 );
 }
 
 /*****************************************************************************
@@ -493,7 +482,7 @@ if (file_exists( $StatusFile ) and $aktuelleDaten["Kabelstatus"] == 3) {
   $whProLadung = file_get_contents( $StatusFile );
   $whProLadung = ($whProLadung + ($aktuelleDaten["Leistung"] / 60));
   $rc = file_put_contents( $StatusFile, $whProLadung );
-  $funktionen->log_schreiben( "WattstundenProLadung: ".round( $whProLadung ), "   ", 5 );
+  Log::write( "WattstundenProLadung: ".round( $whProLadung ), "   ", 5 );
 }
 
 
@@ -501,7 +490,7 @@ fclose($COM1);
 //
 Ausgang:
 //
-$funktionen->log_schreiben( "-------------   Stop   innogy_wallbox.php   --------------------- ", "|--", 6 );
+Log::write( "-------------   Stop   innogy_wallbox.php   --------------------- ", "|--", 6 );
 return;
 
 

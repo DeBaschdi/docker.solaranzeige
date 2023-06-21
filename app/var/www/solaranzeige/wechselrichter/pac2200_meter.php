@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -27,17 +26,6 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
-
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -50,9 +38,9 @@ $RemoteDaten = true;
 $Device = "SM"; // SM = SmartMeter
 $Version = "";
 $Start = time();  // Timestamp festhalten
-$funktionen->log_schreiben("-------------   Start  pac2200_meter.php    -------------------------- ","|--",6);
+Log::write("-------------   Start  pac2200_meter.php    -------------------------- ","|--",6);
 
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 
@@ -71,7 +59,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",8);
+Log::write("Hardware Version: ".$Version,"o  ",8);
 
 switch($Version) {
   case "2B":
@@ -91,14 +79,14 @@ switch($Version) {
 
 $COM1 = fsockopen($WR_IP, $WR_Port, $errno, $errstr, 5);   // 5 = Timeout in Sekunden
 if (!is_resource($COM1)) {
-  $funktionen->log_schreiben("Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
-  $funktionen->log_schreiben("Exit.... ","XX ",9);
+  Log::write("Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
+  Log::write("Exit.... ","XX ",9);
   goto Ausgang;
 }
 
 $i = 1;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...","+  ",9);
+  Log::write("Die Daten werden ausgelesen...","+  ",9);
 
   /****************************************************************************
   //  Ab hier wird der Wechselrichter ausgelesen.
@@ -111,85 +99,85 @@ do {
   ****************************************************************************/
 
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0001","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0001","0002","F32","01","03");
   $aktuelleDaten["AC_Spannung_R"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0003","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0003","0002","F32","01","03");
   $aktuelleDaten["AC_Spannung_S"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0005","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0005","0002","F32","01","03");
   $aktuelleDaten["AC_Spannung_T"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0007","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0007","0002","F32","01","03");
   $aktuelleDaten["AC_Spannung_RS"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0009","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0009","0002","F32","01","03");
   $aktuelleDaten["AC_Spannung_ST"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0011","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0011","0002","F32","01","03");
   $aktuelleDaten["AC_Spannung_RT"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0013","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0013","0002","F32","01","03");
   $aktuelleDaten["AC_Strom_R"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0015","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0015","0002","F32","01","03");
   $aktuelleDaten["AC_Strom_S"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0017","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0017","0002","F32","01","03");
   $aktuelleDaten["AC_Strom_T"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0025","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0025","0002","F32","01","03");
   $aktuelleDaten["AC_Leistung_R"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0027","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0027","0002","F32","01","03");
   $aktuelleDaten["AC_Leistung_S"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0029","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0029","0002","F32","01","03");
   $aktuelleDaten["AC_Leistung_T"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0055","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0055","0002","F32","01","03");
   $aktuelleDaten["Frequenz"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0065","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0065","0002","F32","01","03");
   $aktuelleDaten["AC_Leistung"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0069","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0069","0002","F32","01","03");
   $aktuelleDaten["PF_Leistung"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0037","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0037","0002","F32","01","03");
   $aktuelleDaten["PF_R"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0039","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0039","0002","F32","01","03");
   $aktuelleDaten["PF_S"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0041","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0041","0002","F32","01","03");
   $aktuelleDaten["PF_T"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0211","0002","U32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0211","0002","U32","01","03");
   $aktuelleDaten["Tarif"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0501","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0501","0002","F32","01","03");
   $aktuelleDaten["Bezug"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0505","0002","F32","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0505","0002","F32","01","03");
   $aktuelleDaten["Einspeisung"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0801","0004","F64","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0801","0004","F64","01","03");
   $aktuelleDaten["Wh_Bezug"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0809","0004","F64","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0809","0004","F64","01","03");
   $aktuelleDaten["Wh_Einspeisung"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"0961","0004","F64","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"0961","0004","F64","01","03");
   $aktuelleDaten["GesamterLeistungsbedarf"] = round($rc["Wert"],2);
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"64001","001b","","01","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"64001","001b","","01","03");
   
 
 
   $aktuelleDaten["HerstellerID"] = hexdec(substr($rc["Wert"],0,4));
-  $aktuelleDaten["Seriennummer"] = $funktionen->Hex2String(substr($rc["Wert"],44,32));
-  $aktuelleDaten["Firmware"] = $funktionen->Hex2String(substr($rc["Wert"],80,2)).hexdec(substr($rc["Wert"],82,2)).".".hexdec(substr($rc["Wert"],84,2)).".".hexdec(substr($rc["Wert"],86,2));
+  $aktuelleDaten["Seriennummer"] = Utils::Hex2String(substr($rc["Wert"],44,32));
+  $aktuelleDaten["Firmware"] = Utils::Hex2String(substr($rc["Wert"],80,2)).hexdec(substr($rc["Wert"],82,2)).".".hexdec(substr($rc["Wert"],84,2)).".".hexdec(substr($rc["Wert"],86,2));
 
   /****************************************************************************
   //  ENDE REGLER AUSLESEN      ENDE REGLER AUSLESEN      ENDE REGLER AUSLESEN
@@ -219,14 +207,14 @@ do {
 
   $aktuelleDaten["AC_Strom"] = $aktuelleDaten["AC_Strom_R"] + $aktuelleDaten["AC_Strom_S"] + $aktuelleDaten["AC_Strom_T"];
 
-  $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",8);
+  Log::write(var_export($aktuelleDaten,1),"   ",8);
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/pac2200_meter_math.php")) {
-    include 'pac2200_meter_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/pac2200_meter_math.php")) {
+    include $basedir.'/custom/pac2200_meter_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
 
@@ -237,8 +225,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -278,9 +266,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -290,31 +278,31 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
 
 
 
 
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time() - $Start));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+    Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
     sleep(floor((56 - (time() - $Start))/($Wiederholungen-$i+1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",5);
+    Log::write("Schleife ".$i." Ausgang...","   ",5);
     break;
   }
 
@@ -331,8 +319,8 @@ if (isset($aktuelleDaten["Firmware"])) {
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
     $aktuelleDaten["Solarspannung"] = $aktuelleDaten["Solarspannung1"];
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-    require($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -341,14 +329,14 @@ if (isset($aktuelleDaten["Firmware"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-    require($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...","   ",8);
+    require($basedir."/services/meldungen_senden.php");
   }
 
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);
+  Log::write("OK. Datenübertragung erfolgreich.","   ",7);
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.","!! ",6);
+  Log::write("Keine gültigen Daten empfangen.","!! ",6);
 }
 
 
@@ -358,7 +346,7 @@ Ausgang:
 
 fclose($COM1);
 
-$funktionen->log_schreiben("-------------   Stop   pac2200_meter.php    -------------------------- ","|--",6);
+Log::write("-------------   Stop   pac2200_meter.php    -------------------------- ","|--",6);
 
 return;
 

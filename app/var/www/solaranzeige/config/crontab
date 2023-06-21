@@ -1,7 +1,14 @@
-*/5   *  *  *  *    echo "---mark---" >> /var/log/solaranzeige.log 2>&1
+@reboot             /usr/local/bin/php /var/www/solaranzeige/services/usb_init.php >> /var/log/solaranzeige.log 2>&1
+
 *     *  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/regler_auslesen.php >> /var/log/solaranzeige.log 2>&1
+# *     *  *  *  *    /usr/local/sbin/checkreboot.sh             >/dev/null
 *     *  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/mqtt.php >> /var/log/solaranzeige.log 2>&1
 
 20,50 *  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/wetterdaten.php >> /var/log/solaranzeige.log 2>&1
 
 55   23  *  *  *    /usr/local/bin/php /var/www/solaranzeige/services/wartung.php >> /var/log/solaranzeige.log 2>&1
+
+#*     *  *  *  *   /usr/local/bin/php /var/www/solaranzeige/services/wallbox_steuerung.php >> /var/log/solaranzeige.log 2>&1
+
+#15,45  *  *  *  *  cd /pvforecast && /usr/bin/python3 SolCastLight.py >> /var/log/solaranzeige.log 2>&1
+#15,45  *  *  *  *  cd /pvforecast && /usr/bin/python3 PVForecasts.py >> /var/log/solaranzeige.log 2>&1

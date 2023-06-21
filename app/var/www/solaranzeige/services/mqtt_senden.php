@@ -32,7 +32,7 @@
 $fifoPath = "/var/www/pipe/pipe";
 
 if (! file_exists($fifoPath)) {
-  $funktionen->log_schreiben("Pipe wird neu erstellt.","   ",5);
+  Log::write("Pipe wird neu erstellt.","   ",5);
   posix_mkfifo($fifoPath, 0644);
 } 
 $fifo = fopen($fifoPath, "w+"); 
@@ -43,7 +43,7 @@ if (is_resource($fifo)) {
         foreach ($aktuelleDaten[$key] as $key1 => $value1) {
           //  Bei der Multi-Regler-Version wird zusaetzlich das Geraet mit gesendet.
           $rc = fwrite($fifo, $MQTTGeraet."/".$key."/".$key1." ".$value1."\r\n");
-          $funktionen->log_schreiben($MQTTGeraet."/".$key."/".$key1." ".$value1." rc: ".$rc,"   ",10);
+          Log::write($MQTTGeraet."/".$key."/".$key1." ".$value1." rc: ".$rc,"   ",10);
         }
       }
     }
@@ -53,7 +53,7 @@ if (is_resource($fifo)) {
       if (!is_array($wert)) {
         //  Bei der Multi-Regler-Version wird zusaetzlich das Geraet mit gesendet.
         $rc = fwrite($fifo, $MQTTGeraet."/".$key." ".$wert."\r\n");
-        $funktionen->log_schreiben($MQTTGeraet."/".$key." ".$wert." rc: ".$rc,"   ",10);
+        Log::write($MQTTGeraet."/".$key." ".$wert." rc: ".$rc,"   ",10);
       }
     }
   }

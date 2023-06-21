@@ -1,5 +1,8 @@
 <?php
 
+$basedir = dirname(__FILE__,3)."/solaranzeige";
+require($basedir."/library/base.inc.php");
+
 /*****************************************************************************
 //  Solaranzeige Projekt             Copyright (C) [2016-2021]  [Ulrich Kunz]
 //
@@ -55,7 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   // collect value of input field
   // print_r($_POST);
 }
-log_schreiben( "- - - - - Start Web - Seite automation.web.php  - - - - - -", "|-->", 1 );
+Log::write( "- - - - - Start Web - Seite automation.web.php  - - - - - -", "|-->", 1 );
 
 /****************************************************************************
 //  SQLite Datenbank starten
@@ -69,10 +72,10 @@ if ($submit == true) {
   }
   catch (PDOException $e) {
   // Print PDOException message
-    log_schreiben( $e->getMessage( ), "", 1 );
+    Log::write( $e->getMessage( ), "", 1 );
   }
 }
-log_schreiben( "Connect DB datenauswahl.sqlite3", "   ", 4 );
+Log::write( "Connect DB datenauswahl.sqlite3", "   ", 4 );
 
 /****************************************************************************
 //  SQLite Datenbank starten
@@ -85,9 +88,9 @@ try {
 }
 catch (PDOException $e) {
 // Print PDOException message
-  log_schreiben( $e->getMessage( ), "", 1 );
+  Log::write( $e->getMessage( ), "", 1 );
 }
-log_schreiben( "Connect DB automation.sqlite3", "   ", 4 );
+Log::write( "Connect DB automation.sqlite3", "   ", 4 );
 
 // $varBasiswerte  ($db1)
 if ($submit) {
@@ -143,7 +146,7 @@ if ($submit) {
     $sql .= ",Relais2aktiv = 0";
   $sql .= " where Id = 1";
   $result = $db2->query( $sql );
-  log_schreiben( $sql, "", 4 );
+  Log::write( $sql, "", 4 );
   if (isset($_POST["12PVWattein"])) {
     $sql = "Update config set ";
     $sql .= "Relais1K2PVein = ".$_POST["12PVWattein"];
@@ -162,7 +165,7 @@ if ($submit) {
     $sql .= ",Relais1K2SMBedingungaus = \"".$_POST["12SMaus"]."\"";
     $sql .= " where Id = 1";
     $result = $db2->query( $sql );
-    log_schreiben( $sql, "", 4 );
+    Log::write( $sql, "", 4 );
   }
   if (isset($_POST["13PVWattein"])) {
     $sql = "Update config set ";
@@ -182,7 +185,7 @@ if ($submit) {
     $sql .= ",Relais1K3SMBedingungaus = \"".$_POST["13SMaus"]."\"";
     $sql .= " where Id = 1";
     $result = $db2->query( $sql );
-    log_schreiben( $sql, "", 4 );
+    Log::write( $sql, "", 4 );
   }
   if (isset($_POST["14PVWattein"])) {
     $sql = "Update config set ";
@@ -202,7 +205,7 @@ if ($submit) {
     $sql .= ",Relais1K4SMBedingungaus = \"".$_POST["14SMaus"]."\"";
     $sql .= " where Id = 1";
     $result = $db2->query( $sql );
-    log_schreiben( $sql, "", 4 );
+    Log::write( $sql, "", 4 );
   }
   if (isset($_POST["21PVWattein"])) {
     $sql = "Update config set ";
@@ -222,7 +225,7 @@ if ($submit) {
     $sql .= ",Relais2K1SMBedingungaus = \"".$_POST["21SMaus"]."\"";
     $sql .= " where Id = 1";
     $result = $db2->query( $sql );
-    log_schreiben( $sql, "", 4 );
+    Log::write( $sql, "", 4 );
   }
   if (isset($_POST["22PVWattein"])) {
     $sql = "Update config set ";
@@ -244,18 +247,18 @@ if ($submit) {
     $result = $db2->query( $sql );
     //$Anzahl = $db2->rowCount();
     //
-    log_schreiben( $sql, "", 4 );
+    Log::write( $sql, "", 4 );
   }
 }
 if (isset($_POST["Relais1aktiv"])) {
-  log_schreiben( "Relais 1 ist aktiv.", "", 3 );
+  Log::write( "Relais 1 ist aktiv.", "", 3 );
 }
 if (isset($_POST["Relais2aktiv"])) {
-  log_schreiben( "Relais 2 ist aktiv.", "", 3 );
+  Log::write( "Relais 2 ist aktiv.", "", 3 );
 }
 
 if (!isset($_POST["Relais1aktiv"]) and !isset($_POST["Relais2aktiv"])) {
-  log_schreiben( "Fehler, es ist kein Relais konfiguriert.", "", 1 );
+  Log::write( "Fehler, es ist kein Relais konfiguriert.", "", 1 );
 }
 
 if (isset($_POST["TestRelais1"]) or isset($_POST["TestRelais2"])) {
@@ -263,12 +266,12 @@ if (isset($_POST["TestRelais1"]) or isset($_POST["TestRelais2"])) {
   $result = $db2->query( $sql )->fetchAll( PDO::FETCH_ASSOC );
   if ($result == false) {
     $Fehlermeldung = "Es fehlen Eingaben!";
-    log_schreiben( "Fehler! Es fehlen Eingaben.", "", 1 );
+    Log::write( "Fehler! Es fehlen Eingaben.", "", 1 );
     goto Ausgang;
   }
   //  Alle Felder auslesen
   $var = $result[0];
-  log_schreiben( print_r( $var, 1 ), "", 4 );
+  Log::write( print_r( $var, 1 ), "", 4 );
 
   /**************************************************************************
   //  Moscitto Client starten
@@ -302,9 +305,9 @@ if (isset($_POST["TestRelais1"]) or isset($_POST["TestRelais2"])) {
   }
   $client->loop( );
   for ($i = 1; $i < 20; $i++) {
-    log_schreiben( print_r( $MQTTDaten, 1 ), "MQT", 4 );
+    Log::write( print_r( $MQTTDaten, 1 ), "MQT", 4 );
     if (substr( $MQTTDaten["MQTTStatus"][1], - 7 ) == "PINGREQ") {
-      log_schreiben( "Keine Antwort vom Broker (Relais). Abbruch!", "", 3 );
+      Log::write( "Keine Antwort vom Broker (Relais). Abbruch!", "", 3 );
       break;
     }
     if (isset($MQTTDaten["MQTTMessageReturnText"]) and $MQTTDaten["MQTTMessageReturnText"] == "RX-OK") {
@@ -313,11 +316,11 @@ if (isset($_POST["TestRelais1"]) or isset($_POST["TestRelais2"])) {
       //  MQTT Meldungen empfangen. Subscribing    Subscribing    Subscribing
       //  Hier werden die Daten vom Mosquitto Broker gelesen.
       ***********************************************************************/
-      log_schreiben( print_r( $MQTTDaten, 1 ), "", 4 );
-      log_schreiben( "Nachricht: ".$MQTTDaten["MQTTNachricht"], "", 3 );
+      Log::write( print_r( $MQTTDaten, 1 ), "", 4 );
+      Log::write( "Nachricht: ".$MQTTDaten["MQTTNachricht"], "", 3 );
       if (strtoupper( $MQTTDaten["MQTTNachricht"] ) == "ONLINE") {
         // Gerät ist online
-        log_schreiben( "Topic: ".$MQTTDaten["MQTTTopic"], "   ", 3 );
+        Log::write( "Topic: ".$MQTTDaten["MQTTTopic"], "   ", 3 );
         $TopicTeile = explode( "/", $MQTTDaten["MQTTTopic"] );
         if ($TopicTeile[0] == "tele") {
           $Prefix = 0;
@@ -347,7 +350,7 @@ if (isset($_POST["TestRelais1"]) or isset($_POST["TestRelais2"])) {
         $values = json_decode( $MQTTDaten["MQTTNachricht"], true );
         if (is_array( $values )) {
           if (isset($values["Status"])) {
-            log_schreiben( print_r( $values["Status"], 1 ), "", 1 );
+            Log::write( print_r( $values["Status"], 1 ), "", 1 );
             foreach ($values["Status"] as $k => $v) {
               $inputs[] = array("name" => $k, "value" => $v);
               if ($k == "DeviceName") {
@@ -368,7 +371,7 @@ if (isset($_POST["TestRelais1"]) or isset($_POST["TestRelais2"])) {
             }
           }
           if (isset($values["StatusSTS"])) {
-            log_schreiben( print_r( $values["StatusSTS"], 1 ), "", 1 );
+            Log::write( print_r( $values["StatusSTS"], 1 ), "", 1 );
             foreach ($values["StatusSTS"] as $k => $v) {
               $inputs[] = array("name" => $k, "value" => $v);
               if ($k == "POWER1") {
@@ -400,7 +403,7 @@ if (isset($_POST["TestRelais1"]) or isset($_POST["TestRelais2"])) {
                   $Power4 = 1;
               }
             }
-            log_schreiben( "TopicPosition: ".$TopicPosition, "", 1 );
+            Log::write( "TopicPosition: ".$TopicPosition, "", 1 );
             if ($TopicPosition == 0) {
               if (isset($_POST["TestRelais1"])) {
                 $MQTTDaten["MQTTPublishReturnCode"] = $client->publish( $_POST['Relais1Topic']."/cmnd/power0", 2, 0, false );
@@ -426,7 +429,7 @@ if (isset($_POST["TestRelais1"]) or isset($_POST["TestRelais2"])) {
   }
   $var = array();
 }
-//log_schreiben($Power1." ".$Power2." ".$Power3." ".$Power4,"",2);
+//Log::write($Power1." ".$Power2." ".$Power3." ".$Power4,"",2);
 
 /*****************************************************************************
 // Update der tabelle 'config' mit den Werten aus 'basiswerte'
@@ -436,7 +439,7 @@ if ($_POST["LR_ReglerNr"] > 0) {
   $result = $db1->query( $sql )->fetchAll( PDO::FETCH_ASSOC );
   //  Alle Felder auslesen
   $varBasiswerte = $result[0];
-  log_schreiben( print_r( $varBasiswerte, 1 ), "", 2 );
+  Log::write( print_r( $varBasiswerte, 1 ), "", 2 );
   $sql = "Update config set ";
   $sql .= "LRMeasurement = \"".$varBasiswerte["LRMeasurement"]."\"";
   $sql .= ",LRFeldname = \"".$varBasiswerte["PVLeistung"]."\"";
@@ -448,7 +451,7 @@ if ($_POST["WR_ReglerNr"] > 0) {
   $result = $db1->query( $sql )->fetchAll( PDO::FETCH_ASSOC );
   //  Alle Felder auslesen
   $varBasiswerte = $result[0];
-  log_schreiben( print_r( $varBasiswerte, 1 ), "", 2 );
+  Log::write( print_r( $varBasiswerte, 1 ), "", 2 );
   $sql = "Update config set ";
   $sql .= "WRMeasurement = \"".$varBasiswerte["WRMeasurement"]."\"";
   $sql .= ",WRFeldname = \"".$varBasiswerte["ACLeistung"]."\"";
@@ -460,7 +463,7 @@ if ($_POST["SM_ReglerNr"] > 0) {
   $result = $db1->query( $sql )->fetchAll( PDO::FETCH_ASSOC );
   //  Alle Felder auslesen
   $varBasiswerte = $result[0];
-  log_schreiben( print_r( $varBasiswerte, 1 ), "", 2 );
+  Log::write( print_r( $varBasiswerte, 1 ), "", 2 );
   $sql = "Update config set ";
   $sql .= "SMMeasurement = \"".$varBasiswerte["MeterMeasurement"]."\"";
   $sql .= ",SMBezug = \"".$varBasiswerte["Bezug"]."\"";
@@ -473,7 +476,7 @@ if ($_POST["BMS_ReglerNr"] > 0) {
   $result = $db1->query( $sql )->fetchAll( PDO::FETCH_ASSOC );
   //  Alle Felder auslesen
   $varBasiswerte = $result[0];
-  log_schreiben( print_r( $varBasiswerte, 1 ), "", 4 );
+  Log::write( print_r( $varBasiswerte, 1 ), "", 4 );
   $sql = "Update config set ";
   $sql .= "BMSMeasurement = \"".$varBasiswerte["BMSMeasurement"]."\"";
   $sql .= ",BMSFeldname = \"".$varBasiswerte["SOC"]."\"";
@@ -565,10 +568,10 @@ if ($var["Relais2K4einMinuten"] == "")  {
 $var["Relais2K4einMinuten"] = 0;
 }
 ***********************************************************/
-// log_schreiben(print_r($var,1),"",3);
+// Log::write(print_r($var,1),"",3);
 Ausgang:$db1 = null;
 $db2 = null;
-log_schreiben( "---------------------------------------------------------", "ENDE", 1 );
+Log::write( "---------------------------------------------------------", "ENDE", 1 );
 include ("automation.html");
 exit;
 function db_connect( $Database ) {
@@ -581,17 +584,17 @@ function influxDB_lesen( $Datenbankname, $Measurement ) {
   $rc = datenbank( $ch );
   if (!isset($rc["JSON_Ausgabe"]["results"][0]["series"])) {
     if (isset($rc["JSON_Ausgabe"]["results"][0]["error"])) {
-      log_schreiben( $rc["JSON_Ausgabe"]["results"][0]["error"], "", 1 );
+      Log::write( $rc["JSON_Ausgabe"]["results"][0]["error"], "", 1 );
       return false;
     }
-    log_schreiben( "Keine Daten vorhanden.", "", 1 );
+    Log::write( "Keine Daten vorhanden.", "", 1 );
     return false;
   }
   else {
     for ($i = 1; $i < count( $rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"] ); $i++) {
       $influxDB[$rc["JSON_Ausgabe"]["results"][0]["series"][0]["columns"][$i]] = $rc["JSON_Ausgabe"]["results"][0]["series"][0]["values"][0][$i];
     }
-    log_schreiben( "Datenbank: '".$Datenbankname."' ".print_r( $influxDB, 1 ), "", 4 );
+    Log::write( "Datenbank: '".$Datenbankname."' ".print_r( $influxDB, 1 ), "", 4 );
   }
   return $influxDB;
 }
@@ -621,66 +624,24 @@ function datenbank( $ch, $query = "" ) {
 //  $LogMeldung = Die Meldung ISO Format
 //  $Loglevel=2   Loglevel 1-4   4 = Trace
 **************************************************************************/
-function log_schreiben( $LogMeldung, $Titel = "", $Loglevel = 3, $UTF8 = 0 ) {
-  global $Tracelevel;
-  $LogDateiName = "../log/WEB-automation.log";
-  if (strlen( $Titel ) < 4) {
-    switch ($Loglevel) {
-
-      case 1:
-        $Titel = "ERRO";
-        break;
-
-      case 2:
-        $Titel = "WARN";
-        break;
-
-      case 3:
-        $Titel = "INFO";
-        break;
-
-      default:
-        $Titel = "    ";
-        break;
-    }
-  }
-  if ($Loglevel <= $Tracelevel) {
-    if ($UTF8) {
-      $LogMeldung = utf8_encode( $LogMeldung );
-    }
-    if ($handle = fopen( $LogDateiName, 'a' )) {
-      //  Schreibe in die geöffnete Datei.
-      //  Bei einem Fehler bis zu 3 mal versuchen.
-      for ($i = 1; $i < 4; $i++) {
-        $rc = fwrite( $handle, date( "d.m. H:i:s" )." ".substr( $Titel, 0, 4 )." ".$LogMeldung."\n" );
-        if ($rc) {
-          break;
-        }
-        sleep( 1 );
-      }
-      fclose( $handle );
-    }
-  }
-  return true;
-}
 function connect( $r, $message ) {
   global $Brokermeldung;
-  log_schreiben( "Broker: ".$message, "", 3 );
+  Log::write( "Broker: ".$message, "", 3 );
   $Brokermeldung = $message;
 }
 function publish( ) {
-  log_schreiben( "Mesage published.", "", 3 );
+  Log::write( "Mesage published.", "", 3 );
 }
 function disconnect( ) {
-  // log_schreiben("Broker disconnect erfolgreich.","",3);
+  // Log::write("Broker disconnect erfolgreich.","",3);
 }
 function subscribe( ) {
-  log_schreiben( "Subscribed to a topic.", "", 3 );
+  Log::write( "Subscribed to a topic.", "", 3 );
   // echo "subscribe\n";
 }
 function logger( ) {
   global $MQTTDaten;
-  log_schreiben( print_r( func_get_args( ), 1 ), "", 4 );
+  Log::write( print_r( func_get_args( ), 1 ), "", 4 );
   $p = func_get_args( );
   $MQTTDaten["MQTTStatus"] = $p;
 }

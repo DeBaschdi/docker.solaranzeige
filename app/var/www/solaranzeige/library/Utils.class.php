@@ -306,13 +306,7 @@ class Utils {
   }
 
   public static function VE_CRC($Daten) {
-    $Dezimal = 85; //  HEX 55
-    $Daten = "0".$Daten;
-    for ($i = 0; $i < strlen($Daten) - 1; $i += 2) {
-      $Dezimal = ($Dezimal - hexdec($Daten[$i].$Daten[$i + 1]));
-    }
-    $CRC = strtoupper(substr("0".dechex($Dezimal), - 2));
-    return $CRC;
+    return VE::VE_CRC($Daten);
   }
 
   public static function eSmart3_CRC($Daten) {
@@ -426,5 +420,166 @@ class Utils {
       $crc = '0'.$crc;
     }
     return $crc;
+  }
+  
+  
+  public static function tageslicht($Ort = 'hamburg') {
+    // Ist an dem Ort gerade Sonnenaufgang / Sonnenuntergang?
+    $Daemmerung = 0; // 3600 = 1 Stunde  600 = 10 Minuten
+    switch (strtolower($Ort)) {
+      case "essen":
+        $Breite = 51.4556432;
+        $Laenge = 7.01155520;
+        break;
+      case "hamburg":
+        $Breite = 53.5510846;
+        $Laenge = 9.99368180;
+        break;
+      case "bremerhaven":
+        $Breite = 53.547748;
+        $Laenge = 8.5700350;
+        break;
+      case "hirschau":
+        $Breite = 49.550412;
+        $Laenge = 11.947207;
+        break;
+      case "llucmajor":
+        $Breite = 39.476000;
+        $Laenge = 2.933000;
+        break;
+      case "würzburg":
+        $Breite = 49.683385;
+        $Laenge = 10.114229;
+        break;
+      default:
+        $Breite = 53.5510846;
+        $Laenge = 9.99368180;
+        break;
+    }
+    $now = time();
+    if (date("I")) {
+      $gmt_offset = 2;
+    }
+    else {
+      $gmt_offset = 1;
+    }
+    $zenith = 50 / 60;
+    $zenith = $zenith + 90;
+    $sunset = date_sunset($now, SUNFUNCS_RET_TIMESTAMP, $Breite, $Laenge, $zenith, $gmt_offset);
+    $sunrise = date_sunrise($now, SUNFUNCS_RET_TIMESTAMP, $Breite, $Laenge, $zenith, $gmt_offset);
+    if (time() > ($sunrise - $Daemmerung) and time() < ($sunset + $Daemmerung)) {
+      return true;
+    }
+    return false;
+  }
+  
+  /************************************************************************/
+  public static function cobs_decoder($Wert) {
+    $Ergebnis = $Wert;
+    $cobs = hexdec(substr($Wert, 10, 2));
+    if (strlen($Wert) != ($cobs * 2) + 12) {
+      $Laenge = strlen($Wert);
+      $Zaehler = 10;
+      for ($i = 0; $i <= strlen($Wert); $i++) {
+        $Zaehler = $Zaehler + ($cobs * 2);
+        if (substr($Wert, $Zaehler, 2) == "00") {
+          break;
+        }
+        $Ergebnis = substr_replace($Ergebnis, "00", $Zaehler, 2);
+        $cobs = hexdec(substr($Wert, $Zaehler, 2));
+        // echo $Zaehler."\n";
+        // echo $Wert."\n";
+        // echo $Ergebnis."\n\n";
+      }
+    }
+    return $Ergebnis;
+  }
+  
+  
+  public static function checksumJK32($data) {
+    $crc = 0x0;
+    for ($i = 0; $i < strlen($data); $i++) {
+      $crc = $crc + ord($data[$i]);
+    }
+    $highCrc = floor($crc / 256);
+    $lowCrc = ($crc - $highCrc * 256);
+    return chr(0).chr(0).chr($highCrc).chr($lowCrc);
+  }
+  
+  /*************************/
+  public static function senec($Daten) {
+    $teile = explode("_", $Daten);
+    switch ($teile[0]) {
+      case 'u1':
+        $Ergebnis = hexdec($teile[1]);
+        break;
+      case "i1":
+        $Ergebnis = hexdec($teile[1]);
+        break;
+      case "u3":
+        $Ergebnis = hexdec($teile[1]);
+        break;
+      case "u6":
+        $Ergebnis = hexdec($teile[1]);
+        break;
+      case "u8":
+        $Ergebnis = hexdec($teile[1]);
+        break;
+      case "fl":
+        if ($teile[1] == "00000000") {
+          $Ergebnis = 0;
+        }
+        else {
+          $Ergebnis = Utils::_hex2float($teile[1]);
+        }
+        break;
+      case "st":
+        $Ergebnis = $teile[1];
+        break;
+        //  Eingefügt Timo 09.05.2022
+      case "i8":
+        $Ergebnis = hexdec($teile[1]);
+        break;
+      default:
+        $Ergebnis = 0;
+        break;
+    }
+    return $Ergebnis;
+  }
+  
+  
+  public static function getEnvAsString(string $key, string $defaultValue) :string {
+    $value = getenv($key);
+    if ($value === FALSE) return $defaultValue;
+    return $value;
+  }
+  
+  public static function getEnvAsBoolean(string $key, bool $defaultValue) :bool {
+    $value = getenv($key);
+    if ($value === FALSE) return $defaultValue;
+    return ($value === "true" || $value === "1" || $value === "on" || $value === "yes");
+  }
+  
+  public static function getEnvAsInteger(string $key, int $defaultValue) :int {
+    $value = getenv($key);
+    if ($value === FALSE) return $defaultValue;
+    return intval($value);
+  }
+  
+  public static function getEnvAsFloat(string $key, float $defaultValue) :float {
+    $value = getenv($key);
+    if ($value === FALSE) return $defaultValue;
+    return floatval($value);
+  }
+  
+  public static function getEnvPlattform() :string {
+    If (is_file("/sys/firmware/devicetree/base/model")) {
+      //  Auf welcher Platine läuft die Software?
+      $Platine = file_get_contents("/sys/firmware/devicetree/base/model");
+    } else {
+      $Platine = "Docker Image ".Utils::getEnvAsString("SA_VERSION","0.0.0");
+    }
+    
+    return $Platine;
   }
 }

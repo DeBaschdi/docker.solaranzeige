@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -25,23 +24,13 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 $Tracelevel = 7; //  1 bis 10  10 = Debug
 $RemoteDaten = true;
 $Device = "WR"; // WR = Wechselrichter
 $Version = "";
 $Start = time(); // Timestamp festhalten
-$funktionen->log_schreiben("-----------------   Start  shelly.php    ------------------ ", "|--", 6);
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8);
+Log::write("-----------------   Start  shelly.php    ------------------ ", "|--", 6);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale(LC_TIME, "de_DE.utf8");
@@ -56,7 +45,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version, "o  ", 9);
+Log::write("Hardware Version: ".$Version, "o  ", 9);
 switch ($Version) {
   case "2B":
     break;
@@ -76,7 +65,7 @@ switch ($Version) {
 //  Achtung! Dieser Wert wird jeden Tag um Mitternacht auf 0 gesetzt.
 //
 *****************************************************************************/
-$StatusFile = $Pfad."/database/".$GeraeteNummer.".WhProTag.txt";
+$StatusFile = $basedir."/database/".$GeraeteNummer.".WhProTag.txt";
 if (file_exists($StatusFile)) {
 
   /***************************************************************************
@@ -84,14 +73,14 @@ if (file_exists($StatusFile)) {
   ***************************************************************************/
   $aktuelleDaten["WattstundenGesamtHeute"] = file_get_contents($StatusFile);
   $aktuelleDaten["WattstundenGesamtHeute"] = round($aktuelleDaten["WattstundenGesamtHeute"], 2);
-  $funktionen->log_schreiben("WattstundenGesamtHeute: ".$aktuelleDaten["WattstundenGesamtHeute"], "   ", 8);
+  Log::write("WattstundenGesamtHeute: ".$aktuelleDaten["WattstundenGesamtHeute"], "   ", 8);
   if (empty($aktuelleDaten["WattstundenGesamtHeute"])) {
     $aktuelleDaten["WattstundenGesamtHeute"] = 0;
   }
   if (date("H:i") == "00:00" or date("H:i") == "00:01") { // Jede Nacht 0 Uhr
     $aktuelleDaten["WattstundenGesamtHeute"] = 0; //  Tageszähler löschen
     $rc = file_put_contents($StatusFile, "0");
-    $funktionen->log_schreiben("WattstundenGesamtHeute gelöscht.", "    ", 5);
+    Log::write("WattstundenGesamtHeute gelöscht.", "    ", 5);
   }
 }
 else {
@@ -102,18 +91,18 @@ else {
   ***************************************************************************/
   $rc = file_put_contents($StatusFile, "0");
   if ($rc === false) {
-    $funktionen->log_schreiben("Konnte die Datei kwhProTag_ax.txt nicht anlegen.", "   ", 5);
+    Log::write("Konnte die Datei kwhProTag_ax.txt nicht anlegen.", "   ", 5);
   }
 }
 $COM1 = fsockopen($WR_IP, $WR_Port, $errno, $errstr, 5);
 if (!is_resource($COM1)) {
-  $funktionen->log_schreiben("Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port, "XX ", 3);
-  $funktionen->log_schreiben("Exit.... ", "XX ", 3);
+  Log::write("Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port, "XX ", 3);
+  Log::write("Exit.... ", "XX ", 3);
   goto Ausgang;
 }
 $i = 1;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...", "+  ", 9);
+  Log::write("Die Daten werden ausgelesen...", "+  ", 9);
 
   /****************************************************************************
   //  Ab hier wird das Shelly EM und 3EM ausgelesen.
@@ -145,7 +134,7 @@ do {
   $aktuelleDaten["Relaisstatus"] = 0;
   $aktuelleDaten["OK"] = 0;
   $URL = "shelly";
-  $Daten = $funktionen->read($WR_IP, $WR_Port, $URL);
+  $Daten = Utils::read($WR_IP, $WR_Port, $URL);
   if ($Daten != false) {
     if (isset($Daten["app"])) {
       $aktuelleDaten["Type"] = $Daten["app"];
@@ -156,12 +145,12 @@ do {
       $aktuelleDaten["Firmware"] = $Daten["fw"];
     }
 
-    $funktionen->log_schreiben("Shelly Typ: ".$aktuelleDaten["Type"], "   ", 5);
+    Log::write("Shelly Typ: ".$aktuelleDaten["Type"], "   ", 5);
 
     if (strtoupper($aktuelleDaten["Type"]) == "PRO3EM") {
 
       $URL = "rpc/shelly.getstatus";
-      $Daten = $funktionen->read($WR_IP, $WR_Port, $URL);
+      $Daten = Utils::read($WR_IP, $WR_Port, $URL);
       if ($Daten === false) {
         goto Ausgang;
       }
@@ -191,11 +180,11 @@ do {
     }
     elseif (strtoupper($aktuelleDaten["Type"]) == "SHEM") {
       $URL = "status";
-      $Daten = $funktionen->read($WR_IP, $WR_Port, $URL);
+      $Daten = Utils::read($WR_IP, $WR_Port, $URL);
       if ($Daten === false) {
-        $funktionen->log_schreiben("Status Werte sind falsch... nochmal lesen.", "   ", 3);
+        Log::write("Status Werte sind falsch... nochmal lesen.", "   ", 3);
         if ($i >= 6) {
-          $funktionen->log_schreiben(var_export($funktionen->read($WR_IP, $WR_Port, $URL), 1), "o=>", 9);
+          Log::write(var_export(Utils::read($WR_IP, $WR_Port, $URL), 1), "o=>", 9);
           break;
         }
         $i++;
@@ -246,11 +235,11 @@ do {
     }
     elseif (strtoupper($aktuelleDaten["Type"]) == "SHEM-3") {
       $URL = "status";
-      $Daten = $funktionen->read($WR_IP, $WR_Port, $URL);
+      $Daten = Utils::read($WR_IP, $WR_Port, $URL);
       if ($Daten === false) {
-        $funktionen->log_schreiben("Status Werte sind falsch... nochmal lesen.", "   ", 3);
+        Log::write("Status Werte sind falsch... nochmal lesen.", "   ", 3);
         if ($i >= 6) {
-          $funktionen->log_schreiben(var_export($funktionen->read($WR_IP, $WR_Port, $URL), 1), "o=>", 9);
+          Log::write(var_export(Utils::read($WR_IP, $WR_Port, $URL), 1), "o=>", 9);
           break;
         }
         $i++;
@@ -313,7 +302,7 @@ do {
   /****************************************************************************
   //  ENDE REGLER AUSLESEN      ENDE REGLER AUSLESEN      ENDE REGLER AUSLESEN
   ****************************************************************************/
-  $funktionen->log_schreiben("Gesamtleistung: ".$aktuelleDaten["LeistungGesamt"]." Watt", "   ", 6);
+  Log::write("Gesamtleistung: ".$aktuelleDaten["LeistungGesamt"]." Watt", "   ", 6);
 
   /****************************************************************************
   //  Die Daten werden für die Speicherung vorbereitet.
@@ -331,15 +320,15 @@ do {
   $aktuelleDaten["Objekt"] = $Objekt;
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"] + 10);
   if ($i == 1) {
-    $funktionen->log_schreiben(var_export($aktuelleDaten, 1), "   ", 8);
-    $funktionen->log_schreiben(print_r($Daten, 1), "   ", 9);
+    Log::write(var_export($aktuelleDaten, 1), "   ", 8);
+    Log::write(print_r($Daten, 1), "   ", 9);
   }
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
   if (file_exists("/var/www/html/shelly_math.php")) {
-    include 'shelly_math.php'; // Falls etwas neu berechnet werden muss.
+    include $basedir.'/custom/shelly_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -348,8 +337,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1);
-    require ($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -384,9 +373,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -396,28 +385,28 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time() - $Start));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((54 - (time() - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9);
+    Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((54 - (time() - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9);
     sleep(floor((54 - (time() - $Start)) / ($Wiederholungen - $i + 1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben("OK. Daten gelesen.", "   ", 9);
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...", "   ", 8);
+    Log::write("OK. Daten gelesen.", "   ", 9);
+    Log::write("Schleife ".$i." Ausgang...", "   ", 8);
     break;
   }
   $i++;
@@ -430,8 +419,8 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
     $aktuelleDaten["Solarspannung"] = $aktuelleDaten["Solarspannung1"];
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...", "   ", 8);
-    require ($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...", "   ", 8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -440,13 +429,13 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...", "   ", 8);
-    require ($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...", "   ", 8);
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.", "   ", 7);
+  Log::write("OK. Datenübertragung erfolgreich.", "   ", 7);
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.", "!! ", 6);
+  Log::write("Keine gültigen Daten empfangen.", "!! ", 6);
 }
 
 /*****************************************************************************
@@ -464,8 +453,8 @@ if (file_exists($StatusFile) and isset($aktuelleDaten["Firmware"])) {
   // aktuellen Wert in die Datei schreiben:
   $whProTag = ($whProTag + ($aktuelleDaten["LeistungGesamt"] / 60));
   $rc = file_put_contents($StatusFile, $whProTag);
-  $funktionen->log_schreiben("WattstundenGesamtHeute: ".round($whProTag, 2), "   ", 5);
+  Log::write("WattstundenGesamtHeute: ".round($whProTag, 2), "   ", 5);
 }
-Ausgang:$funktionen->log_schreiben("-----------------   Stop   shelly.php    ------------------ ", "|--", 6);
+Ausgang:Log::write("-----------------   Stop   shelly.php    ------------------ ", "|--", 6);
 return;
 ?>

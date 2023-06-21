@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 /*****************************************************************************
 //  Solaranzeige Projekt             Copyright (C) [2015-2016]  [Ulrich Kunz]
@@ -25,17 +24,6 @@
 //  Achtung! Der Regler sendet zwischendurch immer wieder asynchrone Daten!
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
-
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -46,9 +34,9 @@ $Device = "WR"; // WR = Wechselrichter
 $Reglermodelle = array("0300","A042","A043","A04C","A053","A054","A055");
 $Version = ""; 
 $Start = time();  // Timestamp festhalten
-$funktionen->log_schreiben("---------   Start  victron_phoenix.php   ----------------- ","|--",6);
+Log::write("---------   Start  victron_phoenix.php   ----------------- ","|--",6);
 
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 
@@ -63,20 +51,20 @@ $RemoteDaten = true;
 //  Achtung! Dieser Wert wird jeden Tag um Mitternacht auf 0 gesetzt.
 //
 *****************************************************************************/
-$StatusFile = $Pfad."/database/".$GeraeteNummer.".WhProTag.txt";
+$StatusFile = $basedir."/database/".$GeraeteNummer.".WhProTag.txt";
 if (file_exists($StatusFile)) {
   /***************************************************************************
   //  Daten einlesen ...
   ***************************************************************************/
   $aktuelleDaten["WattstundenGesamtHeute"] = file_get_contents($StatusFile);
-  $funktionen->log_schreiben("WattstundenGesamtHeute: ".round($aktuelleDaten["WattstundenGesamtHeute"],2),"   ",8);
+  Log::write("WattstundenGesamtHeute: ".round($aktuelleDaten["WattstundenGesamtHeute"],2),"   ",8);
   if (empty($aktuelleDaten["WattstundenGesamtHeute"])){
       $aktuelleDaten["WattstundenGesamtHeute"] = 0;
   }
   if (date("H:i") == "00:00" or date("H:i") == "00:01") {   // Jede Nacht 0 Uhr
     $aktuelleDaten["WattstundenGesamtHeute"] = 0;       //  Tageszähler löschen
     $rc = file_put_contents($StatusFile,"0");
-    $funktionen->log_schreiben("WattstundenGesamtHeute gelöscht.","    ",5);
+    Log::write("WattstundenGesamtHeute gelöscht.","    ",5);
   }
 }
 else {
@@ -85,7 +73,7 @@ else {
   ***************************************************************************/
   $rc = file_put_contents($StatusFile,"0");
   if ($rc === false) {
-    $funktionen->log_schreiben("Konnte die Datei whProTag_pho.txt nicht anlegen.","XX ",5);
+    Log::write("Konnte die Datei whProTag_pho.txt nicht anlegen.","XX ",5);
   }
 }
 
@@ -105,7 +93,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",8);
+Log::write("Hardware Version: ".$Version,"o  ",8);
 
 switch($Version) {
   case "2B":
@@ -123,16 +111,16 @@ switch($Version) {
 
 //  Nach em Öffnen des Port muss sofort der Regler ausgelesen werden, sonst
 //  sendet er asynchrone Daten!
-$USB1 = $funktionen->openUSB($USBRegler);
+$USB1 = USB::openUSB($USBRegler);
 if (!is_resource($USB1)) {
-  $funktionen->log_schreiben("USB Port kann nicht geöffnet werden. [1]","XX ",7);
-  $funktionen->log_schreiben("Exit.... ","XX ",7);
+  Log::write("USB Port kann nicht geöffnet werden. [1]","XX ",7);
+  Log::write("Exit.... ","XX ",7);
   goto Ausgang;
 }
 
 $i = 1;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...","+  ",9);
+  Log::write("Die Daten werden ausgelesen...","+  ",9);
 
   /****************************************************************************
   //  Ab hier wird der Regler ausgelesen.
@@ -150,11 +138,11 @@ do {
   ****************************************************************************/
 
   $Befehl = "1";  // Firmware
-  $rc = $funktionen->ve_regler_auslesen($USB1,":".$Befehl.$funktionen->VE_CRC($Befehl));
-  if ($funktionen->VE_CRC(substr(trim($rc),1,-2)) != substr(trim($rc),-2)) {
+  $rc = VE::ve_regler_auslesen($USB1,":".$Befehl.Utils::VE_CRC($Befehl));
+  if (Utils::VE_CRC(substr(trim($rc),1,-2)) != substr(trim($rc),-2)) {
     //  Hier kann es vorkommen, dass der Regler zwischendurch asynchrone 
     //  Daten sendet.
-    $funktionen->log_schreiben("Firmware".trim($rc),"!!  ",9);
+    Log::write("Firmware".trim($rc),"!!  ",9);
     $m++;
     if ($m > 2) {
       break;
@@ -162,69 +150,69 @@ do {
     continue;  // Fehler beim Auslesen aufgetreten. Nochmal...
 
   }
-  $aktuelleDaten = array_merge($aktuelleDaten,$funktionen->ve_ergebnis_auswerten($rc));
+  $aktuelleDaten = array_merge($aktuelleDaten,VE::ve_ergebnis_auswerten($rc));
 
   $Befehl = "4";  // Produkt
-  $rc = $funktionen->ve_regler_auslesen($USB1,":".$Befehl.$funktionen->VE_CRC($Befehl));
-  if ($funktionen->VE_CRC(substr(trim($rc),1,-2)) != substr(trim($rc),-2)) {
-    $funktionen->log_schreiben("Produkt".trim($rc),"!!  ",5);
+  $rc = VE::ve_regler_auslesen($USB1,":".$Befehl.Utils::VE_CRC($Befehl));
+  if (Utils::VE_CRC(substr(trim($rc),1,-2)) != substr(trim($rc),-2)) {
+    Log::write("Produkt".trim($rc),"!!  ",5);
     continue;  // Fehler beim Auslesen aufgetreten. Nochmal...
   }
-  $aktuelleDaten = array_merge($aktuelleDaten,$funktionen->ve_ergebnis_auswerten($rc));
+  $aktuelleDaten = array_merge($aktuelleDaten,VE::ve_ergebnis_auswerten($rc));
 
 
   $Befehl = "7000200";  //  Mode
-  $rc = $funktionen->ve_regler_auslesen($USB1,":".$Befehl.$funktionen->VE_CRC($Befehl));
-  if ($funktionen->VE_CRC(substr(trim($rc),1,-2)) != substr(trim($rc),-2)) {
-    $funktionen->log_schreiben("Optionen".trim($rc),"!!  ",5);
+  $rc = VE::ve_regler_auslesen($USB1,":".$Befehl.Utils::VE_CRC($Befehl));
+  if (Utils::VE_CRC(substr(trim($rc),1,-2)) != substr(trim($rc),-2)) {
+    Log::write("Optionen".trim($rc),"!!  ",5);
     continue;  // Fehler beim Auslesen aufgetreten. Nochmal...
   }
-  $aktuelleDaten = array_merge($aktuelleDaten,$funktionen->ve_ergebnis_auswerten($rc));
-  $funktionen->log_schreiben("Mode:".trim($rc),"!!  ",9);
+  $aktuelleDaten = array_merge($aktuelleDaten,VE::ve_ergebnis_auswerten($rc));
+  Log::write("Mode:".trim($rc),"!!  ",9);
 
 
   $Befehl = "71C0300";  //  Warnungen
-  $rc = $funktionen->ve_regler_auslesen($USB1,":".$Befehl.$funktionen->VE_CRC($Befehl));
-  if ($funktionen->VE_CRC(substr(trim($rc),1,-2)) != substr(trim($rc),-2)) {
-    $funktionen->log_schreiben("Optionen".trim($rc),"!!  ",5);
+  $rc = VE::ve_regler_auslesen($USB1,":".$Befehl.Utils::VE_CRC($Befehl));
+  if (Utils::VE_CRC(substr(trim($rc),1,-2)) != substr(trim($rc),-2)) {
+    Log::write("Optionen".trim($rc),"!!  ",5);
     continue;  // Fehler beim Auslesen aufgetreten. Nochmal...
   }
-  $aktuelleDaten = array_merge($aktuelleDaten,$funktionen->ve_ergebnis_auswerten($rc));
-  $funktionen->log_schreiben("Mode:".trim($rc),"!!  ",9);
+  $aktuelleDaten = array_merge($aktuelleDaten,VE::ve_ergebnis_auswerten($rc));
+  Log::write("Mode:".trim($rc),"!!  ",9);
 
 
   $Befehl = "78DED00";  //  Batteriespannung
-  $rc = $funktionen->ve_regler_auslesen($USB1,":".$Befehl.$funktionen->VE_CRC($Befehl));
-  if ($funktionen->VE_CRC(substr(trim($rc),1,-2)) != substr(trim($rc),-2)) {
-    $funktionen->log_schreiben("Batteriespannung".trim($rc),"!!  ",5);
+  $rc = VE::ve_regler_auslesen($USB1,":".$Befehl.Utils::VE_CRC($Befehl));
+  if (Utils::VE_CRC(substr(trim($rc),1,-2)) != substr(trim($rc),-2)) {
+    Log::write("Batteriespannung".trim($rc),"!!  ",5);
     continue;  // Fehler beim Auslesen aufgetreten. Nochmal...
   }
-  $aktuelleDaten = array_merge($aktuelleDaten,$funktionen->ve_ergebnis_auswerten($rc));
-  $funktionen->log_schreiben("Mode:".trim($rc),"!!  ",9);
+  $aktuelleDaten = array_merge($aktuelleDaten,VE::ve_ergebnis_auswerten($rc));
+  Log::write("Mode:".trim($rc),"!!  ",9);
 
   $Befehl = "7002200";  //  AC_Spannung
-  $rc = $funktionen->ve_regler_auslesen($USB1,":".$Befehl.$funktionen->VE_CRC($Befehl));
-  if ($funktionen->VE_CRC(substr(trim($rc),1,-2)) != substr(trim($rc),-2)) {
-    $funktionen->log_schreiben("Batteriespannung".trim($rc),"!!  ",5);
+  $rc = VE::ve_regler_auslesen($USB1,":".$Befehl.Utils::VE_CRC($Befehl));
+  if (Utils::VE_CRC(substr(trim($rc),1,-2)) != substr(trim($rc),-2)) {
+    Log::write("Batteriespannung".trim($rc),"!!  ",5);
     continue;  // Fehler beim Auslesen aufgetreten. Nochmal...
   }
-  $aktuelleDaten = array_merge($aktuelleDaten,$funktionen->ve_ergebnis_auswerten($rc));
-  $funktionen->log_schreiben("Mode:".trim($rc),"!!  ",9);
+  $aktuelleDaten = array_merge($aktuelleDaten,VE::ve_ergebnis_auswerten($rc));
+  Log::write("Mode:".trim($rc),"!!  ",9);
 
   $Befehl = "7012200";  //  AC_Strom
-  $rc = $funktionen->ve_regler_auslesen($USB1,":".$Befehl.$funktionen->VE_CRC($Befehl));
-  if ($funktionen->VE_CRC(substr(trim($rc),1,-2)) != substr(trim($rc),-2)) {
-    $funktionen->log_schreiben("Batteriespannung".trim($rc),"!!  ",5);
+  $rc = VE::ve_regler_auslesen($USB1,":".$Befehl.Utils::VE_CRC($Befehl));
+  if (Utils::VE_CRC(substr(trim($rc),1,-2)) != substr(trim($rc),-2)) {
+    Log::write("Batteriespannung".trim($rc),"!!  ",5);
     continue;  // Fehler beim Auslesen aufgetreten. Nochmal...
   }
-  $aktuelleDaten = array_merge($aktuelleDaten,$funktionen->ve_ergebnis_auswerten($rc));
-  $funktionen->log_schreiben("Mode:".trim($rc),"!!  ",9);
+  $aktuelleDaten = array_merge($aktuelleDaten,VE::ve_ergebnis_auswerten($rc));
+  Log::write("Mode:".trim($rc),"!!  ",9);
 
 
   $aktuelleDaten["AC_Leistung"] = $aktuelleDaten["AC_Ausgangsspannung"]*$aktuelleDaten["AC_Ausgangsstrom"];
 
 
-  $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",9);
+  Log::write(var_export($aktuelleDaten,1),"   ",9);
 
 
 
@@ -242,14 +230,14 @@ do {
   $aktuelleDaten["Objekt"] = $Objekt;
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"]+10);
 
-  $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",8);
+  Log::write(var_export($aktuelleDaten,1),"   ",8);
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/phoenix_victron_math.php")) {
-    include 'phoenix_victron_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/phoenix_victron_math.php")) {
+    include $basedir.'/custom/phoenix_victron_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
 
@@ -259,8 +247,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -298,9 +286,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -310,31 +298,31 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
 
 
 
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time() - $Start));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+    Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
     sleep(floor((56 - (time() - $Start))/($Wiederholungen-$i+1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben("OK. Daten gelesen.","   ",9);
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",8);
+    Log::write("OK. Daten gelesen.","   ",9);
+    Log::write("Schleife ".$i." Ausgang...","   ",8);
     break;
   }
 
@@ -351,8 +339,8 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-    require($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -360,15 +348,15 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-    require($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...","   ",8);
+    require($basedir."/services/meldungen_senden.php");
   }
 
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);  
+  Log::write("OK. Datenübertragung erfolgreich.","   ",7);  
 
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.","!! ",6);
+  Log::write("Keine gültigen Daten empfangen.","!! ",6);
 }
 
 
@@ -388,12 +376,12 @@ if (file_exists($StatusFile) and isset($aktuelleDaten["Firmware"])) {
   $whProTag = ($whProTag + ($aktuelleDaten["AC_Leistung"]/60));
 
   $rc = file_put_contents($StatusFile,$whProTag);
-  $funktionen->log_schreiben("WattstundenGesamtHeute: ".round($whProTag,2),"   ",5);
+  Log::write("WattstundenGesamtHeute: ".round($whProTag,2),"   ",5);
 }
 
 Ausgang:
 
-$funktionen->log_schreiben("---------   Stop   victron_phoenix.php   ----------------- ","|--",6);
+Log::write("---------   Stop   victron_phoenix.php   ----------------- ","|--",6);
 
 return;
 

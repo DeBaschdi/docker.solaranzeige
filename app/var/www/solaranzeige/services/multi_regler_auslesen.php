@@ -7,28 +7,15 @@
 //  Beispiel: 1.user.config.php und 2.user.config.php usw.
 //  Weitere informationen im PDF Dokument "Multi_Regler_Installation.pdf"
 ******************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
+
+$basedir = dirname(__FILE__,2);
+require_once($basedir."/library/base.inc.php");
+
 $mra_Start = time();  // Timestamp festhalten
 $zentralerTimestamp = time();
 setlocale(LC_TIME,"de_DE.utf8");
 
-if (is_file($Pfad."/1.user.config.php")) {
-  require($Pfad."/1.user.config.php");
-}
-else {
-  log_schreiben("Es ist keine '1.user.config.php' vorhanden.","!! ",6);
-  log_schreiben("Fehler! Ende...","!! ",6);
-  exit;
-}
-
-If (is_file("/sys/firmware/devicetree/base/model")) {
-  //  Auf welcher Platine läuft die Software?
-  $Platine = file_get_contents("/sys/firmware/devicetree/base/model");
-}
-else {
-  $Platine = "";
-}
+$Platine = Utils::getEnvPlattform();
 
 /****************************************************************************
 //  Erst einmal prüfen ob der Script schon läuft
@@ -45,12 +32,12 @@ if( !empty($runningScript) ) {
   // 1 wird immer geliefert, da das Script sich selbst auch sieht
   // echo "Info: Anzahl PHP Scripte laufen: ".trim($output);
   if( (int)$output > 1 ) {
-    log_schreiben("Zu viele PHP Scripte: ".basename($argv[0]),"   ",6);
-    log_schreiben("|---> Stop  PHP Script: ".basename($argv[0])." **************","!! ",6);
+    Log::write("Zu viele PHP Scripte: ".basename($argv[0]),"   ",6);
+    Log::write("|---> Stop  PHP Script: ".basename($argv[0])." **************","!! ",6);
     exit;
   }
 }
-log_schreiben("Multi Regler Auslesen [Start].","   ",6);
+Log::write("Multi Regler Auslesen [Start].","   ",6);
 
 $BenutzerArray = array();
 $shell_befehl = "vcgencmd measure_temp | egrep -o '[0-9]*\.[0-9]*'";
@@ -61,10 +48,12 @@ $RaspiTemp = (int) $temp;
 
 for ($mra_i = 1; $mra_i < 7; $mra_i++) {
 
-  if (is_file($Pfad."/".$mra_i.".user.config.php")) {
-    require($Pfad."/".$mra_i.".user.config.php");
-    log_schreiben("Verarbeitung von: '".$mra_i.".user.config.php'   Regler: ".$Regler,"   ",1);
+  if (is_file($basedir."/config/".$mra_i.".user.config.php")) {
+    require($basedir."/config/".$mra_i.".user.config.php");
+    Log::write("Verarbeitung von: '".$mra_i.".user.config.php'   Regler: ".$Regler,"   ",1);
     $USBRegler = $USBDevice;
+    
+    $Pfad = $basedir."/wechselrichter";
 
     switch ($Regler) {
 
@@ -538,57 +527,23 @@ for ($mra_i = 1; $mra_i < 7; $mra_i++) {
         /*******************************************************************
         //  User PHP Script, falls gewünscht oder nötig
         *******************************************************************/
-        if ( file_exists ("/var/www/html/user_device.php")) {
-          log_schreiben("Datei 'user_device.php' gefunden.","   ",7);
-          require($Pfad."/user_device.php"); // Vom Benutzer selber geschriebene Datei.
+        if ( file_exists ($basedir."/custom/user_device.php")) {
+          Log::write("Datei 'user_device.php' gefunden.","   ",7);
+          require($basedir."/custom/user_device.php"); // Vom Benutzer selber geschriebene Datei.
         }
         else {
-          log_schreiben("Angegebener Regler ungültig. ".$Regler,"   ",2);
+          Log::write("Angegebener Regler ungültig. ".$Regler,"   ",2);
         }
       break;
     }
   }
   if (($mra_Start + 51) <= time()) {   // Läuft die Routine schon mehr als 51 Sekunden?
-    log_schreiben("Multi Regler Auslesen [Stop Timeout].\n","   ",6);
+    Log::write("Multi Regler Auslesen [Stop Timeout].\n","   ",6);
     exit;
   }
   usleep(400000);
 }
-log_schreiben("Multi Regler Auslesen [Stop].\n","   ",6);
+Log::write("Multi Regler Auslesen [Stop].\n","   ",6);
 exit;
-
-/**************************************************************************
-//  Log Eintrag in die Logdatei schreiben
-//  $LogMeldung = Die Meldung ISO Format
-//  $Loglevel=5   Loglevel 1-10   10 = Trace
-**************************************************************************/
-
-function log_schreiben($LogMeldung,$Titel="   ",$Loglevel=5,$UTF8=0){
-    Global $Pfad;
-    $Tracelevel = 7;
-    $LogDateiName = $Pfad."/../log/solaranzeige.log";
-    if ($Loglevel <= $Tracelevel) {
-
-      if($UTF8) {
-         $LogMeldung = utf8_encode($LogMeldung);
-      }
-
-      if ($handle = fopen($LogDateiName, 'a')) {
-        //  Schreibe in die geöffnete Datei.
-        //  Bei einem Fehler bis zu 3 mal versuchen.
-        for ($i=1;$i<4;$i++) {
-          $rc = fwrite($handle,date("d.m. H:i:s")." ".substr($Titel,0,3)."-".$LogMeldung."\n");
-          if ($rc) {
-            break;
-          }
-          sleep(1);
-        }
-        fclose($handle);
-      }
-    }
-    return true;
-}
-
-
 
 ?>

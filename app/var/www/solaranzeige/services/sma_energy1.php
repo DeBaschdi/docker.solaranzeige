@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -24,17 +23,9 @@
 //  ausgelesen und gespeichert werden steht in der user.config.php
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
+$basedir = dirname(__FILE__,2);
+require_once($basedir."/library/base.inc.php");
 
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -45,9 +36,9 @@ $RemoteDaten = true;
 $Device = "WR"; // WR = Wechselrichter
 $Version = "";
 $Start = time();  // Timestamp festhalten
-$funktionen->log_schreiben("-------------   Start  sma_energy.php    -------------------------- ","|--",6);
+Log::write("-------------   Start  sma_energy.php    -------------------------- ","|--",6);
 
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 
@@ -66,7 +57,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",8);
+Log::write("Hardware Version: ".$Version,"o  ",8);
 
 switch($Version) {
   case "2B":
@@ -88,39 +79,39 @@ if(!($socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP)))
 {
   $errorcode = socket_last_error();
   $errormsg = socket_strerror($errorcode);
-  $funktionen->log_schreiben("UDP Socket konnte nicht geöffnet werden","XX ",3);
-  $funktionen->log_schreiben("Kein Kontakt zur Wallbox ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
-  $funktionen->log_schreiben($errormsg,"XX ",3);
+  Log::write("UDP Socket konnte nicht geöffnet werden","XX ",3);
+  Log::write("Kein Kontakt zur Wallbox ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
+  Log::write($errormsg,"XX ",3);
   goto Ausgang;
 }
 
 if( !socket_bind($socket, "0.0.0.0" , $WR_Port) ) {  // Bind an localhost
   $errorcode = socket_last_error();
   $errormsg = socket_strerror($errorcode);
-  $funktionen->log_schreiben("UDP Socket Bind Fehler","XX ",3);
-  $funktionen->log_schreiben($errormsg,"XX ",3);
+  Log::write("UDP Socket Bind Fehler","XX ",3);
+  Log::write($errormsg,"XX ",3);
   goto Ausgang;
 }
 
 $adress = "239.12.255.254"; // Multicast IP used by SMA
 $rc = socket_set_option($socket,IPPROTO_IP,MCAST_JOIN_GROUP,array("group"=>$adress,"interface"=>0));
 if ($rc === false) {
-  $funktionen->log_schreiben("Read SMA Energymeter -> Unable to join multicast group","   ",5);
+  Log::write("Read SMA Energymeter -> Unable to join multicast group","   ",5);
   goto Ausgang;
 }
 
 $rc = socket_set_option($socket, SOL_SOCKET, SO_RCVTIMEO, array("sec"=>1, "usec"=>500000));
 if ($rc === false) {
-  $funktionen->log_schreiben("Read SMA Energymeter -> Set Option Fehler","   ",5);
+  Log::write("Read SMA Energymeter -> Set Option Fehler","   ",5);
   goto Ausgang;
 }
 
-$funktionen->log_schreiben("UDP Socket Bind OK.","   ",8);
+Log::write("UDP Socket Bind OK.","   ",8);
 
 
 $i = 1;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...","+  ",9);
+  Log::write("Die Daten werden ausgelesen...","+  ",9);
 
   /****************************************************************************
   //  Ab hier wird der Energy Meter ausgelesen.
@@ -142,7 +133,7 @@ do {
 
   $Daten = bin2hex($buf);
 
-  $aktuelleDaten["SMA"] = trim($funktionen->Hex2String(substr($Daten,0,8)));
+  $aktuelleDaten["SMA"] = trim(Utils::Hex2String(substr($Daten,0,8)));
   $aktuelleDaten["TAG0"] = substr($Daten,12,4);
   $aktuelleDaten["Gruppe"] = substr($Daten,16,8);
   $aktuelleDaten["Datenlaenge"] = hexdec(substr($Daten,24,4));
@@ -217,14 +208,14 @@ do {
 
 
   if ($i == 1) 
-    $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",8);
+    Log::write(var_export($aktuelleDaten,1),"   ",8);
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/sma_energy_math.php")) {
-    include 'sma_energy_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/sma_energy_math.php")) {
+    include $basedir.'/custom/sma_energy_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
 
@@ -235,8 +226,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT and $i == 1) {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -267,7 +258,7 @@ do {
   $aktuelleDaten["Demodaten"] = false;
 
 
-  $funktionen->log_schreiben(print_r($aktuelleDaten,1),"*- ",10);
+  Log::write(print_r($aktuelleDaten,1),"*- ",10);
 
 
   /*********************************************************************
@@ -277,9 +268,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -289,31 +280,31 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
 
 
 
 
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time() - $Start));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+    Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
     sleep(floor((56 - (time() - $Start))/($Wiederholungen-$i+1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",5);
+    Log::write("Schleife ".$i." Ausgang...","   ",5);
     break;
   }
 
@@ -330,8 +321,8 @@ if (1 == 1) {        // ausgeschaltet 11.08.2021
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
     $aktuelleDaten["Solarspannung"] = $aktuelleDaten["Solarspannung1"];
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-    require($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -340,21 +331,21 @@ if (1 == 1) {        // ausgeschaltet 11.08.2021
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-    require($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...","   ",8);
+    require($basedir."/services/meldungen_senden.php");
   }
 
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);
+  Log::write("OK. Datenübertragung erfolgreich.","   ",7);
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.","!! ",6);
+  Log::write("Keine gültigen Daten empfangen.","!! ",6);
 }
 
 
 Ausgang:
 
 
-$funktionen->log_schreiben("-------------   Stop   sma_energy.php    -------------------------- ","|--",6);
+Log::write("-------------   Stop   sma_energy.php    -------------------------- ","|--",6);
 
 return;
 

@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -26,16 +25,6 @@
 //  Achtung! Der Regler sendet zwischendurch immer wieder asynchrone Daten!
 //
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -45,8 +34,8 @@ $Reglermodelle = array("0300", "A042", "A043", "A04C", "A053", "A054", "A055", "
 $Version = "";
 $Device = "LR"; // LR = Laderegler
 $Start = time( ); // Timestamp festhalten
-$funktionen->log_schreiben( "---------   Start  victron_solarregler.php   ----------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 6 );
+Log::write( "---------   Start  victron_solarregler.php   ----------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 6 );
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale( LC_TIME, "de_DE.utf8" );
@@ -62,7 +51,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben( "Hardware Version: ".$Version, "o  ", 8 );
+Log::write( "Hardware Version: ".$Version, "o  ", 8 );
 switch ($Version) {
 
   case "2B":
@@ -79,15 +68,15 @@ switch ($Version) {
 }
 //  Nach em Öffnen des Port muss sofort der Regler ausgelesen werden, sonst
 //  sendet er asynchrone Daten!
-$USB1 = $funktionen->openUSB( $USBRegler );
+$USB1 = USB::openUSB( $USBRegler );
 if (!is_resource( $USB1 )) {
-  $funktionen->log_schreiben( "USB Port kann nicht geöffnet werden. [1]", "XX ", 7 );
-  $funktionen->log_schreiben( "Exit.... ", "XX ", 7 );
+  Log::write( "USB Port kann nicht geöffnet werden. [1]", "XX ", 7 );
+  Log::write( "Exit.... ", "XX ", 7 );
   goto Ausgang;
 }
 $i = 1;
 do {
-  $funktionen->log_schreiben( "Die Daten werden ausgelesen...", "+  ", 9 );
+  Log::write( "Die Daten werden ausgelesen...", "+  ", 9 );
 
   /****************************************************************************
   //  Ab hier wird der Regler ausgelesen.
@@ -114,154 +103,154 @@ do {
   ****************************************************************************/
 
   $Befehl = "1"; // Firmware
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   if (isset($aktuelleDaten["Error"]) and $i < 3) {
     $i++;
     continue;
   }
   $Befehl = "4"; // Produkt
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
-  $funktionen->log_schreiben( "Produkt: ".$aktuelleDaten["Produkt"], "   ", 1 );
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
+  Log::write( "Produkt: ".$aktuelleDaten["Produkt"], "   ", 1 );
 
   $Befehl = "7400100"; //  Optionen
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   $Befehl = "7010200"; //  Ladestatus
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   $Befehl = "7D5ED00"; //  Batteriespannung
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   $Befehl = "7D7ED00"; //  Batterie Ladestrom
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   $Befehl = "7BCED00"; //  Solarleistung
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   $Befehl = "74F1000"; //  History  kWh Gesamt
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   $Befehl = "7BBED00"; //  Solarspannung
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   $Befehl = "7032000"; //  Batterie Temperatur
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   $Befehl = "7DBED00"; //  Temperatur
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   $Befehl = "7511000"; //  History  kWh Gestern
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   $Befehl = "7D2ED00"; //  max Leistung in Watt
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   $Befehl = "7DAED00"; //  Error Codes auslesen
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   $Befehl = "7DFED00"; //  maxAmpereHeute
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   $Befehl = "7501000"; //  History  kWh Heute
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   //  LOAD Ausgang Status   Nur bei Ladereglern mit LOAD Ausgang.
   $Befehl = "7A8ED00"; //  Alle anderen haben immer 1
-  $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+  $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
   }
-  $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+  $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
   if (in_array( $aktuelleDaten["Produkt"], $Reglermodelle )) {
     if ($aktuelleDaten["Produkt"] == "A05F" and $aktuelleDaten["Firmware"] < "1.59" ) {
       // Spezial Regler Modell A05F
       $Befehl = "7BDED00"; //  Batterieladestrom D7ED = alt
-      $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
-      $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+      $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
+      $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
       $aktuelleDaten["Solarstrom"] = ($aktuelleDaten["Solarstrom"] / 10);
     }
     else {
       // Nur bei den Ladereglern kleiner gleich 15A kein Solarstrom
       $aktuelleDaten["Solarstrom"] = 0;
       $Befehl = "7ADED00"; //  Verbraucherstrom  / Batterieentladestrom
-      $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+      $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
       if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-        $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+        $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
       }
-      $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+      $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
 
     }
   }
   else {
     // Nur bei den Ladereglern größer 15A
     $Befehl = "7BDED00"; //  Batterieladestrom D7ED = alt
-    $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+    $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
     if ($rc == ":4AAAAFD" or $rc == "") { // Es wird ein Framefehler gemeldet.
-      $rc = $funktionen->ve_regler_auslesen( $USB1, ":".$Befehl.$funktionen->VE_CRC( $Befehl ));
+      $rc = VE::ve_regler_auslesen( $USB1, ":".$Befehl.Utils::VE_CRC( $Befehl ));
     }
-    $aktuelleDaten = array_merge( $aktuelleDaten, $funktionen->ve_ergebnis_auswerten( $rc ));
+    $aktuelleDaten = array_merge( $aktuelleDaten, VE::ve_ergebnis_auswerten( $rc ));
 
     $aktuelleDaten["Batterieentladestrom"] = 0;
   }
   if (isset($aktuelleDaten["Framefehler"])) {
-    $funktionen->log_schreiben( "Framefehler! Bitte prüfen.  Exit!", "   ", 1 );
+    Log::write( "Framefehler! Bitte prüfen.  Exit!", "   ", 1 );
     goto Ausgang;
   }
 
   /********************
   if ($aktuelleDaten["Batterieladestrom"] > 100  or $aktuelleDaten["Batterieladestrom"] < -100) {
-  $funktionen->log_schreiben("Peak! Bitte prüfen.  Exit!","   ",1);
-  $funktionen->log_schreiben(print_r($aktuelleDaten,1),"   ",7);
+  Log::write("Peak! Bitte prüfen.  Exit!","   ",1);
+  Log::write(print_r($aktuelleDaten,1),"   ",7);
   exit;
   }
   *********************/
@@ -283,17 +272,17 @@ do {
   **************************************************************************/
   $FehlermeldungText = "";
   if ($aktuelleDaten["Ladestatus"] == 2) {
-    $FehlermeldungText = "Fehlermeldung! ".$funktionen->ve_fehlermeldung( $aktuelleDaten["ErrorCodes"] );
-    $funktionen->log_schreiben( $FehlermeldungText, "** ", 1 );
+    $FehlermeldungText = "Fehlermeldung! ".VE::ve_fehlermeldung( $aktuelleDaten["ErrorCodes"] );
+    Log::write( $FehlermeldungText, "** ", 1 );
   }
   if ($i == 1)
-    $funktionen->log_schreiben( var_export( $aktuelleDaten, 1 ), "   ", 8 );
+    Log::write( var_export( $aktuelleDaten, 1 ), "   ", 8 );
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( "/var/www/html/victron_solarregler_math.php" )) {
-    include 'victron_solarregler_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists($basedir."/custom/victron_solarregler_math.php" )) {
+    include $basedir.'/custom/victron_solarregler_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -302,8 +291,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -339,9 +328,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test( );
+      $rc = InfluxDB::influx_remote_test( );
       if ($rc) {
-        $rc = $funktionen->influx_remote( $aktuelleDaten );
+        $rc = InfluxDB::influx_remote( $aktuelleDaten );
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -351,28 +340,28 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
   }
   else {
-    $rc = $funktionen->influx_local( $aktuelleDaten );
+    $rc = InfluxDB::influx_local( $aktuelleDaten );
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time( ) - $Start));
-    $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+    Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
     if ($Zeitspanne > 0) {
       sleep( $Zeitspanne );
     }
     break;
   }
   else {
-    $funktionen->log_schreiben( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
+    Log::write( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
     sleep( floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben( "OK. Daten gelesen.", "   ", 9 );
-    $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 8 );
+    Log::write( "OK. Daten gelesen.", "   ", 9 );
+    Log::write( "Schleife ".$i." Ausgang...", "   ", 8 );
     break;
   }
   $i++;
@@ -384,8 +373,8 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-    require ($Pfad."/homematic.php");
+    Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -394,14 +383,14 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-    require ($Pfad."/meldungen_senden.php");
+    Log::write( "Nachrichten versenden...", "   ", 8 );
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+  Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 }
 else {
-  $funktionen->log_schreiben( "Keine gültigen Daten empfangen.", "!! ", 6 );
+  Log::write( "Keine gültigen Daten empfangen.", "!! ", 6 );
 }
-Ausgang:$funktionen->log_schreiben( "---------   Stop   victron_solarregler.php   ----------------- ", "|--", 6 );
+Ausgang:Log::write( "---------   Stop   victron_solarregler.php   ----------------- ", "|--", 6 );
 return;
 ?>

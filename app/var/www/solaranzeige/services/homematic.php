@@ -493,19 +493,19 @@ curl_setopt( $rCurlHandle, CURLOPT_RETURNTRANSFER, TRUE );
 
 $strResponse = curl_exec( $rCurlHandle );
 $Connect = curl_errno( $rCurlHandle);
-$funktionen->log_schreiben(print_r(curl_getinfo( $rCurlHandle ),1), "1  " , 9 );
+Log::write(print_r(curl_getinfo( $rCurlHandle ),1), "1  " , 9 );
 curl_close( $rCurlHandle );
 if ($Connect != 0) {
-  $funktionen->log_schreiben( "Keine Verbindung zur Homematic Zentrale! IP: ".$Homematic_IP, "   ", 4 );
+  Log::write( "Keine Verbindung zur Homematic Zentrale! IP: ".$Homematic_IP, "   ", 4 );
   $HM_Verbindung = false;
 }
 else {
   $HM_Verbindung = true;
-  $funktionen->log_schreiben( "Verbindung zur Homematic Zentrale besteht. IP: ".$Homematic_IP, "   ", 8 );
+  Log::write( "Verbindung zur Homematic Zentrale besteht. IP: ".$Homematic_IP, "   ", 8 );
 }
 $HomeMaticVar = trim( $HomeMaticVar );
 $EinzelVar = explode( ",", $HomeMaticVar );
-$funktionen->log_schreiben( var_export( $EinzelVar, 1 ), "   ", 10 );
+Log::write( var_export( $EinzelVar, 1 ), "   ", 10 );
 if ($HM_Verbindung) {
 
   /*****************************************************************
@@ -529,25 +529,25 @@ if ($HM_Verbindung) {
       $rc_info = curl_getinfo( $ch );
       $Ausgabe = json_decode( $result, true );
       if (curl_errno( $ch )) {
-        $funktionen->log_schreiben( "Curl Fehler! Wetterdaten nicht von der InfluxDB gelesen! No. ".curl_errno( $ch ), "   ", 5 );
+        Log::write( "Curl Fehler! Wetterdaten nicht von der InfluxDB gelesen! No. ".curl_errno( $ch ), "   ", 5 );
       }
       if ($rc_info["http_code"] == 200 or $rc_info["http_code"] == 204) {
-        $funktionen->log_schreiben( "Wetterdaten von der InfluxDB  gelesen. ", "*  ", 8 );
+        Log::write( "Wetterdaten von der InfluxDB  gelesen. ", "*  ", 8 );
         break;
       }
       elseif ($rc_info["http_code"] == 401) {
-        $funktionen->log_schreiben( "Influx UserID oder Kennwort ist falsch.", "*  ", 5 );
+        Log::write( "Influx UserID oder Kennwort ist falsch.", "*  ", 5 );
         break;
       }
       elseif (empty($Ausgabe["error"])) {
-        $funktionen->log_schreiben( "InfluxDB Fehler -> nochmal versuchen.", "   ", 5 );
+        Log::write( "InfluxDB Fehler -> nochmal versuchen.", "   ", 5 );
         $i++;
         continue;
       }
-      $funktionen->log_schreiben( "Wetterdaten nicht von der InfluxDB gelesen! => [ ".$Ausgabe["error"]." ]", "   ", 5 );
-      $funktionen->log_schreiben( "InfluxDB  => [ ".$query." ]", "   ", 5 );
-      $funktionen->log_schreiben( "Wetterdaten => [ ".print_r( $aktuelleDaten, 1 )." ]", "   ", 9 );
-      $funktionen->log_schreiben( "Wetterdaten nicht von der InfluxDB gelesen! info: ".var_export( $rc_info, 1 ), "   ", 9 );
+      Log::write( "Wetterdaten nicht von der InfluxDB gelesen! => [ ".$Ausgabe["error"]." ]", "   ", 5 );
+      Log::write( "InfluxDB  => [ ".$query." ]", "   ", 5 );
+      Log::write( "Wetterdaten => [ ".print_r( $aktuelleDaten, 1 )." ]", "   ", 9 );
+      Log::write( "Wetterdaten nicht von der InfluxDB gelesen! info: ".var_export( $rc_info, 1 ), "   ", 9 );
       $i++;
       sleep( 1 );
     } while ($i < 3);
@@ -572,25 +572,25 @@ if ($HM_Verbindung) {
         $rc_info = curl_getinfo( $ch );
         $Ausgabe = json_decode( $result, true );
         if (curl_errno( $ch )) {
-          $funktionen->log_schreiben( "Curl Fehler! Wetterprognose nicht von der InfluxDB gelesen! No. ".curl_errno( $ch ), "   ", 5 );
+          Log::write( "Curl Fehler! Wetterprognose nicht von der InfluxDB gelesen! No. ".curl_errno( $ch ), "   ", 5 );
         }
         if ($rc_info["http_code"] == 200 or $rc_info["http_code"] == 204) {
-          $funktionen->log_schreiben( "Wetterprognose von der InfluxDB  gelesen. ", "*  ", 8 );
+          Log::write( "Wetterprognose von der InfluxDB  gelesen. ", "*  ", 8 );
           break;
         }
         elseif ($rc_info["http_code"] == 401) {
-          $funktionen->log_schreiben( "Influx UserID oder Kennwort ist falsch.", "*  ", 5 );
+          Log::write( "Influx UserID oder Kennwort ist falsch.", "*  ", 5 );
           break;
         }
         elseif (empty($Ausgabe["error"])) {
-          $funktionen->log_schreiben( "InfluxDB Fehler -> nochmal versuchen.", "   ", 5 );
+          Log::write( "InfluxDB Fehler -> nochmal versuchen.", "   ", 5 );
           $i++;
           continue;
         }
-        $funktionen->log_schreiben( "Wetterprognose nicht von der InfluxDB gelesen! => [ ".$Ausgabe["error"]." ]", "   ", 5 );
-        $funktionen->log_schreiben( "InfluxDB  => [ ".$query." ]", "   ", 5 );
-        $funktionen->log_schreiben( "Wetterprognose => [ ".print_r( $aktuelleDaten, 1 )." ]", "   ", 9 );
-        $funktionen->log_schreiben( "Wetterprognose nicht von der InfluxDB gelesen! info: ".var_export( $rc_info, 1 ), "   ", 9 );
+        Log::write( "Wetterprognose nicht von der InfluxDB gelesen! => [ ".$Ausgabe["error"]." ]", "   ", 5 );
+        Log::write( "InfluxDB  => [ ".$query." ]", "   ", 5 );
+        Log::write( "Wetterprognose => [ ".print_r( $aktuelleDaten, 1 )." ]", "   ", 9 );
+        Log::write( "Wetterprognose nicht von der InfluxDB gelesen! info: ".var_export( $rc_info, 1 ), "   ", 9 );
         $i++;
         sleep( 1 );
       } while ($i < 3);
@@ -620,8 +620,8 @@ if ($HM_Verbindung) {
   //  werden.
   *************************************************************/
   if (isset($HM_Var)) {
-    $funktionen->log_schreiben( "HM Übertragung mit _math Datei.", "   ", 7 );
-    $funktionen->log_schreiben( "HM_Var: ".print_r( $HM_Var, 1 ), "   ", 8 );
+    Log::write( "HM Übertragung mit _math Datei.", "   ", 7 );
+    Log::write( "HM_Var: ".print_r( $HM_Var, 1 ), "   ", 8 );
     $g = 0;
     foreach($HM_Var as $key=>$wert) {
       $DataString .= "Antwort".$g."=dom.GetObject('".$key."').State('".$wert."')&";
@@ -679,7 +679,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -750,7 +750,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -838,7 +838,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -907,7 +907,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -944,7 +944,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -1038,7 +1038,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -1119,7 +1119,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -1160,7 +1160,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -1184,7 +1184,7 @@ if ($HM_Verbindung) {
             default:
               break;
           }
-          // $funktionen->log_schreiben("Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter."  ".$Bezeichnung,"   ",5);
+          // Log::write("Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter."  ".$Bezeichnung,"   ",5);
         }
         $DataString .= "&";
       }
@@ -1244,7 +1244,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -1317,7 +1317,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -1378,7 +1378,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -1443,7 +1443,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -1528,7 +1528,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -1589,7 +1589,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -1686,7 +1686,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -1775,7 +1775,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -1852,7 +1852,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -1913,7 +1913,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -1978,7 +1978,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -2043,7 +2043,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -2124,7 +2124,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -2185,7 +2185,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -2242,7 +2242,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -2300,7 +2300,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -2337,7 +2337,7 @@ if ($HM_Verbindung) {
             break;
 
           default:
-            $funktionen->log_schreiben( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
+            Log::write( "Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter, "   ", 5 );
             break;
         }
         $DataString .= "&";
@@ -2362,7 +2362,7 @@ if ($HM_Verbindung) {
     }
   }
   $DataString = substr( $DataString, 0, - 1 );
-  $funktionen->log_schreiben( "DatenString: ".$DataString, "   ", 9 );
+  Log::write( "DatenString: ".$DataString, "   ", 9 );
 
   $ch = curl_init( );
   curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 5 );
@@ -2375,85 +2375,85 @@ if ($HM_Verbindung) {
   $result = curl_exec( $ch );
   $rc_info = curl_getinfo( $ch );
   if ($rc_info["http_code"] == 401) {
-    $funktionen->log_schreiben( "Fehler! Kein Zugriff. Ist die Firewall der HomeMatic richtig eingestellt? ", "   ", 5 );
+    Log::write( "Fehler! Kein Zugriff. Ist die Firewall der HomeMatic richtig eingestellt? ", "   ", 5 );
   }
   elseif ($rc_info["http_code"] != 200) {
-    $funktionen->log_schreiben( "Daten nicht gesendet! info: ".var_export( $rc_info, 1 ), "   ", 5 );
+    Log::write( "Daten nicht gesendet! info: ".var_export( $rc_info, 1 ), "   ", 5 );
   }
   else {
-    $funktionen->log_schreiben( "http://".$Homematic_IP."/rega.exe?".$DataString, "   ", 9 );
-    $funktionen->log_schreiben( "Daten zur HomeMatic Zentrale gesendet. \n Antwort: ".$result, "   ", 9 );
+    Log::write( "http://".$Homematic_IP."/rega.exe?".$DataString, "   ", 9 );
+    Log::write( "Daten zur HomeMatic Zentrale gesendet. \n Antwort: ".$result, "   ", 9 );
   }
   if ($result) {
     $Ergebnis = new SimpleXMLElement( $result );
     if ($Ergebnis->Antwort0 != "true" and isset($EinzelVar[0])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[0]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[0]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort1 != "true" and isset($EinzelVar[1])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[1]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[1]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort2 != "true" and isset($EinzelVar[2])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[2]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[2]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort3 != "true" and isset($EinzelVar[3])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[3]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[3]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort4 != "true" and isset($EinzelVar[4])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[4]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[4]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort5 != "true" and isset($EinzelVar[5])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[5]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[5]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort6 != "true" and isset($EinzelVar[6])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[6]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[6]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort7 != "true" and isset($EinzelVar[7])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[7]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[7]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort8 != "true" and isset($EinzelVar[8])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[8]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[8]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort9 != "true" and isset($EinzelVar[9])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[9]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[9]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort10 != "true" and isset($EinzelVar[10])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[10]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[10]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort11 != "true" and isset($EinzelVar[11])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[11]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[11]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort12 != "true" and isset($EinzelVar[12])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[12]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[12]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort13 != "true" and isset($EinzelVar[13])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[13]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[13]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort14 != "true" and isset($EinzelVar[14])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[14]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[14]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort15 != "true" and isset($EinzelVar[15])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[15]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[15]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort16 != "true" and isset($EinzelVar[16])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[16]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[16]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort17 != "true" and isset($EinzelVar[17])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[17]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[17]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort18 != "true" and isset($EinzelVar[18])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[18]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[18]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort19 != "true" and isset($EinzelVar[19])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[19]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[19]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
     elseif ($Ergebnis->Antwort20 != "true" and isset($EinzelVar[20])) {
-      $funktionen->log_schreiben( "Die Systemvariable '".$EinzelVar[20]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
+      Log::write( "Die Systemvariable '".$EinzelVar[20]."' ist in der HomeMatic eventuell nicht vorhanden", "   ", 5 );
     }
   }
   else {
-    $funktionen->log_schreiben( "Verbindung zur HomeMatic war nicht erfolgreich! Daten nicht gesendet", "   ", 5 );
+    Log::write( "Verbindung zur HomeMatic war nicht erfolgreich! Daten nicht gesendet", "   ", 5 );
   }
-  $funktionen->log_schreiben( "Daten zur HomeMatic gesendet. ", "   ", 5 );
+  Log::write( "Daten zur HomeMatic gesendet. ", "   ", 5 );
 
   /*************************************************************************
   //
@@ -2462,13 +2462,13 @@ if ($HM_Verbindung) {
   //
   *************************************************************************/
   if ($HM_auslesen) {
-    $funktionen->log_schreiben( "HomeMatic Gerätestatus in die InfluxDB speichern.", "   ", 5 );
+    Log::write( "HomeMatic Gerätestatus in die InfluxDB speichern.", "   ", 5 );
     $query = "Homematic ";
     for ($i = 0; $i < count( $HM ); $i++) {
       if ($i > 0) {
         $query .= ",";
       }
-      $funktionen->log_schreiben( "Ergebnis: ".trim( $Ergebnis->{
+      Log::write( "Ergebnis: ".trim( $Ergebnis->{
         $HM[$i]["Variable"]
       }
       ), "   ", 9 );
@@ -2482,7 +2482,7 @@ if ($HM_Verbindung) {
       }
       elseif (trim( $Ergebnis->{ $HM[$i]["Variable"] } ) == 'null') {
         // Gerät ist ausgeschaltet
-        $funktionen->log_schreiben( "Variable liefert falsche Werte!", "   ", 5 );
+        Log::write( "Variable liefert falsche Werte!", "   ", 5 );
       }
       else {
         $query .= $HM[$i]["Variable"]."=".trim( $Ergebnis->{
@@ -2507,10 +2507,10 @@ if ($HM_Verbindung) {
     do {
       $i = 1;
       if ($k == 1) {
-        $funktionen->log_schreiben( "InfluxDB  => [ speichern DB lokal ] ".$query, "   ", 8 );
+        Log::write( "InfluxDB  => [ speichern DB lokal ] ".$query, "   ", 8 );
       }
       if ($k == 2) {
-        $funktionen->log_schreiben( "InfluxDB  => [ speichern DB remote / lokal ] ".$query, "   ", 8 );
+        Log::write( "InfluxDB  => [ speichern DB remote / lokal ] ".$query, "   ", 8 );
       }
       do {
         curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, "POST" );
@@ -2525,24 +2525,24 @@ if ($HM_Verbindung) {
         $rc_info = curl_getinfo( $ch );
         $Ausgabe = json_decode( $result, true );
         if (curl_errno( $ch )) {
-          $funktionen->log_schreiben( "Curl Fehler! Daten nicht zur entfernten InfluxDB gesendet! Curl ErrNo. ".curl_errno( $ch ), "   ", 5 );
+          Log::write( "Curl Fehler! Daten nicht zur entfernten InfluxDB gesendet! Curl ErrNo. ".curl_errno( $ch ), "   ", 5 );
         }
         if ($rc_info["http_code"] == 200 or $rc_info["http_code"] == 204) {
-          $funktionen->log_schreiben( "Daten zur InfluxDB  gesendet. ", "*  ", 9 );
+          Log::write( "Daten zur InfluxDB  gesendet. ", "*  ", 9 );
           break;
         }
         elseif ($rc_info["http_code"] == 401) {
-          $funktionen->log_schreiben( "Influx UserID oder Kennwort ist falsch.", "*  ", 5 );
+          Log::write( "Influx UserID oder Kennwort ist falsch.", "*  ", 5 );
           break;
         }
         elseif (empty($Ausgabe["error"])) {
-          $funktionen->log_schreiben( "InfluxDB Fehler -> nochmal versuchen.", "   ", 5 );
+          Log::write( "InfluxDB Fehler -> nochmal versuchen.", "   ", 5 );
           $i++;
           continue;
         }
-        $funktionen->log_schreiben( "InfluxDB  => [ ".$query." ]", "   ", 9 );
-        $funktionen->log_schreiben( "Daten => [ ".print_r( $aktuelleDaten, 1 )." ]", "   ", 9 );
-        $funktionen->log_schreiben( "Daten nicht zur InfluxDB gesendet! info: ".var_export( $rc_info, 1 ), "   ", 5 );
+        Log::write( "InfluxDB  => [ ".$query." ]", "   ", 9 );
+        Log::write( "Daten => [ ".print_r( $aktuelleDaten, 1 )." ]", "   ", 9 );
+        Log::write( "Daten nicht zur InfluxDB gesendet! info: ".var_export( $rc_info, 1 ), "   ", 5 );
         $i++;
         sleep( 1 );
       } while ($i < 3);
@@ -2555,7 +2555,7 @@ if ($HM_Verbindung) {
     curl_close( $ch );
     unset($ch);
   }
-  $funktionen->log_schreiben( print_r( $Ergebnis, 1 ), "   ", 10 );
+  Log::write( print_r( $Ergebnis, 1 ), "   ", 10 );
 }
 $Tracelevel = $Tracelevel_original;
 ?>

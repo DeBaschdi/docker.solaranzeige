@@ -251,7 +251,7 @@
 //
 //  ---------------------------------------------------------------------------
 //
-$Regler = getEnvAsString("SA_REGLER","0");
+$Regler = Utils::getEnvAsString("SA_REGLER","0");
 //
 /******************************************************************************
 //  Raspberry Gerätenummer   Raspberry Gerätenummer   Raspberry Gerätenummer
@@ -261,7 +261,7 @@ $Regler = getEnvAsString("SA_REGLER","0");
 ******************************************************************************/
 //  GeräteID bzw. GeräteNummer Muss gleich mit der x.user.config.php sein.
 //  Bitte nur bei einer Multi-Regler-Version ändern.  [ 1 bis 6 ]
-$GeraeteNummer = getEnvAsString("SA_GERAETENUMMER","1");
+$GeraeteNummer = Utils::getEnvAsString("SA_GERAETENUMMER","1");
 //
 //  Bei einem Micro Wechselrichter von AEconversion oder LiCom Box von Effekta
 //  und anderen Geräten, die für den Zugang eine Seriennummer benötigen.
@@ -271,18 +271,18 @@ $GeraeteNummer = getEnvAsString("SA_GERAETENUMMER","1");
 //  Bitte alle 10 Stellen hier eintragen.
 //  Bei der AX LiCom Box von Effekta sind es 14 Stellen.
 //  Bei den neuen AEconversion Geräten den Bootcode hier eintragen.
-$Seriennummer = getEnvAsString("SA_SERIENNUMMER","0000000000");
+$Seriennummer = Utils::getEnvAsString("SA_SERIENNUMMER","0000000000");
 //  Wird nur in seltenen Fällen gebraucht.
-$Zugang_Kennwort = getEnvAsString("SA_ZUGANG_KENNWORT","");                        // wird zur Zeit nicht benutzt
+$Zugang_Kennwort = Utils::getEnvAsString("SA_ZUGANG_KENNWORT","");                        // wird zur Zeit nicht benutzt
 //  Falls ein WLAN HF2211 serial   Gateway benutzt wird true eingeben
-$HF2211 = getEnvAsBoolean("SA_HF2211",false);
+$HF2211 = Utils::getEnvAsBoolean("SA_HF2211",false);
 //
 //  Nur bei PylonTech BMS US3000..       ($Regler = "41" )
 //  und den neuen US2000C aus dem Jahr 2019 und später
 //  Anzahl der vorhandenen Batteriepacks und Modell 2000 / 3000
 //  -------------------------------------------------------------------
-$Batteriepacks = getEnvAsString("SA_BATTERY_PACK","1"); //                                Regler = "41"
-$PylonTech = getEnvAsString("SA_PYLON_TECH","2000");  //                                Regler = "41"
+$Batteriepacks = Utils::getEnvAsString("SA_BATTERY_PACK","1"); //                                Regler = "41"
+$PylonTech = Utils::getEnvAsString("SA_PYLON_TECH","2000");  //                                Regler = "41"
 //
 //
 //  Ethernet Kabelverbindung:          Local Area Network  (LAN)
@@ -294,15 +294,15 @@ $PylonTech = getEnvAsString("SA_PYLON_TECH","2000");  //                        
 //  -------------------------------------------------------------------
 //  Bitte die Daten aus dem Gerät übernehmen
 //
-$WR_IP = getEnvAsString("SA_WR_IP","0.0.0.0");  //  Keine führenden Nullen!  67.xx Ja!, 067.xx Nein!
-$WR_Port = getEnvAsString("SA_WR_PORT","12345");
-$WR_Adresse = getEnvAsInteger("SA_WR_ADDRESS",1);   //  Achtung Adresse als Dezimalzahl eingeben / 1 bis 256
+$WR_IP = Utils::getEnvAsString("SA_WR_IP","0.0.0.0");  //  Keine führenden Nullen!  67.xx Ja!, 067.xx Nein!
+$WR_Port = Utils::getEnvAsString("SA_WR_PORT","12345");
+$WR_Adresse = Utils::getEnvAsInteger("SA_WR_ADDRESS",1);   //  Achtung Adresse als Dezimalzahl eingeben / 1 bis 256
 //                       Maximal "256" = Hex FF
 /*****************************************************************************/
 //
 //
 //  Bezeichnung des Objektes. Freie Wahl, maximal 15 Buchstaben.
-$Objekt = getEnvAsString("SA_OBJECT","");
+$Objekt = Utils::getEnvAsString("SA_OBJECT","");
 //
 //
 /******************************************************************************
@@ -317,7 +317,7 @@ $Objekt = getEnvAsString("SA_OBJECT","");
 //  Sollen die Daten in die lokale Influx Datenbank geschrieben werden?
 //  Für die lokale Datenbank sind keine weiteren Angaben nötig.
 //  true oder false
-$InfluxDB_local = getEnvAsBoolean("SA_INFLUX_LOCAL_ENABLED",true);
+$InfluxDB_local = Utils::getEnvAsBoolean("SA_INFLUX_LOCAL_ENABLED",true);
 //
 //  Name der lokalen Datenbank. Bitte nicht ändern, sonst funktionieren die
 //  Standard Dashboards nicht!
@@ -326,7 +326,7 @@ $InfluxDB_local = getEnvAsBoolean("SA_INFLUX_LOCAL_ENABLED",true);
 //  Datenbanknamen eingetragen werden. Mit gleichem Namen müssen die Datenbanken
 //  in der InfluxDB angelegt werden. Siehe Dokument:
 //  "Multi-Regler-Version Installation"
-$InfluxDBLokal  = getEnvAsString("SA_INFLUX_LOCAL","solaranzeige");
+$InfluxDBLokal  = Utils::getEnvAsString("SA_INFLUX_LOCAL","solaranzeige");
 //
 //  Wie oft pro Minute sollen die Daten ausgelesen und zur InfluxDB
 //  übertragen werden?
@@ -336,7 +336,7 @@ $InfluxDBLokal  = getEnvAsString("SA_INFLUX_LOCAL","solaranzeige");
 //  Wie es bei der Multi-Regler-Version funktioniert bitte in dem
 //  entsprechenden Dokument nachlesen.
 //  Default ist 1 (Ein mal pro Minute)
-$Wiederholungen = getEnvAsInteger("SA_INFLUX_FREQUENCE",1);
+$Wiederholungen = Utils::getEnvAsInteger("SA_INFLUX_FREQUENCE",1);
 //
 /****************************************************************************/
 //  ENTFERNTE INFLUX DATENBANK:
@@ -344,36 +344,36 @@ $Wiederholungen = getEnvAsInteger("SA_INFLUX_FREQUENCE",1);
 //  Ist eine entfernte InfluxDB vorhanden und sollen dorthin auch die Daten
 //  übertragen werden?
 //  true oder false
-$InfluxDB_remote = getEnvAsBoolean("SA_INFLUX_REMOTE_ENABLED",false);
+$InfluxDB_remote = Utils::getEnvAsBoolean("SA_INFLUX_REMOTE_ENABLED",false);
 //
 //  Port an den die Daten geschickt werden. Normal ist Port 8086
-$InfluxPort = getEnvAsInteger("SA_INFLUX_PORT",8086);
+$InfluxPort = Utils::getEnvAsInteger("SA_INFLUX_PORT",8086);
 //
 //  Name der entfernten Datenbank eintragen
 //  Beispiel:  "solaranzeige" oder "MeineDatenbank"
-$InfluxDBName  = getEnvAsString("SA_INFLUX_DATABASE","solaranzeige");
+$InfluxDBName  = Utils::getEnvAsString("SA_INFLUX_DATABASE","solaranzeige");
 //
 //  Adresse der Datenbank
 //  Entweder die IP Adresse "xxx.xxx.xxx.xxx" oder den Hostnamen oder "localhost"
 //  eintragen.
 //  Beispiel:  "db.solaranzeige.de" oder "34.101.3.20"
-$InfluxAdresse = getEnvAsString("SA_INFLUX_HOST","");
+$InfluxAdresse = Utils::getEnvAsString("SA_INFLUX_HOST","");
 //
 //  Wenn man mit UserID und Kennwort die Daten übertragen möchte, sollte man
 //  auf jeden Fall auch die SSL Verschlüsselung einschalten. Dazu muss die
 //  Influx Datenbank aber erst auf https eingerichtet werden.
-$InfluxSSL = getEnvAsBoolean("SA_INFLUX_SSL",false);
+$InfluxSSL = Utils::getEnvAsBoolean("SA_INFLUX_SSL",false);
 //
 //  Wenn die entfernte Datenbank mit UserID und Kennwort geschützt ist.
 //  Wenn nicht, bitte leer lassen.
-$InfluxUser = getEnvAsString("SA_INFLUX_USERNAME","");
-$InfluxPassword = getEnvAsString("SA_INFLUX_PASSWORD","");
+$InfluxUser = Utils::getEnvAsString("SA_INFLUX_USERNAME","");
+$InfluxPassword = Utils::getEnvAsString("SA_INFLUX_PASSWORD","");
 //
 //  Sollen die Daten nur bei Tageslicht an eine remote Datenbank gesendet werden?
 //  Das reduziert den Traffic bei teuren Leitungen. Das betrifft nur die Remote
 //  Datenbank falls konfiguriert.
 //  true / false     ( false = die Daten werden rund um die Uhr gesendet. )
-$InfluxDaylight = getEnvAsBoolean("SA_INFLUX_ONLY_WITH_LIGHT",false);
+$InfluxDaylight = Utils::getEnvAsBoolean("SA_INFLUX_ONLY_WITH_LIGHT",false);
 //
 //
 //
@@ -398,21 +398,21 @@ $InfluxDaylight = getEnvAsBoolean("SA_INFLUX_ONLY_WITH_LIGHT",false);
 //  * Batteriestatus in % (Wie voll ist die Batterie?) Nicht bei allen Geräten!
 //
 //  true / false
-$Homematic = getEnvAsBoolean("SA_HM_ENABLED",false);
+$Homematic = Utils::getEnvAsBoolean("SA_HM_ENABLED",false);
 //
 //  Welche IP Adresse hat Ihre Homematic Zentrale? Sie muss sich im selben
 //  Netzwerk wie der Raspberry Pi befinden. Beispiel: 192.168.33.200
-$Homematic_IP = getEnvAsString("SA_HM_IP","xxx.xxx.xxx.xxx");
+$Homematic_IP = Utils::getEnvAsString("SA_HM_IP","xxx.xxx.xxx.xxx");
 //
 //  Hier die Variablen eintragen, die zur HomeMatic Zentrale übermittelt werden
 //  sollen. Siehe Dokument "HomeMatic_Anbindung.pdf"
 //  Beispiel: "BatterieLadestatus,BatteriestatusText,Batteriespannung,Solarleistung,SolarleistungTag,Solarspannung";
-$HomeMaticVar = getEnvAsString("SA_HM_VAR","");
+$HomeMaticVar = Utils::getEnvAsString("SA_HM_VAR","");
 //
 //  Den Status einzelner Geräte aus der HomeMatic Zentrale auslesen und in die
 //  Influx Datenbank schreiben, damit man den Status im Dashboard anzeigen kann.
 //  Nähere Einzelheiten stehen im Dokument "HomeMatic Anbindung"
-$HM_auslesen = getEnvAsBoolean("SA_HM_READ",false);
+$HM_auslesen = Utils::getEnvAsBoolean("SA_HM_READ",false);
 //
 //  Für jedes Gerät, dessen Status ausgelesen werden soll, müssen 4 Variablen
 //  angegeben werden.
@@ -481,8 +481,8 @@ $HM_auslesen = getEnvAsBoolean("SA_HM_READ",false);
 *******************************************************************************/
 //
 //  HM_Geraet 1
-$HM_Geraetetyp[1] = getEnvAsString("SA_HM_DEVICETPE","");      // Typenbezeichnung
-$HM_Seriennummer[1] = getEnvAsString("SA_HM_SERIALNUMBER","");    // Seriennummer
+$HM_Geraetetyp[1] = Utils::getEnvAsString("SA_HM_DEVICETPE","");      // Typenbezeichnung
+$HM_Seriennummer[1] = Utils::getEnvAsString("SA_HM_SERIALNUMBER","");    // Seriennummer
 //
 //
 /******************************************************************************
@@ -492,7 +492,7 @@ $HM_Seriennummer[1] = getEnvAsString("SA_HM_SERIALNUMBER","");    // Seriennumme
 //  Sollen alle ausgelesenen Daten mit dem MQTT Protokoll an einen
 //  MQTT-Broker gesendet werden oder MQTT Daten empfangen werden? 
 //  Bitte das Solaranzeige-MQTT PDF Dokument lesen
-$MQTT = getEnvAsBoolean("SA_MQTT",false);
+$MQTT = Utils::getEnvAsBoolean("SA_MQTT",false);
 //
 //
 /******************************************************************************/
@@ -502,29 +502,29 @@ $MQTT = getEnvAsBoolean("SA_MQTT",false);
 //  Wo ist der MQTT-Broker zu finden?
 //  Entweder "localhost", eine Domain oder IP Adresse "xxx.xxx.xxx.xxx" eintragen.
 //  broker.hivemq.com ist ein Test Broker   Siehe http://www.mqtt-dashboard.com/
-$MQTTBroker = getEnvAsString("SA_MQTT_BROKER","localhost");
+$MQTTBroker = Utils::getEnvAsString("SA_MQTT_BROKER","localhost");
 //
 //  Benutzter Port des Brokers. Normal ist 1883  mit SSL 8883
-$MQTTPort = getEnvAsInteger("SA_MQTT_PORT",1883);
+$MQTTPort = Utils::getEnvAsInteger("SA_MQTT_PORT",1883);
 //
 //  Falls der Broker gesichert ist. Sonst bitte leer lassen.
-$MQTTBenutzer = getEnvAsString("SA_MQTT_USERNAME","");
-$MQTTKennwort = getEnvAsString("SA_MQTT_PASSWORD","");
+$MQTTBenutzer = Utils::getEnvAsString("SA_MQTT_USERNAME","");
+$MQTTKennwort = Utils::getEnvAsString("SA_MQTT_PASSWORD","");
 //
 //  Wenn man die Daten mit SSL Verschlüsselung versenden möchte.
 //  Wenn hier true steht, muss im Verzeichnis "/var/www/html/" die "cerfile"
 //  'ca.crt' vorhanden sein. Nähere Einzelheiten über diese Datei findet
 //  man im Internet in der Mosquitto Dokumentation.
-$MQTTSSL = getEnvAsBoolean("SA_MQTT_SSL",false);
+$MQTTSSL = Utils::getEnvAsBoolean("SA_MQTT_SSL",false);
 //
 //  Timeout der Übertragung zum Broker. Normal = 10 bis 60 Sekunden
-$MQTTKeepAlive = getEnvAsInteger("SA_MQTT_KEEP_ALIVE",60);
+$MQTTKeepAlive = Utils::getEnvAsInteger("SA_MQTT_KEEP_ALIVE",60);
 //
 //  Topic Name oder Nummer des Gerätes solaranzeige/1
 //  oder solaranzeige/box1                     (solaranzeige ist fest vorgegeben.)
 //  Man kann das Gerät nennen wie man will, nur jedes Gerät, welches Daten
 //  senden soll unterschiedlich. Entwerder 1 bis 6 oder Namen Ihrer Wahl vergeben.
-$MQTTGeraet = getEnvAsString("SA_MQTT_GERAET","box1");
+$MQTTGeraet = Utils::getEnvAsString("SA_MQTT_GERAET","box1");
 //
 //  Welche Daten sollen als MQTT Message übertragen werden? Wenn hier nichts
 //  aufgeführt ist, werden alle ausgelesenen Daten übertragen.
@@ -536,7 +536,7 @@ $MQTTGeraet = getEnvAsString("SA_MQTT_GERAET","box1");
 //  $MQTTAuswahl = "1/ladestatus,1/solarspannung,1/solarstrom"
 //  Werden hier Variablen eingetragen, dann werden auch nur diese Topics
 //  übertragen.
-$MQTTAuswahl = getEnvAsString("SA_MQTT_AUSWAHL","");
+$MQTTAuswahl = Utils::getEnvAsString("SA_MQTT_AUSWAHL","");
 //
 //
 /******************************************************************************
@@ -571,7 +571,7 @@ $MQTTAuswahl = getEnvAsString("SA_MQTT_AUSWAHL","");
 //  werden. Weitere Informationen finden Sie auf dem Support Forum.
 //  Achtung! Damit der Empfang auch funktioniert muss $MQTT = true;
 //  etwas weiter oben stehen!
-$MQTTTopic[1] = getEnvAsString("SA_MQTT_TOPIC","solaranzeige/befehl/1/#");
+$MQTTTopic[1] = Utils::getEnvAsString("SA_MQTT_TOPIC","solaranzeige/befehl/1/#");
 //
 //
 /******************************************************************************
@@ -583,7 +583,7 @@ $MQTTTopic[1] = getEnvAsString("SA_MQTT_TOPIC","solaranzeige/befehl/1/#");
 //  frei gewählt werden, er muss nur im Gerät und hier gleich sein. Werden
 //  mehrere Sonoff Geräte mit der Solaranzeige betrieben, muss jedes einzelne
 //  Gerät einen anderen Topic-Namen benutzen!
-$Topic = getEnvAsString("SA_TOPIC","sonoff");
+$Topic = Utils::getEnvAsString("SA_TOPIC","sonoff");
 //
 //
 /******************************************************************************
@@ -599,19 +599,19 @@ $Topic = getEnvAsString("SA_TOPIC","sonoff");
 //  Datenbank "aktuellesWetter" unter dem Measurement "Wetter" zur Verfügung.
 //  Sie werden alle 30 Minuten aktualisiert
 //  true oder false
-$Wetterdaten = getEnvAsBoolean("SA_WEATHER",false);
+$Wetterdaten = Utils::getEnvAsBoolean("SA_WEATHER",false);
 //
 //  Die Application ID bekommt man, wenn man sich auf dem Server
 //  www.openweathermap.org registriert. Sie hat 32 Stellen und muss hier
 //  eingetragen werden. Beispiel: "57b78415a343540e3a4e4f72751c90f9"
-$APPID = getEnvAsString("SA_WEATHER_APPID","");
+$APPID = Utils::getEnvAsString("SA_WEATHER_APPID","");
 //
 //  Der Standort wird mit einer StandortID angegeben. Wie die StandortID
 //  ermittelt wird, bitte im Support Forum nachlesen. Man kann eine Liste
 //  aller Standort ID's Weltweit hier herunterladen:
 //  http://bulk.openweathermap.org/sample/city.list.json.gz
 //  Default = "2925533" Frankfurt am Main oder die ID Ihres Standortes.
-$StandortID = getEnvAsString("SA_WEATHER_LOCATION_ID","2925533");
+$StandortID = Utils::getEnvAsString("SA_WEATHER_LOCATION_ID","2925533");
 //
 //
 /******************************************************************************
@@ -629,13 +629,13 @@ $StandortID = getEnvAsString("SA_WEATHER_LOCATION_ID","2925533");
 //  In diesem Fall wird alle 30 Minuten der Script "prognose.php" aufgerufen.
 //  Dort müssen die Funktionen hinterlegt sein.
 //  keine, API, User, beide
-$Prognosedaten = getEnvAsString("SA_PROGNOSE","keine");              //  "keine" , "API" , "User" , "beide"
+$Prognosedaten = Utils::getEnvAsString("SA_PROGNOSE","keine");              //  "keine" , "API" , "User" , "beide"
 //
 //  Wenn API eingetragen wird, dann folgende 3 Variablen füllen:
-$AccessToken = getEnvAsString("SA_PROGNOSE_ACCESSTOKEN","");                     // Bekommt man bei www.solarprognose.de
-$PrognoseItem = getEnvAsString("SA_PROGNOSE_ITEM","inverter");            // plant, inverter
-$PrognoseID = getEnvAsString("SA_PROGNOSE_ID","0");                     // Anlagen ID oder Wechselrichter ID
-$Algorithmus = getEnvAsString("SA_ALGORITHMUS","");                     // kann leer bleiben oder
+$AccessToken = Utils::getEnvAsString("SA_PROGNOSE_ACCESSTOKEN","");                     // Bekommt man bei www.solarprognose.de
+$PrognoseItem = Utils::getEnvAsString("SA_PROGNOSE_ITEM","inverter");            // plant, inverter
+$PrognoseID = Utils::getEnvAsString("SA_PROGNOSE_ID","0");                     // Anlagen ID oder Wechselrichter ID
+$Algorithmus = Utils::getEnvAsString("SA_ALGORITHMUS","");                     // kann leer bleiben oder
 //                                     // mosmix | own-v1 | clearsky
 //
 /******************************************************************************
@@ -646,18 +646,18 @@ $Algorithmus = getEnvAsString("SA_ALGORITHMUS","");                     // kann 
 //  Genaue Informationen stehen im Dokument "Messenger_Nachrichten.pdf"
 //
 //  true / false
-$Messenger = getEnvAsBoolean("SA_MESSENGER",false);
+$Messenger = Utils::getEnvAsBoolean("SA_MESSENGER",false);
 //
 //  Welcher Messengerdienst soll benutzt werden?
 //  Pushover / Signal / WhatsApp
-$Messengerdienst[1] = getEnvAsString("SA_MESSENGERDIENST","Pushover");   //  Pushover, Signal oder WhatsApp
+$Messengerdienst[1] = Utils::getEnvAsString("SA_MESSENGERDIENST","Pushover");   //  Pushover, Signal oder WhatsApp
 //  Die Solaranzeige müssen Sie bei Pushover / Signal oder WhatsApp
 //  registrieren und einen API Token holen. 
 //  Wie das geht, steht in dem Dokument "Messenger_Nachrichten" auf dem
 //  Support Server
 //  Pushover Beispiel $API_Token = "amk4be851bcegnirhu1b71u6ou7uoh";
 //  Signal Beispiel $API_Token = "999999";
-$API_Token[1] = getEnvAsString("SA_API_TOKEN"," ");
+$API_Token[1] = Utils::getEnvAsString("SA_API_TOKEN"," ");
 //
 //  Der User_Key ist die Messeger Empfänger Adresse. Bei Pushover können bis zu
 //  9 Empfänger angegeben werden. $User_Key[1]  bis  $User_Key[9]
@@ -667,7 +667,7 @@ $API_Token[1] = getEnvAsString("SA_API_TOKEN"," ");
 //  Bei WhatsApp und Signal kann nur ein Empfänger angegeben werden, da der Token 
 //  zur Rufnummer passen muss.
 //  Signal Beispiel: $User_Key[1] = "+491769000000";
-$User_Key[1] = getEnvAsString("SA_USERKEY_1","");
+$User_Key[1] = Utils::getEnvAsString("SA_USERKEY_1","");
 //
 //  ------------------------------------------------------------------------
 //  Und jetzt eventuell für weitere Personen:
@@ -684,8 +684,8 @@ $User_Key[1] = getEnvAsString("SA_USERKEY_1","");
 //  Sonnen Auf und Untergang:
 //  Standort für Frankfurt. Wer es etwas genauer haben möchte, hier den eigenen
 //  Standort eintragen. Bitte als Dezimalzahl wie hier vorgegeben!
-$Breitengrad = getEnvAsFloat("SA_BREITENGRAD",50.1143999);
-$Laengengrad = getEnvAsFloat("SA_LAENGENGRAD",8.6585178);
+$Breitengrad = Utils::getEnvAsFloat("SA_BREITENGRAD",50.1143999);
+$Laengengrad = Utils::getEnvAsFloat("SA_LAENGENGRAD",8.6585178);
 //
 //
 /******************************************************************************
@@ -695,11 +695,11 @@ $Laengengrad = getEnvAsFloat("SA_LAENGENGRAD",8.6585178);
 //  Datenbank in das Measurement "awattarPreise" geschrieben werden?
 ******************************************************************************/
 //
-$aWATTar = getEnvAsBoolean("SA_AWATTAR",false);
+$aWATTar = Utils::getEnvAsBoolean("SA_AWATTAR",false);
 //
-$Aufschlag = getEnvAsString("SA_AUFSCHLAG","0");       // Z.B.  "20,6"        Preis des Aufschlages in Cent
+$Aufschlag = Utils::getEnvAsString("SA_AUFSCHLAG","0");       // Z.B.  "20,6"        Preis des Aufschlages in Cent
 //
-$aWATTarLand = getEnvAsString("SA_AWATTAR_LAND","DE");     // "DE" = Deutschland   "AT" = Österreich 
+$aWATTarLand = Utils::getEnvAsString("SA_AWATTAR_LAND","DE");     // "DE" = Deutschland   "AT" = Österreich 
 /******************************************************************************
 //  ACHTUNG!   ACHTUNG!   ACHTUNG!   ACHTUNG!   ACHTUNG!   ACHTUNG!   ACHTUNG!
 //
@@ -712,7 +712,7 @@ $aWATTarLand = getEnvAsString("SA_AWATTAR_LAND","DE");     // "DE" = Deutschland
 //  USB Device, die automatisch erkannt wurde...  bitte nicht ändern
 //  Wird nicht bei der Multi-Regler-Version benötigt.
 //
-$USBRegler = getEnvAsString("SA_USB_REGLER","/dev/ttyUSB0");
+$USBRegler = Utils::getEnvAsString("SA_USB_REGLER","/dev/ttyUSB0");
 //
 //  Nur wenn die automatischer Erkennung nicht funktioniert hat, bitte manuell
 //  eintragen. Im Normalfall wird das nicht benötigt. So lassen wie es ist.
@@ -720,7 +720,7 @@ $USBRegler = getEnvAsString("SA_USB_REGLER","/dev/ttyUSB0");
 //  Bei einer Multi-Regler-Version muss hier der Devicename manuell
 //  eingetragen werden.
 //
-$USBDevice = getEnvAsString("SA_USB_DEVICE","");
+$USBDevice = Utils::getEnvAsString("SA_USB_DEVICE","");
 //
 //  Wird nur in seltenen Fällen gebraucht.
 //  $SerielleGeschwindigkeit = "9600";
@@ -731,7 +731,7 @@ $USBDevice = getEnvAsString("SA_USB_DEVICE","");
 ******************************************************************************/
 // Bitte nicht ändern, wird automatisch ermittelt.
 //
-$Platine = getEnvAsString("SA_PLATINE","Raspberry unbekannt");
+$Platine = Utils::getEnvAsString("SA_PLATINE","Raspberry unbekannt");
 //
 /******************************************************************************
 //  PHP Error Reporting        PHP Error Reporting        PHP Error Reporting
@@ -745,7 +745,7 @@ $Platine = getEnvAsString("SA_PLATINE","Raspberry unbekannt");
 ******************************************************************************/
 //  Ist für die neue Datenbankstruktur des Alpha ESS Wechselrichters
 //  Mit 0 kann die alte Struktur eingeschaltet werden.
-$Alpha_ESS = getEnvAsInteger("SA_ALPHA_ESS",0);
+$Alpha_ESS = Utils::getEnvAsInteger("SA_ALPHA_ESS",0);
 //
 // ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE ENDE
 

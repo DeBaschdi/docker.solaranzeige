@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 /*****************************************************************************
 //  Solaranzeige Projekt             Copyright (C) [2015-2016]  [Ulrich Kunz]
@@ -25,18 +24,6 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
-
-
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -48,8 +35,8 @@ $Device = "ME"; // ME = Smart Meter
 $RemoteDaten = true;
 
 $Start = time();  // Timestamp festhalten
-$funktionen->log_schreiben("---------   Start  hager_meter.php  ------------------------- ","|--",6);
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("---------   Start  hager_meter.php  ------------------------- ","|--",6);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 
 // Achtung Änderung! Die Adresse $WR_Adresse muss in Dezimal eingegeben werden!
 if (empty($WR_Adresse)) {
@@ -65,7 +52,7 @@ else {
   $WR_ID = dechex( $WR_Adresse );
 }
 
-$funktionen->log_schreiben("WR_ID: ".$WR_ID,"+  ",7);
+Log::write("WR_ID: ".$WR_ID,"+  ",7);
 
 
 $Befehl = array(
@@ -89,7 +76,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",8);
+Log::write("Hardware Version: ".$Version,"o  ",8);
 
 switch($Version) {
   case "2B":
@@ -109,7 +96,7 @@ switch($Version) {
 //  pro Tag zu speichern.
 //
 *****************************************************************************/
-$StatusFile = $Pfad . "/database/" . $GeraeteNummer . ".Tagesdaten.txt";
+$StatusFile = $basedir . "/database/" . $GeraeteNummer . ".Tagesdaten.txt";
 $Tagesdaten = array("BezugGesamtHeute" => 0, "EinspeisungGesamtHeute" => 0);
 if (!file_exists( $StatusFile )) {
 
@@ -118,7 +105,7 @@ if (!file_exists( $StatusFile )) {
   ***************************************************************************/
   $rc = file_put_contents( $StatusFile, serialize( $Tagesdaten ));
   if ($rc === false) {
-    $funktionen->log_schreiben( "Konnte die Datei " . $StatusFile . " nicht anlegen.", 5 );
+    Log::write( "Konnte die Datei " . $StatusFile . " nicht anlegen.", 5 );
   }
   $aktuelleDaten["Wh_BezugHeute"] = 0;
   $aktuelleDaten["Wh_EinspeisungHeute"] = 0;
@@ -133,17 +120,17 @@ else {
 
 //  Nach em Öffnen des Port muss sofort der Regler ausgelesen werden, sonst
 //  sendet er asynchrone Daten!
-$USB1 = $funktionen->openUSB($USBRegler);
+$USB1 = USB::openUSB($USBRegler);
 if (!is_resource($USB1)) {
-  $funktionen->log_schreiben("USB Port kann nicht geöffnet werden. [1]","XX ",7);
-  $funktionen->log_schreiben("Exit.... ","XX ",7);
+  Log::write("USB Port kann nicht geöffnet werden. [1]","XX ",7);
+  Log::write("Exit.... ","XX ",7);
   goto Ausgang;
 }
 
 
 $i = 1;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...",">  ",9);
+  Log::write("Die Daten werden ausgelesen...",">  ",9);
 
   /**************************************************************************
   //  Ab hier wird der Energy Meter ausgelesen.
@@ -167,128 +154,128 @@ do {
   $Befehl["BefehlFunctionCode"] = "03";     // in HEX
   $Befehl["RegisterCount"] = "0010";        // in HEX
   $Befehl["Datentyp"] = "String";           // String
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["Hersteller"] = $rc["Wert"];
 
   $Befehl["RegisterAddress"] = "1020";
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "Hex";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["Firmware"] = $rc["Wert"];
 
   $Befehl["RegisterAddress"] = "1032";
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0010";
   $Befehl["Datentyp"] = "String";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["Produkt"] = $rc["Wert"];
 
   $Befehl["RegisterAddress"] = "1010";
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0010";
   $Befehl["Datentyp"] = "String";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["Modell"] = $rc["Wert"];
 
   $Befehl["RegisterAddress"] = "B000";
   $Befehl["RegisterCount"] = "0001";
   $Befehl["Datentyp"] = "U16";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["AC_Spannung_R"] = ($rc["Wert"]/100);
 
   $Befehl["RegisterAddress"] = "B001";
   $Befehl["RegisterCount"] = "0001";
   $Befehl["Datentyp"] = "U16";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["AC_Spannung_S"] = ($rc["Wert"]/100);
 
   $Befehl["RegisterAddress"] = "B002";
   $Befehl["RegisterCount"] = "0001";
   $Befehl["Datentyp"] = "U16";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["AC_Spannung_T"] = ($rc["Wert"]/100);
 
 
   $Befehl["RegisterAddress"] = "B006";
   $Befehl["RegisterCount"] = "0001";
   $Befehl["Datentyp"] = "U16";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["Frequenz"] = ($rc["Wert"]/100);
 
   $Befehl["RegisterAddress"] = "B009";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "U32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["AC_Strom_R"] = ($rc["Wert"]/1000);
 
   $Befehl["RegisterAddress"] = "B00B";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "U32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["AC_Strom_S"] = ($rc["Wert"]/1000);
 
   $Befehl["RegisterAddress"] = "B00D";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "U32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["AC_Strom_T"] = ($rc["Wert"]/1000);
 
   $Befehl["RegisterAddress"] = "B019";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "S32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["AC_Leistung_R"] = ($rc["Wert"]*10);
 
   $Befehl["RegisterAddress"] = "B01B";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "S32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["AC_Leistung_S"] = ($rc["Wert"]*10);
 
   $Befehl["RegisterAddress"] = "B01D";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "S32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["AC_Leistung_T"] = ($rc["Wert"]*10);
 
   $Befehl["RegisterAddress"] = "B02B";
   $Befehl["RegisterCount"] = "0001";
   $Befehl["Datentyp"] = "S16";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["PF_R"] = ($rc["Wert"]/1000);
 
   $Befehl["RegisterAddress"] = "B02C";
   $Befehl["RegisterCount"] = "0001";
   $Befehl["Datentyp"] = "S16";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["PF_S"] = ($rc["Wert"]/1000);
 
   $Befehl["RegisterAddress"] = "B02D";
   $Befehl["RegisterCount"] = "0001";
   $Befehl["Datentyp"] = "S16";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["PF_T"] = ($rc["Wert"]/1000);
 
   $Befehl["RegisterAddress"] = "B000";
   $Befehl["RegisterCount"] = "0001";
   $Befehl["Datentyp"] = "U16";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["AC_Spannung"] = ($rc["Wert"]/100);
 
   $Befehl["RegisterAddress"] = "B00F";
   $Befehl["RegisterCount"] = "0001";
   $Befehl["Datentyp"] = "U16";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["AC_Strom"] = ($rc["Wert"]/1000);
 
   $Befehl["RegisterAddress"] = "B011";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "S32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["AC_Leistung"] = ($rc["Wert"]*10);
 
-  $funktionen->log_schreiben("AC Leistung: ".$aktuelleDaten["AC_Leistung"]." Watt","   ",6);
+  Log::write("AC Leistung: ".$aktuelleDaten["AC_Leistung"]." Watt","   ",6);
 
 
   if ($aktuelleDaten["AC_Leistung"] >= 0) {
@@ -309,62 +296,62 @@ do {
   $Befehl["RegisterAddress"] = "B0B0";
   $Befehl["RegisterCount"] = "0001";
   $Befehl["Datentyp"] = "U16";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["AnzTarife"] = $rc["Wert"];
 
   $Befehl["RegisterAddress"] = "B0B1";
   $Befehl["RegisterCount"] = "0001";
   $Befehl["Datentyp"] = "U16";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["Tarif"] = $rc["Wert"];
 
   $Befehl["RegisterAddress"] = "B060";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "U32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["Wh_Bezug"] = ($rc["Wert"]*1000);
 
 
   $Befehl["RegisterAddress"] = "B180";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "U32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["Wh_Bezug_Phase_R"] = 0;
 
   $Befehl["RegisterAddress"] = "B182";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "U32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["Wh_Bezug_Phase_S"] = 0;
 
   $Befehl["RegisterAddress"] = "B184";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "U32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["Wh_Bezug_Phase_T"] = 0;
 
   $Befehl["RegisterAddress"] = "B064";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "U32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["Wh_Einspeisung"] = ($rc["Wert"]*1000);
 
   $Befehl["RegisterAddress"] = "B186";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "U32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["Wh_Einspeisung_Phase_R"] = 0;
 
   $Befehl["RegisterAddress"] = "B188";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "U32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["Wh_Einspeisung_Phase_S"] = 0;
 
   $Befehl["RegisterAddress"] = "B18A";
   $Befehl["RegisterCount"] = "0002";
   $Befehl["Datentyp"] = "U32";
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   $aktuelleDaten["Wh_Einspeisung_Phase_T"] = 0;
 
 
@@ -389,14 +376,14 @@ do {
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"]+10);
 
 
-  $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",8);
+  Log::write(var_export($aktuelleDaten,1),"   ",8);
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/hager_meter_math.php")) {
-    include 'hager_meter_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/hager_meter_math.php")) {
+    include $basedir.'/custom/hager_meter_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
 
@@ -406,8 +393,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -445,9 +432,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -457,31 +444,31 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
 
 
 
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (9 - (time() - $Start));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+    Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
     sleep(floor((56 - (time() - $Start))/($Wiederholungen-$i+1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben("OK. Daten gelesen.","   ",9);
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",8);
+    Log::write("OK. Daten gelesen.","   ",9);
+    Log::write("Schleife ".$i." Ausgang...","   ",8);
     break;
   }
   $i++;
@@ -497,8 +484,8 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-    require($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -507,14 +494,14 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-    require($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...","   ",8);
+    require($basedir."/services/meldungen_senden.php");
   }
 
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);    
+  Log::write("OK. Datenübertragung erfolgreich.","   ",7);    
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.","!! ",6);
+  Log::write("Keine gültigen Daten empfangen.","!! ",6);
 }
 
 
@@ -534,7 +521,7 @@ if (file_exists( $StatusFile )) {
   if (date( "H:i" ) == "00:00" or date( "H:i" ) == "00:01") {
     $Tagesdaten = array("BezugGesamtHeute" => 0, "EinspeisungGesamtHeute" => 0);
     $rc = file_put_contents( $StatusFile, serialize( $Tagesdaten ));
-    $funktionen->log_schreiben( "Tagesdaten zurückgesetzt.", "o- ", 5 );
+    Log::write( "Tagesdaten zurückgesetzt.", "o- ", 5 );
   }
 
   /***************************************************************************
@@ -544,14 +531,14 @@ if (file_exists( $StatusFile )) {
   $Tagesdaten["BezugGesamtHeute"] = round(($Tagesdaten["BezugGesamtHeute"] + ($aktuelleDaten["Bezug"]) / 60),2);
   $Tagesdaten["EinspeisungGesamtHeute"] = round(($Tagesdaten["EinspeisungGesamtHeute"] + ($aktuelleDaten["Einspeisung"]) / 60),2);
   $rc = file_put_contents( $StatusFile, serialize( $Tagesdaten ));
-  $funktionen->log_schreiben( "BezugGesamtHeute: ".$Tagesdaten["BezugGesamtHeute"], "   ", 5 );
-  $funktionen->log_schreiben( "EinspeisungGesamtHeute: ".$Tagesdaten["EinspeisungGesamtHeute"], "   ", 5 );
+  Log::write( "BezugGesamtHeute: ".$Tagesdaten["BezugGesamtHeute"], "   ", 5 );
+  Log::write( "EinspeisungGesamtHeute: ".$Tagesdaten["EinspeisungGesamtHeute"], "   ", 5 );
 }
 
 
 Ausgang:
 
-$funktionen->log_schreiben("---------   Stop   hager_meter.php    ----------------------- ","|--",6);
+Log::write("---------   Stop   hager_meter.php    ----------------------- ","|--",6);
 
 return;
 

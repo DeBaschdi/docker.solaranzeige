@@ -32,27 +32,9 @@ $Tracelevel = 7;  //  1 bis 10  10 = Debug
 $basedir = dirname(__FILE__,2);
 require($basedir."/library/base.inc.php");
 
-
-if (is_file($basedir."/config/1.user.config.php")) {
-  require($basedir."/config/1.user.config.php");
-
-  /*************************************************************************
-  //  Ist die MQTT Übertragung eingeschaltet?
-  //  Wenn nicht, dann ist hier Schluß.
-  //  Nur bei Single-Geräte-Version!
-  *************************************************************************/
-  if ($MQTT == false) {
-    //  Es sollen keine Daten an den MQTT Broker übermittelt werden.
-    exit;
-  }
-}
-else {
-  require($basedir."/config/user.config.php");
-  
-  if ($MQTT == false) {
-    //  Es sollen keine Daten an den MQTT Broker übermittelt werden.
-    exit;
-  }
+if ($MQTT == false) {
+  //  Es sollen keine Daten an den MQTT Broker übermittelt werden.
+  exit;
 }
 
 $aktuelleDaten = array();
@@ -68,7 +50,7 @@ $openWB = false;
 ******************************************************************************/
 $fifoPath = "/var/www/pipe/pipe";
 if (! file_exists($fifoPath)) {
-  $funktionen->log_schreiben("Pipe exestiert nicht. Nur Info, kein Fehler...Exit.","MQT",5);
+  Log::write("Pipe exestiert nicht. Nur Info, kein Fehler...Exit.","MQT",5);
   exit;
 }
 
@@ -91,13 +73,13 @@ if (!empty($MQTTBenutzer) and !empty($MQTTKennwort)) {
   $client->setCredentials($MQTTBenutzer, $MQTTKennwort);
 }
 if ($MQTTSSL) {
-  $client->setTlsCertificates($Pfad."/ca.crt");
+  $client->setTlsCertificates($basedir."/config/ca.crt");
   $client->setTlsInsecure(1);
 }
 
 $rc = $client->connect($MQTTBroker, $MQTTPort, $MQTTKeepAlive);
 if ($rc == 14) {
-  $funktionen->log_schreiben("MQTT Client connect nicht möglich. UserID + Kennwort?","MQT",7);
+  Log::write("MQTT Client connect nicht möglich. UserID + Kennwort?","MQT",7);
   exit;
 }
 for ($i=1;$i<200;$i++) {
@@ -110,7 +92,7 @@ for ($i=1;$i<200;$i++) {
   }
 }
 
-$funktionen->log_schreiben($MQTTDaten["MQTTConnectReturnText"],"MQT",8);
+Log::write($MQTTDaten["MQTTConnectReturnText"],"MQT",8);
 
 /*****************************************************************************
 //  Subscribe   Subscribe   Subscribe   Subscribe   Subscribe   Subscribe
@@ -132,7 +114,7 @@ if (is_file($basedir."/config/1.user.config.php")) {
       if (count($AuswahlNeu) > 0) {
         $Auswahl = array_merge($Auswahl,$AuswahlNeu );
         $AuswahlNeu = array();
-        $funktionen->log_schreiben("MQTT Topic Auswahl in ".$mra_i.".user.config.php\n".var_export($Auswahl,1),"MQT",9);
+        Log::write("MQTT Topic Auswahl in ".$mra_i.".user.config.php\n".var_export($Auswahl,1),"MQT",9);
       }
     }
   }
@@ -157,7 +139,7 @@ do {
     //  MQTT Meldungen empfangen. Subscribing    Subscribing    Subscribing
     //  Broker auslesen...
     *************************************************************************/
-    $funktionen->log_schreiben(print_r($MQTTDaten,1),"MQT",10);
+    Log::write(print_r($MQTTDaten,1),"MQT",10);
     mqttDatenAuswerten($MQTTDaten);
     $MQTTDaten["MQTTMessageReturnText"] = "RX-NO";
   }
@@ -171,7 +153,7 @@ do {
   else {
     $Teile = explode(" ",$Daten,2);
     if (substr($Daten,-1) == "|") {
-      $funktionen->log_schreiben("PIPE ausgelesen und versendet.","MQT",8);
+      Log::write("PIPE ausgelesen und versendet.","MQT",8);
       $PipeDaten = true;
     }
     if (isset($Teile[1])) {
@@ -196,16 +178,16 @@ do {
         else {
           $topic = "solaranzeige/".strtolower($key);
         }
-        $funktionen->log_schreiben(": ".$key." -> ".$wert,"MQT",10);
+        Log::write(": ".$key." -> ".$wert,"MQT",10);
         try {
           $MQTTDaten["MQTTPublishReturnCode"] = $client->publish($topic, $wert, 0, false);
         }
         catch(Mosquitto\Exception $e){
-          $funktionen->log_schreiben($topic." rc: ".$e->getMessage(),"MQT",1);
+          Log::write($topic." rc: ".$e->getMessage(),"MQT",1);
         }
       }
     }
-    $funktionen->log_schreiben("MQTT Daten zum Broker gesendet bzw. vom Broker empfangen. Adresse: ".$MQTTBroker." Port: ".$MQTTPort,"MQT",7);
+    Log::write("MQTT Daten zum Broker gesendet bzw. vom Broker empfangen. Adresse: ".$MQTTBroker." Port: ".$MQTTPort,"MQT",7);
     $aktuelleDaten = array();
     $PipeDaten = false;
   }
@@ -221,8 +203,8 @@ fclose($fifo);
 $client->disconnect();
 unset($client);
 
-$funktionen->log_schreiben("Ende der Verarbeitung. (MQTT)","MQT",8);
-$funktionen->log_schreiben("MQTT Ende: ".var_export($MQTTDaten,1),"MQT",9);
+Log::write("Ende der Verarbeitung. (MQTT)","MQT",8);
+Log::write("MQTT Ende: ".var_export($MQTTDaten,1),"MQT",9);
 
 
 exit;
@@ -242,7 +224,7 @@ function mqttDatenAuswerten($RawDaten) {
   $Teile = explode("/",$RawDaten["MQTTTopic"],4);
 
   if (file_exists($basedir."/config/".$Teile[2].".user.config.php")) {
-    $funktionen->log_schreiben("File ist vorhanden. ".$Teile[2].".user.config.php","   ",9);
+    Log::write("File ist vorhanden. ".$Teile[2].".user.config.php","   ",9);
     include($basedir."/config/".$Teile[2].".user.config.php");
     $Daten["GeraeteID"] = $Teile[2];
   }
@@ -258,7 +240,7 @@ function mqttDatenAuswerten($RawDaten) {
       //echo "Anzeige\n";
       //echo $Teile[2]."\n";
       //echo $RawDaten["MQTTNachricht"]."\n";
-      $funktionen->log_schreiben(print_r($Teile,1),"MQT",9);
+      Log::write(print_r($Teile,1),"MQT",9);
 
       if ($InfluxDB_remote) {
         $Daten["InfluxAdresse"] = $InfluxAdresse;
@@ -278,7 +260,7 @@ function mqttDatenAuswerten($RawDaten) {
       $Daten["InfluxSpalte"] = str_replace("/","_",$Teile[3]);
       $Daten["InfluxWert"] = $RawDaten["MQTTNachricht"];
       $ret = MQTT_speichern($Daten);
-      $funktionen->log_schreiben("Daten in die Influx Datenbank '".$InfluxDBLokal."' geschrieben. Gerätenummer: ".$Teile[2]." Spalte: ".$Teile[3]."  Wert: ".$RawDaten["MQTTNachricht"]." RC: ".$ret,"MQT",8);
+      Log::write("Daten in die Influx Datenbank '".$InfluxDBLokal."' geschrieben. Gerätenummer: ".$Teile[2]." Spalte: ".$Teile[3]."  Wert: ".$RawDaten["MQTTNachricht"]." RC: ".$ret,"MQT",8);
     }
     elseif ($Teile[1] == "befehl") {
       /************************************************************************
@@ -289,7 +271,7 @@ function mqttDatenAuswerten($RawDaten) {
       //echo $Teile[2]."\n";
       //echo $Teile[3]."\n";
       //echo $RawDaten["MQTTNachricht"]."\n";
-      $funktionen->log_schreiben("Befehl in die Datei '/var/www/pipe/".$Teile[2].".befehl.steuerung' geschrieben. ".$Teile[3].$RawDaten["MQTTNachricht"],"MQT",7);
+      Log::write("Befehl in die Datei '/var/www/pipe/".$Teile[2].".befehl.steuerung' geschrieben. ".$Teile[3].$RawDaten["MQTTNachricht"],"MQT",7);
       $l = 0;
       do {
         $fh = fopen("/var/www/pipe/".$Teile[2].".befehl.steuerung",'a');

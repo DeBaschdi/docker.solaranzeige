@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 /*****************************************************************************
 //  Solaranzeige Projekt             Copyright (C) [2016-2020]  [Ulrich Kunz]
@@ -25,22 +24,12 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 $Tracelevel = 7; //  1 bis 10  10 = Debug
 $RemoteDaten = true;
 $Version = "";
 $Start = time( ); // Timestamp festhalten
-$funktionen->log_schreiben( "---------------   Start  openWB.php   ------------------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "---------------   Start  openWB.php   ------------------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale( LC_TIME, "de_DE.utf8" );
@@ -60,7 +49,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben( "Hardware Version: ".$Version, "o  ", 8 );
+Log::write( "Hardware Version: ".$Version, "o  ", 8 );
 switch ($Version) {
 
   case "2B":
@@ -92,7 +81,7 @@ if (!empty($MQTTBenutzer) and !empty($MQTTKennwort)) {
   $client->setCredentials( $MQTTBenutzer, $MQTTKennwort );
 }
 if ($MQTTSSL) {
-  $client->setTlsCertificates( $Pfad."/ca.cert" );
+  $client->setTlsCertificates( $basedir."/ca.crt" );
   $client->setTlsInsecure( SSL_VERIFY_NONE );
 }
 
@@ -109,19 +98,19 @@ try {
   }
   if ($MQTTConnect == true) {
     if ($MQTTDaten["MQTTConnectReturnCode"] <> 0) {
-      $funktionen->log_schreiben( "Kein Connect zum Broker ".$MQTTBroker." möglich", "   ", 3 );
+      Log::write( "Kein Connect zum Broker ".$MQTTBroker." möglich", "   ", 3 );
       goto Ausgang;
     }
   }
 }
 catch (Mosquitto\Exception $e) {
-  $funktionen->log_schreiben( "Fehler! Kein Connect zum Broker ".$MQTTBroker." möglich", "   ", 3 );
+  Log::write( "Fehler! Kein Connect zum Broker ".$MQTTBroker." möglich", "   ", 3 );
   goto Ausgang;
 }
 
 
 
-$funktionen->log_schreiben( "Connect zum Broker (openWB) erfolgreich.", "   ", 8 );
+Log::write( "Connect zum Broker (openWB) erfolgreich.", "   ", 8 );
 $Topic = "openWB/config/#";
 $client->subscribe( "openWB/lp/$Ladepunkt/#", 0 ); // Subscribe
 $client->loop( 1000 );
@@ -140,11 +129,11 @@ $client->loop( 1000 );
 //
 //
 ***************************************************************************/
-if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
-  $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
-  $Inhalt = file_get_contents( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+if (file_exists( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" )) {
+  Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
+  $Inhalt = file_get_contents( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
   $Befehle = explode( "\n", trim( $Inhalt ));
-  $funktionen->log_schreiben( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
+  Log::write( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
   for ($i = 0; $i < count( $Befehle ); $i++) {
     if ($i >= 6) {
       //  Es werden nur maximal 5 Befehle pro Datei verarbeitet!
@@ -159,16 +148,16 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
     //  curr_6000 ist nur zum Testen ...
     //  Siehe Dokument:  Befehle_senden.pdf
     *********************************************************************************/
-    if (file_exists( $Pfad."/befehle.ini.php" )) {
-      $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 9 );
-      $INI_File = parse_ini_file( $Pfad.'/befehle.ini.php', true );
+    if (file_exists( $basedir."/config/befehle.ini" )) {
+      Log::write( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 9 );
+      $INI_File = parse_ini_file( $basedir."/config/befehle.ini", true );
       $Regler39 = $INI_File["Regler39"];
-      $funktionen->log_schreiben( "Befehlsliste: ".print_r( $Regler39, 1 ), "|- ", 9 );
+      Log::write( "Befehlsliste: ".print_r( $Regler39, 1 ), "|- ", 9 );
       foreach ($Regler39 as $Template) {
         $Subst = $Befehle[$i];
         $l = strlen( $Template );
         for ($p = 1; $p < $l;++$p) {
-          $funktionen->log_schreiben( "Template: ".$Template." Subst: ".$Subst." l: ".$l, "|- ", 10 );
+          Log::write( "Template: ".$Template." Subst: ".$Subst." l: ".$l, "|- ", 10 );
           if ($Template[$p] == "#") {
             $Subst[$p] = "#";
           }
@@ -178,13 +167,13 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
         }
       }
       if ($Template != $Subst) {
-        $funktionen->log_schreiben( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
-        $funktionen->log_schreiben( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
+        Log::write( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
+        Log::write( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
         break;
       }
     }
     else {
-      $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
+      Log::write( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
       break;
     }
     $Teile = explode( "_", $Befehle[$i] );
@@ -192,7 +181,7 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
     // Hier wird der Befehl gesendet...
     //  $Teile[0] = Befehl
     //  $Teile[1] = Wert
-    $funktionen->log_schreiben( print_r( $Teile, 1 ), "MQT", 9 );
+    Log::write( print_r( $Teile, 1 ), "MQT", 9 );
     if (strtolower( $Teile[0] ) == "start") {
       $topic = "openWB/set/ChargeMode";
       if ($Teile[1] == 0) {
@@ -200,38 +189,38 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
         $wert = "3";
         try {
           $MQTTDaten["MQTTPublishReturnCode"] = $client->publish( $topic, $wert, 0, false );
-          $funktionen->log_schreiben( "Befehl gesendet: ".$topic." Wert: ".$wert, "MQT", 8 );
+          Log::write( "Befehl gesendet: ".$topic." Wert: ".$wert, "MQT", 8 );
         }
         catch (Mosquitto\Exception $e) {
-          $funktionen->log_schreiben( $topic." rc: ".$e->getMessage( ), "MQT", 1 );
+          Log::write( $topic." rc: ".$e->getMessage( ), "MQT", 1 );
         }
       }
       else {
         $wert = "0";
         try {
           $MQTTDaten["MQTTPublishReturnCode"] = $client->publish( $topic, $wert, 0, false );
-          $funktionen->log_schreiben( "Befehl gesendet: ".$topic." Wert: ".$wert, "MQT", 8 );
+          Log::write( "Befehl gesendet: ".$topic." Wert: ".$wert, "MQT", 8 );
         }
         catch (Mosquitto\Exception $e) {
-          $funktionen->log_schreiben( $topic." rc: ".$e->getMessage( ), "MQT", 1 );
+          Log::write( $topic." rc: ".$e->getMessage( ), "MQT", 1 );
         }
         $topic = "openWB/set/lp/".$Ladepunkt."/ChargePointEnabled";
         $wert = "1";
         try {
           $MQTTDaten["MQTTPublishReturnCode"] = $client->publish( $topic, $wert, 0, false );
-          $funktionen->log_schreiben( "Befehl gesendet: ".$topic." Wert: ".$wert, "MQT", 8 );
+          Log::write( "Befehl gesendet: ".$topic." Wert: ".$wert, "MQT", 8 );
         }
         catch (Mosquitto\Exception $e) {
-          $funktionen->log_schreiben( $topic." rc: ".$e->getMessage( ), "MQT", 1 );
+          Log::write( $topic." rc: ".$e->getMessage( ), "MQT", 1 );
         }
         $topic = "openWB/config/set/sofort/lp/".$Ladepunkt."/current";
         $wert = $Teile[1];
         try {
           $MQTTDaten["MQTTPublishReturnCode"] = $client->publish( $topic, $wert, 0, false );
-          $funktionen->log_schreiben( "Befehl gesendet: ".$topic." Wert: ".$wert, "MQT", 8 );
+          Log::write( "Befehl gesendet: ".$topic." Wert: ".$wert, "MQT", 8 );
         }
         catch (Mosquitto\Exception $e) {
-          $funktionen->log_schreiben( $topic." rc: ".$e->getMessage( ), "MQT", 1 );
+          Log::write( $topic." rc: ".$e->getMessage( ), "MQT", 1 );
         }
       }
     }
@@ -240,10 +229,10 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
       $wert = $Teile[1];
       try {
         $MQTTDaten["MQTTPublishReturnCode"] = $client->publish( $topic, $wert, 0, false );
-        $funktionen->log_schreiben( "Befehl gesendet: ".$topic." Wert: ".$wert, "MQT", 8 );
+        Log::write( "Befehl gesendet: ".$topic." Wert: ".$wert, "MQT", 8 );
       }
       catch (Mosquitto\Exception $e) {
-        $funktionen->log_schreiben( $topic." rc: ".$e->getMessage( ), "MQT", 1 );
+        Log::write( $topic." rc: ".$e->getMessage( ), "MQT", 1 );
       }
     }
     if (strtolower( $Teile[0] ) == "stop") {
@@ -251,10 +240,10 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
       $wert = "3";
       try {
         $MQTTDaten["MQTTPublishReturnCode"] = $client->publish( $topic, $wert, 0, false );
-        $funktionen->log_schreiben( "Befehl gesendet: ".$topic." Wert: ".$wert, "MQT", 8 );
+        Log::write( "Befehl gesendet: ".$topic." Wert: ".$wert, "MQT", 8 );
       }
       catch (Mosquitto\Exception $e) {
-        $funktionen->log_schreiben( $topic." rc: ".$e->getMessage( ), "MQT", 1 );
+        Log::write( $topic." rc: ".$e->getMessage( ), "MQT", 1 );
       }
     }
     if (strtolower( $Teile[0] ) == "pause") {
@@ -262,20 +251,20 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
       $wert = "4";
       try {
         $MQTTDaten["MQTTPublishReturnCode"] = $client->publish( $topic, $wert, 0, false );
-        $funktionen->log_schreiben( "Befehl gesendet: ".$topic." Wert: ".$wert, "MQT", 8 );
+        Log::write( "Befehl gesendet: ".$topic." Wert: ".$wert, "MQT", 8 );
       }
       catch (Mosquitto\Exception $e) {
-        $funktionen->log_schreiben( $topic." rc: ".$e->getMessage( ), "MQT", 1 );
+        Log::write( $topic." rc: ".$e->getMessage( ), "MQT", 1 );
       }
     }
   }
-  $rc = unlink( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+  $rc = unlink( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
   if ($rc) {
-    $funktionen->log_schreiben( "Datei  /../pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 9 );
+    Log::write( "Datei  /../pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 9 );
   }
 }
 else {
-  $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
+  Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
 }
 $i = 1;
 do {
@@ -287,7 +276,7 @@ do {
   for ($k = 1; $k < 65; $k++) {
     $client->loop( 1000 );
     if (isset($MQTTDaten["MQTTMessageReturnText"]) and $MQTTDaten["MQTTMessageReturnText"] == "RX-OK") {
-      $funktionen->log_schreiben( print_r( $MQTTDaten["MQTTTopic"], 1 ), "*- ", 10 );
+      Log::write( print_r( $MQTTDaten["MQTTTopic"], 1 ), "*- ", 10 );
 
       /*************************************************************************
       //  MQTT Meldungen empfangen. Subscribing    Subscribing    Subscribing
@@ -378,7 +367,7 @@ do {
   }
   else {
     $aktuelleDaten["Stationsstatus"] = 0;
-    $funktionen->log_schreiben( print_r( $aktuelleDaten, 1 ), "***", 8 );
+    Log::write( print_r( $aktuelleDaten, 1 ), "***", 8 );
   }
 
   /*************************************************************************************
@@ -417,16 +406,16 @@ do {
   if (!isset($aktuelleDaten["ADirectModeAmps"])) {
     $aktuelleDaten["ADirectModeAmps"] = 0;
   }
-  $funktionen->log_schreiben( "CountPhasesInUse ".$aktuelleDaten["countPhasesInUse"], "*- ", 8 );
-  $funktionen->log_schreiben( "kWhChargedSincePlugged ".$aktuelleDaten["kWhChargedSincePlugged"], "*- ", 8 );
+  Log::write( "CountPhasesInUse ".$aktuelleDaten["countPhasesInUse"], "*- ", 8 );
+  Log::write( "kWhChargedSincePlugged ".$aktuelleDaten["kWhChargedSincePlugged"], "*- ", 8 );
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"] + 10);
-  $funktionen->log_schreiben( var_export( $aktuelleDaten, 1 ), "   ", 8 );
+  Log::write( var_export( $aktuelleDaten, 1 ), "   ", 8 );
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( "/var/www/html/openWB_math.php" )) {
-    include 'openWB_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists($basedir."/custom/openWB_math.php" )) {
+    include $basedir.'/custom/openWB_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -435,8 +424,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -471,9 +460,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test( );
+      $rc = InfluxDB::influx_remote_test( );
       if ($rc) {
-        $rc = $funktionen->influx_remote( $aktuelleDaten );
+        $rc = InfluxDB::influx_remote( $aktuelleDaten );
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -483,27 +472,27 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
   }
   else {
-    $rc = $funktionen->influx_local( $aktuelleDaten );
+    $rc = InfluxDB::influx_local( $aktuelleDaten );
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time( ) - $Start));
-    $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+    Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
     if ($Zeitspanne > 0) {
       sleep( $Zeitspanne );
     }
     break;
   }
   else {
-    $funktionen->log_schreiben( "Schleife: ".($i)." Zeitspanne: ".(floor( ((9 * $i) - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
+    Log::write( "Schleife: ".($i)." Zeitspanne: ".(floor( ((9 * $i) - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
     sleep( floor( ((9 * $i) - (time( ) - $Start)) / ($Wiederholungen - $i + 1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 5 );
+    Log::write( "Schleife ".$i." Ausgang...", "   ", 5 );
     break;
   }
   $i++;
@@ -516,8 +505,8 @@ if (1 == 1) {
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
     $aktuelleDaten["Solarspannung"] = $aktuelleDaten["Solarspannung1"];
-    $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-    require ($Pfad."/homematic.php");
+    Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -526,14 +515,14 @@ if (1 == 1) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-    require ($Pfad."/meldungen_senden.php");
+    Log::write( "Nachrichten versenden...", "   ", 8 );
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+  Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 }
 else {
-  $funktionen->log_schreiben( "Keine gültigen Daten empfangen.", "!! ", 6 );
+  Log::write( "Keine gültigen Daten empfangen.", "!! ", 6 );
 }
-Ausgang:$funktionen->log_schreiben( "---------------   Stop   openWB.php   ------------------------- ", "|--", 6 );
+Ausgang:Log::write( "---------------   Stop   openWB.php   ------------------------- ", "|--", 6 );
 return;
 ?>

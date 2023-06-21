@@ -34,18 +34,12 @@ $Tage = 4*365; //  Nach spätestens 4 Jahren sollten ältere Daten
 $basedir = dirname(__FILE__,2);
 require($basedir."/library/base.inc.php");
 
-if (is_file($basedir."/config/1.user.config.php")) {
-  require($basedir."/config/1.user.config.php");
-} else {
-  require($basedir."/config/user.config.php");
-}
-
 $Tracelevel = 3; //  1 bis 10  10 = Debug
-log_schreiben( "- - - - - - - - - - - - - - - - - - - - - - - - - - - - -", "|-->", 1 );
-log_schreiben( "Wartung wird durchgeführt....", "", 3 );
-if (file_exists( "/var/www/html/user.wartung.php" )) {
-  log_schreiben( "Die user.wartung.php wird ausgeführt.....", "", 2 );  
-  include ("/var/www/html/user.wartung.php");
+Log::write( "- - - - - - - - - - - - - - - - - - - - - - - - - - - - -", "|-->", 1 );
+Log::write( "Wartung wird durchgeführt....", "", 3 );
+if (file_exists( $basedir."/custom/user.wartung.php" )) {
+  Log::write( "Die user.wartung.php wird ausgeführt.....", "", 2 );  
+  include ($basedir."/custom/user.wartung.php");
 
 }
 if (date( "N" ) == 7 and $Tage > 0) { // Jeden Sonntag im Monat
@@ -57,15 +51,15 @@ if (date( "N" ) == 7 and $Tage > 0) { // Jeden Sonntag im Monat
   //  $Datenbank[6]
   $Datenbank[1] = "solaranzeige";
   for ($i = 1; $i <= count( $Datenbank ); $i++) {
-    log_schreiben( "Datenbank: '".$Datenbank[$i]."'. Daten älter als dem ".$Datum." werden gelöscht.", "", 4 );
+    Log::write( "Datenbank: '".$Datenbank[$i]."'. Daten älter als dem ".$Datum." werden gelöscht.", "", 4 );
     $ch = curl_init( "http://localhost/query?db=$Datenbank[$i]&precision=s&q=".urlencode( "delete where time < '$Datum'" ));
     $rc = datenbank( $ch );
     if ($rc["rc_info"]["http_code"] == 200) {
-      log_schreiben( "Datenbank: '".$Datenbank[$i]."'. Daten älter als dem ".$Datum." wurden gelöscht.", "", 2 );
+      Log::write( "Datenbank: '".$Datenbank[$i]."'. Daten älter als dem ".$Datum." wurden gelöscht.", "", 2 );
     }
   }
 }
-log_schreiben( "- - - - - - - - - - - - - - - - - - - - - - - - - - - - -", "|-->", 1 );
+Log::write( "- - - - - - - - - - - - - - - - - - - - - - - - - - - - -", "|-->", 1 );
 exit;
 
 /**************************************************************************
@@ -74,53 +68,6 @@ exit;
 //
 **************************************************************************/
 
-/**************************************************************************
-//  Log Eintrag in die Logdatei schreiben
-//  $LogMeldung = Die Meldung ISO Format
-//  $Loglevel=2   Loglevel 1-4   4 = Trace
-**************************************************************************/
-function log_schreiben( $LogMeldung, $Titel = "", $Loglevel = 3, $UTF8 = 0 ) {
-  global $Tracelevel;
-  $LogDateiName = "/var/log/solaranzeige.log";
-  if (strlen( $Titel ) < 4) {
-    switch ($Loglevel) {
-
-      case 1:
-        $Titel = "ERRO";
-        break;
-
-      case 2:
-        $Titel = "WARN";
-        break;
-
-      case 3:
-        $Titel = "INFO";
-        break;
-
-      default:
-        $Titel = "    ";
-        break;
-    }
-  }
-  if ($Loglevel <= $Tracelevel) {
-    if ($UTF8) {
-      $LogMeldung = utf8_encode( $LogMeldung );
-    }
-    if ($handle = fopen( $LogDateiName, 'a' )) {
-      //  Schreibe in die geöffnete Datei.
-      //  Bei einem Fehler bis zu 3 mal versuchen.
-      for ($i = 1; $i < 4; $i++) {
-        $rc = fwrite( $handle, date( "d.m. H:i:s" )." ".substr( $Titel, 0, 4 )." ".$LogMeldung."\n" );
-        if ($rc) {
-          break;
-        }
-        sleep( 1 );
-      }
-      fclose( $handle );
-    }
-  }
-  return true;
-}
 function datenbank( $ch, $query = "" ) {
   $Ergebnis = array();
   $Ergebnis["Ausgabe"] = false;

@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -27,17 +26,6 @@
 //  Achtung! Der Regler sendet zwischendurch immer wieder asynchrone Daten!
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
-
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -48,9 +36,9 @@ $RemoteDaten = true;
 $Device = "WR"; // WR = Wechselrichter
 $Version = "";
 $Start = time();  // Timestamp festhalten
-$funktionen->log_schreiben("-------------   Start  infini_v_serie.php  ------------------- ","|--",6);
+Log::write("-------------   Start  infini_v_serie.php  ------------------- ","|--",6);
 
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 
@@ -69,7 +57,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",8);
+Log::write("Hardware Version: ".$Version,"o  ",8);
 
 switch($Version) {
   case "2B":
@@ -89,27 +77,27 @@ switch($Version) {
 //  pro Tag zu speichern.
 //
 *****************************************************************************/
-$StatusFile = $Pfad."/database/".$GeraeteNummer.".WhProTag.txt";
+$StatusFile = $basedir."/database/".$GeraeteNummer.".WhProTag.txt";
 if (!file_exists($StatusFile)) {
   /***************************************************************************
   //  Inhalt der Status Datei anlegen, wenn nicht existiert.
   ***************************************************************************/
   $rc = file_put_contents($StatusFile,"0");
   if ($rc === false) {
-    $funktionen->log_schreiben("Konnte die Datei whProTag_inf.txt nicht anlegen.",5);
+    Log::write("Konnte die Datei whProTag_inf.txt nicht anlegen.",5);
   }
   $aktuelleDaten["WattstundenGesamtHeute"] = 0;
 }
 else {
   $aktuelleDaten["WattstundenGesamtHeute"] = file_get_contents($StatusFile);
-  $funktionen->log_schreiben("WattstundenGesamtHeute: ".$aktuelleDaten["WattstundenGesamtHeute"],"   ",8);
+  Log::write("WattstundenGesamtHeute: ".$aktuelleDaten["WattstundenGesamtHeute"],"   ",8);
 }
 
 
-$USB1 = $funktionen->openUSB($USBRegler);
+$USB1 = USB::openUSB($USBRegler);
 if (!is_resource($USB1)) {
-  $funktionen->log_schreiben("USB Port kann nicht geöffnet werden. [1]","XX ",7);
-  $funktionen->log_schreiben("Exit.... ","XX ",7);
+  Log::write("USB Port kann nicht geöffnet werden. [1]","XX ",7);
+  Log::write("Exit.... ","XX ",7);
   goto Ausgang;
 }
 
@@ -117,11 +105,11 @@ if (!is_resource($USB1)) {
 //  Sollen Befehle an den Wechselrichter gesendet werden?
 //
 ************************************************************************************/
-if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
-  $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
-  $Inhalt = file_get_contents( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+if (file_exists( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" )) {
+  Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
+  $Inhalt = file_get_contents( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
   $Befehle = explode( "\n", trim( $Inhalt ));
-  $funktionen->log_schreiben( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
+  Log::write( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
   for ($i = 0; $i < count( $Befehle ); $i++) {
     if ($i >= 4) {
       //  Es werden nur maximal 5 Befehle pro Datei verarbeitet!
@@ -136,11 +124,11 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
     //  QPI ist nur zum Testen ...
     //  Siehe Dokument:  Befehle_senden.pdf
     **************************************************************************/
-    if (file_exists( $Pfad."/befehle.ini.php" )) {
-      $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 10 );
-      $INI_File = parse_ini_file( $Pfad.'/befehle.ini.php', true );
+    if (file_exists( $basedir."/config/befehle.ini" )) {
+      Log::write( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 10 );
+      $INI_File = parse_ini_file( $basedir."/config/befehle.ini", true );
       $Regler8 = $INI_File["Regler8"];
-      $funktionen->log_schreiben( "Befehlsliste: ".print_r( $Regler8, 1 ), "|- ", 10 );
+      Log::write( "Befehlsliste: ".print_r( $Regler8, 1 ), "|- ", 10 );
       foreach ($Regler8 as $Template) {
         $Subst = $Befehle[$i];
         $l = strlen( $Template );
@@ -154,13 +142,13 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
         }
       }
       if ($Template != $Subst) {
-        $funktionen->log_schreiben( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
-        $funktionen->log_schreiben( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
+        Log::write( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
+        Log::write( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
         break;
       }
     }
     else {
-      $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
+      Log::write( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
       break;
     }
     $Wert = false;
@@ -171,31 +159,31 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
     //  Das Zeichen "^" beim senden der Befehle weg lassen!
     //  Es wird hier eingestetzt!
     **************************************************************************/
-    $funktionen->log_schreiben( "Befehl ^".$Befehle[$i]." wird gesendet", "    ", 7 );
+    Log::write( "Befehl ^".$Befehle[$i]." wird gesendet", "    ", 7 );
 
-    $RAW_daten = $funktionen->infini_lesen($USB1, "^".$Befehle[$i], true);
+    $RAW_daten = Infini::infini_lesen($USB1, "^".$Befehle[$i], true);
 
     if ($RAW_daten == "NAK") {
-      $funktionen->log_schreiben( "Befehlsausführung erfolglos! ".$Befehle[$i], "    ", 6 );
-      $funktionen->log_schreiben( "receive: ".$RAW_daten, "    ", 7 );
+      Log::write( "Befehlsausführung erfolglos! ".$Befehle[$i], "    ", 6 );
+      Log::write( "receive: ".$RAW_daten, "    ", 7 );
     }
     if ($RAW_daten == "ACK") {
-      $funktionen->log_schreiben( "Befehl ".$Befehle[$i]." erfolgreich gesendet!", "    ", 7 );
+      Log::write( "Befehl ".$Befehle[$i]." erfolgreich gesendet!", "    ", 7 );
     }
   }
-  $rc = unlink( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+  $rc = unlink( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
   if ($rc) {
-    $funktionen->log_schreiben( "Datei  /pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 8 );
+    Log::write( "Datei  /pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 8 );
   }
 }
 else {
-  $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
+  Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
 }
 
 
 $i = 1;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...","+  ",9);
+  Log::write("Die Daten werden ausgelesen...","+  ",9);
 
   /****************************************************************************
   //  Ab hier wird der Regler ausgelesen.
@@ -224,58 +212,58 @@ do {
 
   for ($k = 1; $k < 3; $k++) {
     $Befehl = "^P005GS";  //  Auslesen der aktuellen Wechselrichter Daten
-    $RAW_daten = $funktionen->infini_lesen($USB1, $Befehl);
+    $RAW_daten = Infini::infini_lesen($USB1, $Befehl);
     if ($RAW_daten === false) {
-      $funktionen->log_schreiben("Continue: ".$Befehl,"o  ",8);
+      Log::write("Continue: ".$Befehl,"o  ",8);
       continue;
     }
-    $aktuelleDaten = array_merge($aktuelleDaten, $funktionen->infini_entschluesseln(substr($Befehl,5),$RAW_daten));  
+    $aktuelleDaten = array_merge($aktuelleDaten, Infini::infini_entschluesseln(substr($Befehl,5),$RAW_daten));  
     break;
   }
-  $funktionen->log_schreiben($RAW_daten,"   ",7);
+  Log::write($RAW_daten,"   ",7);
 
 
   for ($k = 1; $k < 3; $k++) {
     $Befehl = "^P005PI";  //  Auslesen der Firmware angeben
-    $RAW_daten = $funktionen->infini_lesen($USB1, $Befehl);
+    $RAW_daten = Infini::infini_lesen($USB1, $Befehl);
     if ($RAW_daten === false) {
-      $funktionen->log_schreiben("Continue: ".$Befehl,"o  ",8);
+      Log::write("Continue: ".$Befehl,"o  ",8);
       continue;
     }
-    $aktuelleDaten = array_merge($aktuelleDaten, $funktionen->infini_entschluesseln(substr($Befehl,5),$RAW_daten));  
+    $aktuelleDaten = array_merge($aktuelleDaten, Infini::infini_entschluesseln(substr($Befehl,5),$RAW_daten));  
     break;
   }
 
   for ($k = 1; $k < 3; $k++) {
     $Befehl = "^P004T";  //  Auslesen der aktuellen Zeit
-    $RAW_daten = $funktionen->infini_lesen($USB1, $Befehl);
+    $RAW_daten = Infini::infini_lesen($USB1, $Befehl);
     if ($RAW_daten === false) {
-      $funktionen->log_schreiben("Continue: ".$Befehl,"o  ",8);
+      Log::write("Continue: ".$Befehl,"o  ",8);
       continue;
     }
-    $aktuelleDaten = array_merge($aktuelleDaten, $funktionen->infini_entschluesseln(substr($Befehl,5),$RAW_daten));  
+    $aktuelleDaten = array_merge($aktuelleDaten, Infini::infini_entschluesseln(substr($Befehl,5),$RAW_daten));  
     break;
   }
 
   for ($k = 1; $k < 3; $k++) {
     $Befehl = "^P006MOD";  //  Auslesen des aktuellen Modus
-    $RAW_daten = $funktionen->infini_lesen($USB1, $Befehl);
+    $RAW_daten = Infini::infini_lesen($USB1, $Befehl);
     if ($RAW_daten === false) {
-      $funktionen->log_schreiben("Continue: ".$Befehl,"o  ",8);
+      Log::write("Continue: ".$Befehl,"o  ",8);
       continue;
     }
-    $aktuelleDaten = array_merge($aktuelleDaten, $funktionen->infini_entschluesseln(substr($Befehl,5),$RAW_daten));  
+    $aktuelleDaten = array_merge($aktuelleDaten, Infini::infini_entschluesseln(substr($Befehl,5),$RAW_daten));  
     break;
   }
 
   for ($k = 1; $k < 3; $k++) {
     $Befehl = "^P006FWS";  //  Auslesen der Fehlercodes und Warnungen
-    $RAW_daten = $funktionen->infini_lesen($USB1, $Befehl);
+    $RAW_daten = Infini::infini_lesen($USB1, $Befehl);
     if ($RAW_daten === false) {
-      $funktionen->log_schreiben("Continue: ".$Befehl,"o  ",8);
+      Log::write("Continue: ".$Befehl,"o  ",8);
       continue;
     }
-    $aktuelleDaten = array_merge($aktuelleDaten, $funktionen->infini_entschluesseln(substr($Befehl,5),$RAW_daten));  
+    $aktuelleDaten = array_merge($aktuelleDaten, Infini::infini_entschluesseln(substr($Befehl,5),$RAW_daten));  
     $aktuelleDaten["Optionen"] = substr($RAW_daten,3);
     break;
   }
@@ -298,11 +286,11 @@ do {
 
   //  Nur einmal pro Minute berechnen!
   if ($i == 1 and $aktuelleDaten["Solarleistung1"] > 0) {
-    $funktionen->log_schreiben("Leistung1: ".$aktuelleDaten["Solarleistung1"],"o  ",9);
+    Log::write("Leistung1: ".$aktuelleDaten["Solarleistung1"],"o  ",9);
     $aktuelleDaten["WattstundenGesamtHeute"] = ($aktuelleDaten["WattstundenGesamtHeute"] + ($aktuelleDaten["Solarleistung1"]/60) );
   }
   if ($i == 1 and $aktuelleDaten["Solarleistung2"] > 0) {
-    $funktionen->log_schreiben("Solarleistung2: ".$aktuelleDaten["Solarleistung2"],"o  ",9);
+    Log::write("Solarleistung2: ".$aktuelleDaten["Solarleistung2"],"o  ",9);
     $aktuelleDaten["WattstundenGesamtHeute"] = ($aktuelleDaten["WattstundenGesamtHeute"] + ($aktuelleDaten["Solarleistung2"]/60) );
   }
 
@@ -392,20 +380,20 @@ do {
     }
 
     $FehlermeldungText = "Fehlermeldung: ".$Text;
-    $funktionen->log_schreiben($FehlermeldungText,"** ",1);
+    Log::write($FehlermeldungText,"** ",1);
   }
 
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"]+10);
 
 
-  $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",8);
+  Log::write(var_export($aktuelleDaten,1),"   ",8);
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/infini_v_serie_math.php")) {
-    include 'infini_v_serie_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/infini_v_serie_math.php")) {
+    include $basedir.'/custom/infini_v_serie_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
 
@@ -416,8 +404,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT and strtoupper($MQTTAuswahl) != "OPENWB") {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
 
@@ -453,7 +441,7 @@ do {
 
 
   if ($aktuelleDaten["Warnungen"] > 0 or $aktuelleDaten["Fehlercode"] > 0) {
-    $funktionen->log_schreiben("Fehlercode. ".$aktuelleDaten["Fehlercode"]." Warnung: ".$aktuelleDaten["Warnungen"],"*--",7);
+    Log::write("Fehlercode. ".$aktuelleDaten["Fehlercode"]." Warnung: ".$aktuelleDaten["Warnungen"],"*--",7);
   }
 
 
@@ -465,9 +453,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -477,30 +465,30 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
 
 
 
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time() - $Start));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+    Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
     sleep(floor((56 - (time() - $Start))/($Wiederholungen-$i+1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",8);
+    Log::write("Schleife ".$i." Ausgang...","   ",8);
     break;
   }
 
@@ -516,8 +504,8 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-    require($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -526,14 +514,14 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-    require($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...","   ",8);
+    require($basedir."/services/meldungen_senden.php");
   }
 
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);
+  Log::write("OK. Datenübertragung erfolgreich.","   ",7);
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.","!! ",6);
+  Log::write("Keine gültigen Daten empfangen.","!! ",6);
 }
 
 
@@ -545,7 +533,7 @@ else {
 $aktuelleDaten["WattstundenGesamtHeute"] = round($aktuelleDaten["WattstundenGesamtHeute"],2);
 if (date("H:i") == "00:00" or date("H:i") == "00:01") {
   $rc = file_put_contents($StatusFile, "0");
-  $funktionen->log_schreiben("WattstundenGesamtHeute  gesetzt.","o--",5);
+  Log::write("WattstundenGesamtHeute  gesetzt.","o--",5);
 }
 else {
   $rc = file_put_contents($StatusFile, $aktuelleDaten["WattstundenGesamtHeute"]);
@@ -554,7 +542,7 @@ else {
 
 Ausgang:
 
-$funktionen->log_schreiben("-------------   Stop   infini_v_serie.php    ----------------- ","|--",6);
+Log::write("-------------   Stop   infini_v_serie.php    ----------------- ","|--",6);
 
 return;
 

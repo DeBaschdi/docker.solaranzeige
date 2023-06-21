@@ -22,6 +22,9 @@ ENV TIMEZONE="Europe/Berlin" \
     LANG="en_US.UTF-8" \
     LC_ALL="en_US.UTF-8"
 
+ENV SA_INFLUX_LOCAL_ENABLED="false" \
+    SA_INFLUX_REMOTE_ENABLED="true"
+
 COPY app/ /
 
 RUN echo "Dir::Cache "";" >> /etc/apt/apt.conf.d/docker-nocache && \

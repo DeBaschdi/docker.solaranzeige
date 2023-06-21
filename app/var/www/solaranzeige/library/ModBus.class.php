@@ -26,11 +26,11 @@ class ModBus {
       usleep(1000);
       $Laenge = ((hexdec(substr($Antwort, 8, 4)) * 2) + 12); // 12 = Header Länge
       $i++;
-      $this->log_schreiben("Antwort = ".$Antwort, "o  ", 8);
+      Log::write("Antwort = ".$Antwort, "o  ", 8);
       // **************  Eingebaut 14.08.2021 ******************************/
       if ($Antwort == "") {
         $i = 200;
-        $this->log_schreiben("Modbus: Timeout", "o  ", 6);
+        Log::write("Modbus: Timeout", "o  ", 6);
       }
       // *******************************************************************/
     } while (strlen($Antwort) < $Laenge and $i < 200);

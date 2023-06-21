@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -50,16 +49,6 @@
 //
 //
 ***************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -67,8 +56,8 @@ if (isset($USBDevice) and !empty($USBDevice)) {
 $Tracelevel = 7; //  1 bis 10  10 = Debug
 $RemoteDaten = true;
 $Start = time( ); // Timestamp festhalten
-$funktionen->log_schreiben( "----------------------   Start  nilan_wp.php   --------------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "----------------------   Start  nilan_wp.php   --------------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale( LC_TIME, "de_DE.utf8" );
@@ -76,7 +65,7 @@ setlocale( LC_TIME, "de_DE.utf8" );
 //  $Platine = "Raspberry Pi Model B Plus Rev 1.2";
 $Teile = explode( " ", $Platine );
 if ($Teile[1] == "Pi") {
-  $funktionen->log_schreiben( "Hardware Version: ".$Platine, "o  ", 8 );
+  Log::write( "Hardware Version: ".$Platine, "o  ", 8 );
   $Version = trim( $Teile[2] );
   if ($Teile[3] == "Model") {
     $Version .= trim( $Teile[4] );
@@ -114,12 +103,12 @@ elseif (strlen( $WR_Adresse ) == 2) {
 else {
   $WR_ID = dechex( $WR_Adresse );
 }
-$funktionen->log_schreiben( "WR_ID: ".$WR_ID, "+  ", 8 );
+Log::write( "WR_ID: ".$WR_ID, "+  ", 8 );
 
-$USB1 = $funktionen->openUSB( $USBRegler );
+$USB1 = USB::openUSB( $USBRegler );
 if (!is_resource( $USB1 )) {
-  $funktionen->log_schreiben( "USB Port kann nicht geöffnet werden. [1]", "XX ", 7 );
-  $funktionen->log_schreiben( "Exit.... ", "XX ", 7 );
+  Log::write( "USB Port kann nicht geöffnet werden. [1]", "XX ", 7 );
+  Log::write( "Exit.... ", "XX ", 7 );
   goto Ausgang;
 }
 
@@ -128,11 +117,11 @@ if (!is_resource( $USB1 )) {
 //  Sollen Befehle an die Wärmepumpe gesendet werden?
 //  Alle Holding register können geändert werden.
 ************************************************************************************/
-if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
-  $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
-  $Inhalt = file_get_contents( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+if (file_exists( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" )) {
+  Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
+  $Inhalt = file_get_contents( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
   $Befehle = explode( "\n", trim( $Inhalt ));
-  $funktionen->log_schreiben( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
+  Log::write( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
   for ($i = 0; $i < count( $Befehle ); $i++) {
     if ($i >= 4) {
       //  Es werden nur maximal 5 Befehle pro Datei verarbeitet!
@@ -147,11 +136,11 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
     //  QPI ist nur zum Testen ...
     //  Siehe Dokument:  Befehle_senden.pdf
     **************************************************************************/
-    if (file_exists( $Pfad."/befehle.ini.php" )) {
-      $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 9 );
-      $INI_File = parse_ini_file( $Pfad.'/befehle.ini.php', true );
+    if (file_exists( $basedir."/config/befehle.ini" )) {
+      Log::write( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 9 );
+      $INI_File = parse_ini_file( $basedir."/config/befehle.ini", true );
       $Regler90 = $INI_File["Regler90"];
-      $funktionen->log_schreiben( "Befehlsliste: ".print_r( $Regler90, 1 ), "|- ", 10 );
+      Log::write( "Befehlsliste: ".print_r( $Regler90, 1 ), "|- ", 10 );
       foreach ($Regler90 as $Template) {
         $Subst = $Befehle[$i];
         $l = strlen( $Template );
@@ -165,13 +154,13 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
         }
       }
       if ($Template != $Subst) {
-        $funktionen->log_schreiben( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
-        $funktionen->log_schreiben( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
+        Log::write( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
+        Log::write( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
         break;
       }
     }
     else {
-      $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
+      Log::write( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
       break;
     }
     $Wert = false;
@@ -184,36 +173,36 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
       $Befehl["RegisterAddress"] = str_pad( dechex( substr($Teile[0],1)), 4, "0", STR_PAD_LEFT );
       $Befehl["RegisterCount"] = "0001";
       $Befehl["Befehl"] = $RegWert;
-      $funktionen->log_schreiben( "Befehl: ".print_r( $Befehl, 10 ), "    ", 1 );
-      $rc = $funktionen->phocos_pv18_auslesen( $USB1, $Befehl );
+      Log::write( "Befehl: ".print_r( $Befehl, 10 ), "    ", 1 );
+      $rc = Phocos::phocos_pv18_auslesen( $USB1, $Befehl );
       if ($rc["ok"] == true) {
         $wert = true;
-        $funktionen->log_schreiben( "Befehlsausführung war erfolgreich.", "   ", 7 );
-        $funktionen->log_schreiben( "Register ".hexdec( $Befehl["RegisterAddress"] )." Wert: ".$Befehl["Befehl"], "   ", 2 );
+        Log::write( "Befehlsausführung war erfolgreich.", "   ", 7 );
+        Log::write( "Register ".hexdec( $Befehl["RegisterAddress"] )." Wert: ".$Befehl["Befehl"], "   ", 2 );
       }
       else {
         $Wert = false;
-        $funktionen->log_schreiben( "Befehlsausführung war nicht erfolgreich! ", "XX ", 2 );
-        $funktionen->log_schreiben( "Register ".hexdec( $Befehl["RegisterAddress"] )." Wert: ".$Befehl["Befehl"], "XX ", 2 );
+        Log::write( "Befehlsausführung war nicht erfolgreich! ", "XX ", 2 );
+        Log::write( "Register ".hexdec( $Befehl["RegisterAddress"] )." Wert: ".$Befehl["Befehl"], "XX ", 2 );
       }
     }
     else {
-      $funktionen->log_schreiben( "Befehl ungültig: ".$Befehle[$i], "    ", 2 );
+      Log::write( "Befehl ungültig: ".$Befehle[$i], "    ", 2 );
     }
   }
-  $rc = unlink( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+  $rc = unlink( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
   if ($rc) {
-    $funktionen->log_schreiben( "Datei  /pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 8 );
+    Log::write( "Datei  /pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 8 );
   }
 }
 else {
-  $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
+  Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
 }
 
 
 $i = 1;
 do {
-  $funktionen->log_schreiben( "Die Daten werden ausgelesen...", "+  ", 9 );
+  Log::write( "Die Daten werden ausgelesen...", "+  ", 9 );
 
   /****************************************************************************
   //  Ab hier wird die Wärmepumpe ausgelesen.
@@ -225,39 +214,39 @@ do {
   $Befehl["BefehlFunctionCode"] = "04";       // in HEX
   $Befehl["RegisterCount"] = "0013";          // in HEX
   $Befehl["Datentyp"] = "";                // String
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   if ($rc == false) {
-    $funktionen->log_schreiben("Falsches Protokoll ... Exit.... ","!! ",5);
+    Log::write("Falsches Protokoll ... Exit.... ","!! ",5);
     goto Ausgang;
   }
 
-  $aktuelleDaten["AnalogIO"]["T0_Controler"] = $funktionen->hexdecs(substr($rc["Wert"],0,4))/100;
-  $aktuelleDaten["AnalogIO"]["T1_Intake"] = $funktionen->hexdecs(substr($rc["Wert"],4,4))/100;
-  $aktuelleDaten["AnalogIO"]["T2_Inlet"] = $funktionen->hexdecs(substr($rc["Wert"],8,4))/100;
-  $aktuelleDaten["AnalogIO"]["T3_Exhaust"] = $funktionen->hexdecs(substr($rc["Wert"],12,4))/100;
-  $aktuelleDaten["AnalogIO"]["T4_Outlet"] = $funktionen->hexdecs(substr($rc["Wert"],16,4))/100;
-  $aktuelleDaten["AnalogIO"]["T5_Cond"] = $funktionen->hexdecs(substr($rc["Wert"],20,4))/100;
-  $aktuelleDaten["AnalogIO"]["T6_Evap"] = $funktionen->hexdecs(substr($rc["Wert"],24,4))/100;
-  $aktuelleDaten["AnalogIO"]["T7_Inlet"] = $funktionen->hexdecs(substr($rc["Wert"],28,4))/100;
-  $aktuelleDaten["AnalogIO"]["T8_Outdoor"] = $funktionen->hexdecs(substr($rc["Wert"],32,4))/100;
-  $aktuelleDaten["AnalogIO"]["T9_Heater"] = $funktionen->hexdecs(substr($rc["Wert"],36,4))/100;
-  $aktuelleDaten["AnalogIO"]["T10_Extern"] = $funktionen->hexdecs(substr($rc["Wert"],40,4))/100;
-  $aktuelleDaten["AnalogIO"]["T11_Top"] = $funktionen->hexdecs(substr($rc["Wert"],44,4))/100;
-  $aktuelleDaten["AnalogIO"]["T12_Bottom"] = $funktionen->hexdecs(substr($rc["Wert"],48,4))/100;
-  $aktuelleDaten["AnalogIO"]["T13_Return"] = $funktionen->hexdecs(substr($rc["Wert"],52,4))/100;
-  $aktuelleDaten["AnalogIO"]["T14_Supply"] = $funktionen->hexdecs(substr($rc["Wert"],56,4))/100;
-  $aktuelleDaten["AnalogIO"]["T15_Room"] = $funktionen->hexdecs(substr($rc["Wert"],60,4))/100;
-  $aktuelleDaten["AnalogIO"]["T17_PreHeat"] = $funktionen->hexdecs(substr($rc["Wert"],68,4))/100;
-  $aktuelleDaten["AnalogIO"]["T18_PresPibe"] = $funktionen->hexdecs(substr($rc["Wert"],72,4))/100;
+  $aktuelleDaten["AnalogIO"]["T0_Controler"] = Utils::hexdecs(substr($rc["Wert"],0,4))/100;
+  $aktuelleDaten["AnalogIO"]["T1_Intake"] = Utils::hexdecs(substr($rc["Wert"],4,4))/100;
+  $aktuelleDaten["AnalogIO"]["T2_Inlet"] = Utils::hexdecs(substr($rc["Wert"],8,4))/100;
+  $aktuelleDaten["AnalogIO"]["T3_Exhaust"] = Utils::hexdecs(substr($rc["Wert"],12,4))/100;
+  $aktuelleDaten["AnalogIO"]["T4_Outlet"] = Utils::hexdecs(substr($rc["Wert"],16,4))/100;
+  $aktuelleDaten["AnalogIO"]["T5_Cond"] = Utils::hexdecs(substr($rc["Wert"],20,4))/100;
+  $aktuelleDaten["AnalogIO"]["T6_Evap"] = Utils::hexdecs(substr($rc["Wert"],24,4))/100;
+  $aktuelleDaten["AnalogIO"]["T7_Inlet"] = Utils::hexdecs(substr($rc["Wert"],28,4))/100;
+  $aktuelleDaten["AnalogIO"]["T8_Outdoor"] = Utils::hexdecs(substr($rc["Wert"],32,4))/100;
+  $aktuelleDaten["AnalogIO"]["T9_Heater"] = Utils::hexdecs(substr($rc["Wert"],36,4))/100;
+  $aktuelleDaten["AnalogIO"]["T10_Extern"] = Utils::hexdecs(substr($rc["Wert"],40,4))/100;
+  $aktuelleDaten["AnalogIO"]["T11_Top"] = Utils::hexdecs(substr($rc["Wert"],44,4))/100;
+  $aktuelleDaten["AnalogIO"]["T12_Bottom"] = Utils::hexdecs(substr($rc["Wert"],48,4))/100;
+  $aktuelleDaten["AnalogIO"]["T13_Return"] = Utils::hexdecs(substr($rc["Wert"],52,4))/100;
+  $aktuelleDaten["AnalogIO"]["T14_Supply"] = Utils::hexdecs(substr($rc["Wert"],56,4))/100;
+  $aktuelleDaten["AnalogIO"]["T15_Room"] = Utils::hexdecs(substr($rc["Wert"],60,4))/100;
+  $aktuelleDaten["AnalogIO"]["T17_PreHeat"] = Utils::hexdecs(substr($rc["Wert"],68,4))/100;
+  $aktuelleDaten["AnalogIO"]["T18_PresPibe"] = Utils::hexdecs(substr($rc["Wert"],72,4))/100;
 
 
   $Befehl["RegisterAddress"] = dechex(1000);   // In Dezimal
   $Befehl["BefehlFunctionCode"] = "04";       // in HEX
   $Befehl["RegisterCount"] = "0004";          // in HEX
   $Befehl["Datentyp"] = "";                // String
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   if ($rc == false) {
-    $funktionen->log_schreiben("Falsches Protokoll ... Exit.... ","!! ",5);
+    Log::write("Falsches Protokoll ... Exit.... ","!! ",5);
     goto Ausgang;
   }
 
@@ -271,9 +260,9 @@ do {
   $Befehl["BefehlFunctionCode"] = "04";       // in HEX
   $Befehl["RegisterCount"] = "0005";          // in HEX
   $Befehl["Datentyp"] = "";                // String
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   if ($rc == false) {
-    $funktionen->log_schreiben("Falsches Protokoll ... Exit.... ","!! ",5);
+    Log::write("Falsches Protokoll ... Exit.... ","!! ",5);
     goto Ausgang;
   }
 
@@ -289,16 +278,16 @@ do {
   $Befehl["BefehlFunctionCode"] = "04";       // in HEX
   $Befehl["RegisterCount"] = "0004";          // in HEX
   $Befehl["Datentyp"] = "";                // String
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   if ($rc == false) {
-    $funktionen->log_schreiben("Falsches Protokoll ... Exit.... ","!! ",5);
+    Log::write("Falsches Protokoll ... Exit.... ","!! ",5);
     goto Ausgang;
   }
 
   $aktuelleDaten["AirTemp"]["IsSummer"] = hexdec(substr($rc["Wert"],0,4));
-  $aktuelleDaten["AirTemp"]["TempInletSet"] = $funktionen->hexdecs(substr($rc["Wert"],4,4))/100;
-  $aktuelleDaten["AirTemp"]["TempControl"] = $funktionen->hexdecs(substr($rc["Wert"],8,4))/100;
-  $aktuelleDaten["AirTemp"]["TempRoom"] = $funktionen->hexdecs(substr($rc["Wert"],12,4))/100;
+  $aktuelleDaten["AirTemp"]["TempInletSet"] = Utils::hexdecs(substr($rc["Wert"],4,4))/100;
+  $aktuelleDaten["AirTemp"]["TempControl"] = Utils::hexdecs(substr($rc["Wert"],8,4))/100;
+  $aktuelleDaten["AirTemp"]["TempRoom"] = Utils::hexdecs(substr($rc["Wert"],12,4))/100;
 
 
 
@@ -307,9 +296,9 @@ do {
   $Befehl["BefehlFunctionCode"] = "03";       // in HEX
   $Befehl["RegisterCount"] = "0008";          // in HEX
   $Befehl["Datentyp"] = "";                // String
-  $rc = $funktionen->modbus_rtu_auslesen($USB1,$Befehl);
+  $rc = ModBus::modbus_rtu_auslesen($USB1,$Befehl);
   if ($rc == false) {
-    $funktionen->log_schreiben("Falsches Protokoll ... Exit.... ","!! ",5);
+    Log::write("Falsches Protokoll ... Exit.... ","!! ",5);
     goto Ausgang;
   }
 
@@ -317,14 +306,14 @@ do {
   $aktuelleDaten["Control"]["RunSet"] = hexdec(substr($rc["Wert"],4,4));
   $aktuelleDaten["Control"]["ModeSet"] = hexdec(substr($rc["Wert"],8,4));
   $aktuelleDaten["Control"]["VentSet"] = hexdec(substr($rc["Wert"],12,4));
-  $aktuelleDaten["Control"]["TempSet"] = $funktionen->hexdecs(substr($rc["Wert"],16,4))/100;
+  $aktuelleDaten["Control"]["TempSet"] = Utils::hexdecs(substr($rc["Wert"],16,4))/100;
   $aktuelleDaten["Control"]["ServiceMode"] = hexdec(substr($rc["Wert"],20,4));
-  $aktuelleDaten["Control"]["ServicePct"] = $funktionen->hexdecs(substr($rc["Wert"],24,4))/100;
+  $aktuelleDaten["Control"]["ServicePct"] = Utils::hexdecs(substr($rc["Wert"],24,4))/100;
   $aktuelleDaten["Control"]["Preset"] = hexdec(substr($rc["Wert"],28,4));
 
 
 
-  $funktionen->log_schreiben( "Auslesen des Gerätes beendet.", "   ", 8 );
+  Log::write( "Auslesen des Gerätes beendet.", "   ", 8 );
 
 
   /**************************************************************************
@@ -341,13 +330,13 @@ do {
   $aktuelleDaten["Info"]["Objekt.Text"] = $Objekt;
   $aktuelleDaten["Info"]["Produkt.Text"] = "NILAN CTS602";
   $aktuelleDaten["zentralerTimestamp"] = ( $aktuelleDaten["zentralerTimestamp"] + 10 );  
-  $funktionen->log_schreiben( print_r( $aktuelleDaten, 1 ), "   ", 8 );
+  Log::write( print_r( $aktuelleDaten, 1 ), "   ", 8 );
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( "/var/www/html/nilan_wp_math.php" )) {
-    include 'nilan_wp_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists($basedir."/custom/nilan_wp_math.php" )) {
+    include $basedir.'/custom/nilan_wp_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -356,8 +345,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT and strtoupper( $MQTTAuswahl ) != "OPENWB") {
-    $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+    require($basedir."/services/mqtt_senden.php");
   }
 
 
@@ -382,9 +371,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test( );
+      $rc = InfluxDB::influx_remote_test( );
       if ($rc) {
-        $rc = $funktionen->influx_remote( $aktuelleDaten );
+        $rc = InfluxDB::influx_remote( $aktuelleDaten );
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -394,27 +383,27 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
   }
   else {
-    $rc = $funktionen->influx_local( $aktuelleDaten );
+    $rc = InfluxDB::influx_local( $aktuelleDaten );
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (9 - (time( ) - $Start));
-    $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+    Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
     if ($Zeitspanne > 0) {
       sleep( $Zeitspanne );
     }
     break;
   }
   else {
-    $funktionen->log_schreiben( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
+    Log::write( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
     sleep( floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 8 );
+    Log::write( "Schleife ".$i." Ausgang...", "   ", 8 );
     break;
   }
   $i++;
@@ -426,8 +415,8 @@ if (isset($aktuelleDaten["AnalogIO"]["T0_Controler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-    require ($Pfad."/homematic.php");
+    Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -436,19 +425,19 @@ if (isset($aktuelleDaten["AnalogIO"]["T0_Controler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-    require ($Pfad."/meldungen_senden.php");
+    Log::write( "Nachrichten versenden...", "   ", 8 );
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+  Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 }
 else {
-  $funktionen->log_schreiben( "Keine gültigen Daten empfangen.", "!! ", 6 );
+  Log::write( "Keine gültigen Daten empfangen.", "!! ", 6 );
 }
 
 /***********/
 Ausgang:
 
 /***********/
-$funktionen->log_schreiben( "----------------------   Stop   nilan_wp.php   --------------------- ", "|--", 6 );
+Log::write( "----------------------   Stop   nilan_wp.php   --------------------- ", "|--", 6 );
 return;
 ?>

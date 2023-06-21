@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -24,16 +23,6 @@
 //  ausgelesen und gespeichert werden steht in der user.config.php
 //
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -45,14 +34,14 @@ $Version = "";
 $aktuelleDaten = array();
 $aktuelleDaten["WattstundenGesamtHeute"] = 0; //Dummy
 $Start = time( ); // Timestamp festhalten
-$funktionen->log_schreiben( "---------   Start  JK_bms.php    ---------------------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "---------   Start  JK_bms.php    ---------------------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale( LC_TIME, "de_DE.utf8" );
 //  Hardware Version ermitteln.
 $Teile = explode( " ", $Platine );
 if ($Teile[1] == "Pi") {
-  $funktionen->log_schreiben( "Hardware Version: ".$Platine, "o  ", 8 );
+  Log::write( "Hardware Version: ".$Platine, "o  ", 8 );
   $Version = trim( $Teile[2] );
   if ($Teile[3] == "Model") {
     $Version .= trim( $Teile[4] );
@@ -61,7 +50,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben( "Hardware Version: ".$Version, "o  ", 9 );
+Log::write( "Hardware Version: ".$Version, "o  ", 9 );
 switch ($Version) {
 
   case "2B":
@@ -90,26 +79,26 @@ if ($HF2211) {
   // HF2211 WLAN Gateway wird benutzt
   $USB1 = fsockopen( $WR_IP, $WR_Port, $errno, $errstr, 5 ); // 5 Sekunden Timeout
   if ($USB1 === false) {
-    $funktionen->log_schreiben( "Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
-    $funktionen->log_schreiben( "Exit.... ", "XX ", 3 );
+    Log::write( "Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
+    Log::write( "Exit.... ", "XX ", 3 );
     goto Ausgang;
   }
 }
 else {
-  $USB1 = $funktionen->openUSB( $USBRegler );
+  $USB1 = USB::openUSB( $USBRegler );
   if (!is_resource( $USB1 )) {
-    $funktionen->log_schreiben( "USB Port kann nicht geöffnet werden. [1]", "XX ", 7 );
-    $funktionen->log_schreiben( "Exit.... ", "XX ", 7 );
+    Log::write( "USB Port kann nicht geöffnet werden. [1]", "XX ", 7 );
+    Log::write( "Exit.... ", "XX ", 7 );
     goto Ausgang;
   }
 }
-$funktionen->log_schreiben( "USB Port: ".$USBRegler, "   ", 8 );
+Log::write( "USB Port: ".$USBRegler, "   ", 8 );
 $StartByte = "a5";
 $DeviceType = "01"; // MPPT Controler
 if (1 == 1) {
   $i = 1;
   do {
-    $funktionen->log_schreiben( "Die Daten werden ausgelesen...", "+  ", 9 );
+    Log::write( "Die Daten werden ausgelesen...", "+  ", 9 );
 
     /**************************************************************************
     //  Ab hier wird der Regler ausgelesen.
@@ -131,17 +120,17 @@ if (1 == 1) {
     $CommandHex = "4E57"."0013"."00000000"."06"."03"."00"."00"."00000000"."68"; // JK BMS send all
     $response["ok"] = false;
 
-    $response = $funktionen->sendUSB( $USB1, $CommandHex);
+    $response = USB::sendUSB( $USB1, $CommandHex);
 
     if ($response["ok"] == false) {
-      $funktionen->log_schreiben( "Fehler USB Command", "!! ", 3 );
+      Log::write( "Fehler USB Command", "!! ", 3 );
       goto Ausgang;
     }
 
     $pos = 22; // Startposition der Daten im Frame
     if (substr($response["response"], $pos, 2) !== "79") {  // check ID 0x79
-      $funktionen->log_schreiben( "invalid frame! ".substr($response["response"], $pos, 2)." instead of 0x79", "!! ", 3 );
-      $funktionen->log_schreiben( $response["response"], "   ", 3 );
+      Log::write( "invalid frame! ".substr($response["response"], $pos, 2)." instead of 0x79", "!! ", 3 );
+      Log::write( $response["response"], "   ", 3 );
       goto Ausgang;
     }
 
@@ -180,8 +169,8 @@ if (1 == 1) {
     $pos += 4;
 
     if (substr($response["response"], $pos, 2) !== "83") {  // check ID 0x83
-      $funktionen->log_schreiben( "invalid frame! ".substr($response["response"], $pos, 2)." instead of 0x83", "!! ", 2 );
-      $funktionen->log_schreiben( $response["response"], "   ", 5 );
+      Log::write( "invalid frame! ".substr($response["response"], $pos, 2)." instead of 0x83", "!! ", 2 );
+      Log::write( $response["response"], "   ", 5 );
       goto Ausgang;
     }
 
@@ -226,8 +215,8 @@ if (1 == 1) {
     $pos += 4;
 
     if (substr($response["response"], $pos, 2) !== "8c") {  // check ID 0x8c
-      $funktionen->log_schreiben( "invalid frame! ".substr($response["response"], $pos, 2)." instead of 0x8c", "!! ", 2 );
-      $funktionen->log_schreiben( $response["response"], "   ", 5 );
+      Log::write( "invalid frame! ".substr($response["response"], $pos, 2)." instead of 0x8c", "!! ", 2 );
+      Log::write( $response["response"], "   ", 5 );
       goto Ausgang;
     }
 
@@ -235,7 +224,7 @@ if (1 == 1) {
     $aktuelleDaten["BatStatus"] = hexdec(substr($response["response"], $pos, 4));
     $pos += 4;
 
-//    $funktionen->log_schreiben( "SOC : ".$aktuelleDaten["SOC"]." %", "   ", 8 );
+//    Log::write( "SOC : ".$aktuelleDaten["SOC"]." %", "   ", 8 );
 
 
     /****************************************************************************
@@ -246,13 +235,13 @@ if (1 == 1) {
     $aktuelleDaten["Firmware"] = "1.0";
     $aktuelleDaten["Produkt"] = "";  
     $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"] + 10);
-    $funktionen->log_schreiben( var_export( $aktuelleDaten, 1 ), "   ", 8 );
+    Log::write( var_export( $aktuelleDaten, 1 ), "   ", 8 );
 
     /**************************************************************************
     //  User PHP Script, falls gewünscht oder nötig
     **************************************************************************/
-    if (file_exists( "/var/www/html/JK_bms_math.php" )) {
-      include 'JK_bms_math.php'; // Falls etwas neu berechnet werden muss.
+    if (file_exists($basedir."/custom/JK_bms_math.php" )) {
+      include $basedir.'/custom/JK_bms_math.php'; // Falls etwas neu berechnet werden muss.
     }
 
     /**************************************************************************
@@ -261,8 +250,8 @@ if (1 == 1) {
     //  an den mqtt-Broker Mosquitto gesendet.
     **************************************************************************/
     if ($MQTT) {
-      $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-      require ($Pfad."/mqtt_senden.php");
+      Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+      require($basedir."/services/mqtt_senden.php");
     }
 
     /**************************************************************************
@@ -294,14 +283,14 @@ if (1 == 1) {
     //  Daten werden in die Influx Datenbank gespeichert.
     //  Lokal und Remote bei Bedarf.
     *********************************************************************/
-    $funktionen->log_schreiben( "Start DB transfer", "   ", 7 );
+    Log::write( "Start DB transfer", "   ", 7 );
 
     if ($InfluxDB_remote) {
       // Test ob die Remote Verbindung zur Verfügung steht.
       if ($RemoteDaten) {
-        $rc = $funktionen->influx_remote_test( );
+        $rc = InfluxDB::influx_remote_test( );
         if ($rc) {
-          $rc = $funktionen->influx_remote( $aktuelleDaten );
+          $rc = InfluxDB::influx_remote( $aktuelleDaten );
           if ($rc) {
             $RemoteDaten = false;
           }
@@ -311,29 +300,29 @@ if (1 == 1) {
         }
       }
       if ($InfluxDB_local) {
-        $rc = $funktionen->influx_local( $aktuelleDaten );
+        $rc = InfluxDB::influx_local( $aktuelleDaten );
       }
     }
     elseif ($InfluxDB_local) {
-      $funktionen->log_schreiben( "InfluxDBName: ".$InfluxDBLokal, "   ", 8 );
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      Log::write( "InfluxDBName: ".$InfluxDBLokal, "   ", 8 );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
-    if (is_file( $Pfad."/1.user.config.php" )) {
+    if (is_file( $basedir."/config/1.user.config.php" )) {
       // Ausgang Multi-Regler-Version
       $Zeitspanne = (7 - (time( ) - $Start));
-      $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+      Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
       if ($Zeitspanne > 0) {
         sleep( $Zeitspanne );
       }
       break;
     }
     else {
-      $funktionen->log_schreiben( "Schleife: ".($i)." Zeitspanne: ".(floor( (50 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 8 );
+      Log::write( "Schleife: ".($i)." Zeitspanne: ".(floor( (50 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 8 );
       sleep( floor( (50 - (time( ) - $Start)) / ($Wiederholungen - $i + 1)));
     }
     if ($Wiederholungen <= $i or $i >= 6) {
-      $funktionen->log_schreiben( "OK. Daten gelesen.", "   ", 8 );
-      $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 8 );
+      Log::write( "OK. Daten gelesen.", "   ", 8 );
+      Log::write( "Schleife ".$i." Ausgang...", "   ", 8 );
       break;
     }
     $i++;
@@ -346,8 +335,8 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-    require ($Pfad."/homematic.php");
+    Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -356,18 +345,18 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-    require ($Pfad."/meldungen_senden.php");
+    Log::write( "Nachrichten versenden...", "   ", 8 );
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+  Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 }
 else {
-  $funktionen->log_schreiben( "Keine gültigen Daten empfangen.", "!! ", 6 );
+  Log::write( "Keine gültigen Daten empfangen.", "!! ", 6 );
 }
 /***********/
 Ausgang:
 /***********/
-$funktionen->log_schreiben( "---------   Stop   JK_bms.php (".(time( ) - $Start)."s)   ---------------------------- ", "|--", 6 );
+Log::write( "---------   Stop   JK_bms.php (".(time( ) - $Start)."s)   ---------------------------- ", "|--", 6 );
 return;
 
 

@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -176,17 +175,6 @@
 //  8128 => "Kommunikationsprodukte",
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
-
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -197,13 +185,13 @@ $RemoteDaten = true;
 $Device = "WR"; // WR = Wechselrichter
 $Version = "";
 $Start = time();  // Timestamp festhalten
-$funktionen->log_schreiben("-------------   Start  sma_wr.php    -------------------------- ","|--",6);
+Log::write("-------------   Start  sma_wr.php    -------------------------- ","|--",6);
 
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale(LC_TIME,"de_DE.utf8");
-$funktionen->log_schreiben( "SMA: ".$WR_IP." Port: ".$WR_Port." GeräteID: ".$WR_Adresse, "   ", 7 );
+Log::write( "SMA: ".$WR_IP." Port: ".$WR_Port." GeräteID: ".$WR_Adresse, "   ", 7 );
 
 
 //  Hardware Version ermitteln.
@@ -217,7 +205,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",8);
+Log::write("Hardware Version: ".$Version,"o  ",8);
 
 switch($Version) {
   case "2B":
@@ -239,21 +227,21 @@ switch($Version) {
 //  Achtung! Dieser Wert wird jeden Tag um Mitternacht auf 0 gesetzt.
 //
 *****************************************************************************/
-$StatusFile = $Pfad."/database/".$GeraeteNummer.".WhProTag.txt";
+$StatusFile = $basedir."/database/".$GeraeteNummer.".WhProTag.txt";
 if (file_exists($StatusFile)) {
   /***************************************************************************
   //  Daten einlesen ...
   ***************************************************************************/
   $aktuelleDaten["WattstundenGesamtHeute"] = file_get_contents($StatusFile);
   $aktuelleDaten["WattstundenGesamtHeute"] = round($aktuelleDaten["WattstundenGesamtHeute"],2);
-  $funktionen->log_schreiben("WattstundenGesamtHeute: ".$aktuelleDaten["WattstundenGesamtHeute"],"   ",8);
+  Log::write("WattstundenGesamtHeute: ".$aktuelleDaten["WattstundenGesamtHeute"],"   ",8);
   if (empty($aktuelleDaten["WattstundenGesamtHeute"])){
       $aktuelleDaten["WattstundenGesamtHeute"] = 0;
   }
   if (date("H:i") == "00:00" or date("H:i") == "00:01") {   // Jede Nacht 0 Uhr
     $aktuelleDaten["WattstundenGesamtHeute"] = 0;       //  Tageszähler löschen
     $rc = file_put_contents($StatusFile,"0");
-    $funktionen->log_schreiben("WattstundenGesamtHeute gelöscht.","    ",5);
+    Log::write("WattstundenGesamtHeute gelöscht.","    ",5);
   }
 }
 else {
@@ -263,7 +251,7 @@ else {
   ***************************************************************************/
   $rc = file_put_contents($StatusFile,"0");
   if ($rc === false) {
-    $funktionen->log_schreiben("Konnte die Datei kwhProTag_ax.txt nicht anlegen.","   ",5);
+    Log::write("Konnte die Datei kwhProTag_ax.txt nicht anlegen.","   ",5);
   }
 }
 
@@ -272,14 +260,14 @@ else {
 
 $COM1 = fsockopen($WR_IP, $WR_Port, $errno, $errstr, 5);   // 5 = Timeout in Sekunden
 if (!is_resource($COM1)) {
-  $funktionen->log_schreiben("Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
-  $funktionen->log_schreiben("Exit.... ","XX ",9);
+  Log::write("Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
+  Log::write("Exit.... ","XX ",9);
   goto Ausgang;
 }
 
 $i = 1;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...","+  ",9);
+  Log::write("Die Daten werden ausgelesen...","+  ",9);
 
   /****************************************************************************
   //  Ab hier wird der Wechselrichter ausgelesen.
@@ -293,43 +281,43 @@ do {
   $aktuelleDaten["KeineSonne"] = false;  // Dummy
   $aktuelleDaten["Betriebszustand"] = 16777213;
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"30005","0002","U32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30005","0002","U32","03");
   $aktuelleDaten["Seriennummer"] = $rc["Wert"];
   if (trim($aktuelleDaten["Seriennummer"]) == false) {
-    $funktionen->log_schreiben(print_r($rc,1),"!  ",6);
+    Log::write(print_r($rc,1),"!  ",6);
   }
 
-  $rc = $funktionen->modbus_register_lesen($COM1,"30007","0002","U32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30007","0002","U32","03");
   $aktuelleDaten["LiveBit"] = $rc["Wert"];
-  $rc = $funktionen->modbus_register_lesen($COM1,"30051","0002","U32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30051","0002","U32","03");
   $aktuelleDaten["Geraeteklasse"] = $rc["Wert"];
-  $rc = $funktionen->modbus_register_lesen($COM1,"30053","0002","U32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30053","0002","U32","03");
   $aktuelleDaten["Geraetetype"] = $rc["Wert"];
-  $rc = $funktionen->modbus_register_lesen($COM1,"30059","0002","U32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30059","0002","U32","03");
   $aktuelleDaten["Softwarepaket"] = $rc["Wert"];
-  $rc = $funktionen->modbus_register_lesen($COM1,"30201","0002","U32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30201","0002","U32","03");
   $aktuelleDaten["Geraetestatus"] = $rc["Wert"];
-  $rc = $funktionen->modbus_register_lesen($COM1,"30529","0002","S32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30529","0002","S32","03");
   $aktuelleDaten["Wh_Gesamt"] = ($rc["Wert"]);
-  $rc = $funktionen->modbus_register_lesen($COM1,"30535","0002","U32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30535","0002","U32","03");
   $aktuelleDaten["Wh_GesamtHeute"] = ($rc["Wert"]);
-  $rc = $funktionen->modbus_register_lesen($COM1,"30583","0002","U32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30583","0002","U32","03");
   $aktuelleDaten["Einspeisung_Wh"] = $rc["Wert"];
-  $rc = $funktionen->modbus_register_lesen($COM1,"30581","0002","U32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30581","0002","U32","03");
   $aktuelleDaten["Bezug_Wh"] = $rc["Wert"];
-  $rc = $funktionen->modbus_register_lesen($COM1,"30865","0002","S32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30865","0002","S32","03");
   $aktuelleDaten["AC_Leistung_Bezug"] = $rc["Wert"];
-  $rc = $funktionen->modbus_register_lesen($COM1,"30867","0002","S32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30867","0002","S32","03");
   $aktuelleDaten["AC_Leistung_Einspeisung"] = $rc["Wert"];
-  $rc = $funktionen->modbus_register_lesen($COM1,"30803","0002","U32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30803","0002","U32","03");
   $aktuelleDaten["AC_Frequenz"] = ($rc["Wert"]/100);
-  $rc = $funktionen->modbus_register_lesen($COM1,"30775","0002","S32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30775","0002","S32","03");
   $aktuelleDaten["AC_Leistung"] = $rc["Wert"];
-  $rc = $funktionen->modbus_register_lesen($COM1,"30777","0002","S32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30777","0002","S32","03");
   $aktuelleDaten["AC_Wirkleistung_R"] = $rc["Wert"];
-  $rc = $funktionen->modbus_register_lesen($COM1,"30779","0002","S32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30779","0002","S32","03");
   $aktuelleDaten["AC_Wirkleistung_S"] = $rc["Wert"];
-  $rc = $funktionen->modbus_register_lesen($COM1,"30781","0002","S32","03");
+  $rc = ModBus::modbus_register_lesen($COM1,"30781","0002","S32","03");
   $aktuelleDaten["AC_Wirkleistung_T"] = $rc["Wert"];
 
   if ($aktuelleDaten["Geraeteklasse"] == 8001) {
@@ -357,42 +345,42 @@ do {
     $aktuelleDaten["Modell"] = "Tripower SE";
   }
   else {
-    $funktionen->log_schreiben("Die Geräteklasse ist unbekannt: ".$aktuelleDaten["Geraeteklasse"],"   ",2);
-    $funktionen->log_schreiben("Ausgang! ","   ",2);
+    Log::write("Die Geräteklasse ist unbekannt: ".$aktuelleDaten["Geraeteklasse"],"   ",2);
+    Log::write("Ausgang! ","   ",2);
     return;
   }
 
 
   if ($aktuelleDaten["Modell"]  == "Tripower" or $aktuelleDaten["Modell"]  == "Tripower SE") {
     // Wechselrichter oder Hybrid-Wechselrichter
-    $rc = $funktionen->modbus_register_lesen($COM1,"30217","0002","U32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30217","0002","U32","03");
     $aktuelleDaten["Netz-Schuetz"] = $rc["Wert"];
-    $rc = $funktionen->modbus_register_lesen($COM1,"40497","0010","String","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"40497","0010","String","03");
     $aktuelleDaten["MAC"] = trim($rc["Wert"]);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30977","0002","U32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30977","0002","U32","03");
     $aktuelleDaten["AC_Strom_R"] = ($rc["Wert"]/100);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30979","0002","U32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30979","0002","U32","03");
     $aktuelleDaten["AC_Strom_S"] = ($rc["Wert"]/100);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30981","0002","U32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30981","0002","U32","03");
     $aktuelleDaten["AC_Strom_T"] = ($rc["Wert"]/100);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30783","0002","U32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30783","0002","U32","03");
     $aktuelleDaten["AC_Spannung_R"] = ($rc["Wert"]/100);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30785","0002","U32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30785","0002","U32","03");
     $aktuelleDaten["AC_Spannung_S"] = ($rc["Wert"]/100);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30787","0002","U32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30787","0002","U32","03");
     $aktuelleDaten["AC_Spannung_T"] = ($rc["Wert"]/100);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30769","0002","S32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30769","0002","S32","03");
     $aktuelleDaten["DC_Strom1"] = ($rc["Wert"]/1000);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30957","0002","S32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30957","0002","S32","03");
     $aktuelleDaten["DC_Strom2"] = ($rc["Wert"]/1000);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30771","0002","S32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30771","0002","S32","03");
     $aktuelleDaten["DC_Spannung1"] = ($rc["Wert"]/100);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30959","0002","S32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30959","0002","S32","03");
     $aktuelleDaten["DC_Spannung2"] = ($rc["Wert"]/100);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30773","0002","S32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30773","0002","S32","03");
     $aktuelleDaten["DC_Leistung1"] = $rc["Wert"];
     $aktuelleDaten["KeineSonne"] = $rc["KeineSonne"];
-    $rc = $funktionen->modbus_register_lesen($COM1,"30961","0002","S32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30961","0002","S32","03");
     $aktuelleDaten["DC_Leistung2"] = $rc["Wert"];
     $aktuelleDaten["KeineSonne"] = $rc["KeineSonne"];
 
@@ -410,46 +398,46 @@ do {
     $aktuelleDaten["DC_Leistung6"] = 0;                         // hinzugefügt 04.9.2020
 
     if ($aktuelleDaten["Geraetetype"] == "9347"  or $aktuelleDaten["Geraetetype"] == "9348" or $aktuelleDaten["Geraetetype"] == "9338" or $aktuelleDaten["Geraetetype"] == "9491") {  // Tripower 8.0,10.0 und CORE1 25.5.2023
-      $rc = $funktionen->modbus_register_lesen($COM1,"30963","0002","S32","03");   // hinzugefügt 28.8.2020
+      $rc = ModBus::modbus_register_lesen($COM1,"30963","0002","S32","03");   // hinzugefügt 28.8.2020
       $aktuelleDaten["DC_Strom3"] = ($rc["Wert"]/1000);                            // hinzugefügt 28.8.2020
-      $rc = $funktionen->modbus_register_lesen($COM1,"30969","0002","S32","03");   // hinzugefügt 28.8.2020
+      $rc = ModBus::modbus_register_lesen($COM1,"30969","0002","S32","03");   // hinzugefügt 28.8.2020
       $aktuelleDaten["DC_Strom4"] = ($rc["Wert"]/1000);                            // hinzugefügt 28.8.2020
-      $rc = $funktionen->modbus_register_lesen($COM1,"30965","0002","S32","03");   // hinzugefügt 28.8.2020
+      $rc = ModBus::modbus_register_lesen($COM1,"30965","0002","S32","03");   // hinzugefügt 28.8.2020
       $aktuelleDaten["DC_Spannung3"] = ($rc["Wert"]/100);                          // hinzugefügt 28.8.2020
-      $rc = $funktionen->modbus_register_lesen($COM1,"30971","0002","S32","03");   // hinzugefügt 28.8.2020
+      $rc = ModBus::modbus_register_lesen($COM1,"30971","0002","S32","03");   // hinzugefügt 28.8.2020
       $aktuelleDaten["DC_Spannung4"] = ($rc["Wert"]/100);                          // hinzugefügt 28.8.2020
-      $rc = $funktionen->modbus_register_lesen($COM1,"30967","0002","S32","03");   // hinzugefügt 28.8.2020
+      $rc = ModBus::modbus_register_lesen($COM1,"30967","0002","S32","03");   // hinzugefügt 28.8.2020
       $aktuelleDaten["DC_Leistung3"] = $rc["Wert"];                                // hinzugefügt 28.8.2020
-      $rc = $funktionen->modbus_register_lesen($COM1,"30973","0002","S32","03");   // hinzugefügt 28.8.2020
+      $rc = ModBus::modbus_register_lesen($COM1,"30973","0002","S32","03");   // hinzugefügt 28.8.2020
       $aktuelleDaten["DC_Leistung4"] = $rc["Wert"];                                // hinzugefügt 28.8.2020
     }
     if ($aktuelleDaten["Geraetetype"] == "9338") {  // Tripower CORE1 letzte Änderung 11.3.2021
-      $rc = $funktionen->modbus_register_lesen($COM1,"31209","0002","S32","03");   // hinzugefügt 04.9.2020
+      $rc = ModBus::modbus_register_lesen($COM1,"31209","0002","S32","03");   // hinzugefügt 04.9.2020
       $aktuelleDaten["DC_Strom5"] = ($rc["Wert"]/1000);                            // hinzugefügt 04.9.2020
-      $rc = $funktionen->modbus_register_lesen($COM1,"31215","0002","S32","03");   // hinzugefügt 04.9.2020
+      $rc = ModBus::modbus_register_lesen($COM1,"31215","0002","S32","03");   // hinzugefügt 04.9.2020
       $aktuelleDaten["DC_Strom6"] = ($rc["Wert"]/1000);                            // hinzugefügt 04.9.2020
-      $rc = $funktionen->modbus_register_lesen($COM1,"31211","0002","S32","03");   // hinzugefügt 04.9.2020
+      $rc = ModBus::modbus_register_lesen($COM1,"31211","0002","S32","03");   // hinzugefügt 04.9.2020
       $aktuelleDaten["DC_Spannung5"] = ($rc["Wert"]/100);                          // hinzugefügt 04.9.2020
-      $rc = $funktionen->modbus_register_lesen($COM1,"31217","0002","S32","03");   // hinzugefügt 04.9.2020
+      $rc = ModBus::modbus_register_lesen($COM1,"31217","0002","S32","03");   // hinzugefügt 04.9.2020
       $aktuelleDaten["DC_Spannung6"] = ($rc["Wert"]/100);                          // hinzugefügt 04.9.2020
-      $rc = $funktionen->modbus_register_lesen($COM1,"31213","0002","S32","03");   // hinzugefügt 04.9.2020
+      $rc = ModBus::modbus_register_lesen($COM1,"31213","0002","S32","03");   // hinzugefügt 04.9.2020
       $aktuelleDaten["DC_Leistung5"] = $rc["Wert"];                                // hinzugefügt 04.9.2020
-      $rc = $funktionen->modbus_register_lesen($COM1,"31219","0002","S32","03");   // hinzugefügt 04.9.2020
+      $rc = ModBus::modbus_register_lesen($COM1,"31219","0002","S32","03");   // hinzugefügt 04.9.2020
       $aktuelleDaten["DC_Leistung6"] = $rc["Wert"];                                // hinzugefügt 04.9.2020
-      $rc = $funktionen->modbus_register_lesen($COM1,"30983","0002","U32","03");   // hinzugefügt 28.8.2020
+      $rc = ModBus::modbus_register_lesen($COM1,"30983","0002","U32","03");   // hinzugefügt 28.8.2020
       $aktuelleDaten["DC_Leistung_"] = ($rc["Wert"]);                              // hinzugefügt 28.8.2020
     }
-    $rc = $funktionen->modbus_register_lesen($COM1,"30231","0002","S32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30231","0002","S32","03");
     $aktuelleDaten["Max_Wirkleistung"] = $rc["Wert"];
-    $rc = $funktionen->modbus_register_lesen($COM1,"30211","0002","S32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30211","0002","S32","03");
     $aktuelleDaten["nextAktion"] = $rc["Wert"];
-    $rc = $funktionen->modbus_register_lesen($COM1,"33001","0002","S32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"33001","0002","S32","03");
     $aktuelleDaten["Standbystatus"] = $rc["Wert"];
-    $rc = $funktionen->modbus_register_lesen($COM1,"33003","0002","S32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"33003","0002","S32","03");
     $aktuelleDaten["Betriebsstatus"] = $rc["Wert"];
-    $rc = $funktionen->modbus_register_lesen($COM1,"30953","0002","S32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30953","0002","S32","03");
     $aktuelleDaten["Temperatur"] = ($rc["Wert"]/10);
-    $rc = $funktionen->modbus_register_lesen($COM1,"40029","0002","U32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"40029","0002","U32","03");
     $aktuelleDaten["Betriebszustand"] = ($rc["Wert"]);
 
 
@@ -466,23 +454,23 @@ do {
 
   if ($aktuelleDaten["Modell"] == "Island" or $aktuelleDaten["Modell"] == "Tripower SE") {
     // Batterie Wechselrichter oder Hybrid-Wechselrichter
-    $rc = $funktionen->modbus_register_lesen($COM1,"30845","0002","U32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30845","0002","U32","03");
     $aktuelleDaten["SOC"] = ($rc["Wert"]);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30851","0002","U32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30851","0002","U32","03");
     $aktuelleDaten["Batteriespannung"] = ($rc["Wert"]/100);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30859","0002","U32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30859","0002","U32","03");
     $aktuelleDaten["Batterieladung"] = ($rc["Wert"]);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30869","0002","S32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30869","0002","S32","03");
     $aktuelleDaten["DC_Leistung"] = ($rc["Wert"]);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30843","0002","S32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30843","0002","S32","03");
     $aktuelleDaten["Batteriestrom"] = ($rc["Wert"]/1000);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30849","0002","S32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30849","0002","S32","03");
     $aktuelleDaten["Temperatur"] = ($rc["Wert"]/10);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30955","0002","U32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30955","0002","U32","03");
     $aktuelleDaten["Batteriestatus"] = ($rc["Wert"]);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30879","0002","U32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30879","0002","U32","03");
     $aktuelleDaten["Betriebszustand"] = ($rc["Wert"]);
-    $rc = $funktionen->modbus_register_lesen($COM1,"30847","0002","U32","03");
+    $rc = ModBus::modbus_register_lesen($COM1,"30847","0002","U32","03");
     $aktuelleDaten["SOE"] = ($rc["Wert"]);
   }
 
@@ -505,12 +493,12 @@ do {
     }
   }
   else {
-    $funktionen->log_schreiben("Keine Sonne für DC2 deaktiviert, Gerätetyp: ".$aktuelleDaten["Geraetetype"]," ",6);
+    Log::write("Keine Sonne für DC2 deaktiviert, Gerätetyp: ".$aktuelleDaten["Geraetetype"]," ",6);
   }
   //
-  $funktionen->log_schreiben("Geräteklasse: ".$aktuelleDaten["Geraeteklasse"],"*- ",7);
-  $funktionen->log_schreiben("Gerätetyp: ".$aktuelleDaten["Geraetetype"],"*- ",7);
-  $funktionen->log_schreiben(print_r($aktuelleDaten,1),"*- ",8);
+  Log::write("Geräteklasse: ".$aktuelleDaten["Geraeteklasse"],"*- ",7);
+  Log::write("Gerätetyp: ".$aktuelleDaten["Geraetetype"],"*- ",7);
+  Log::write(print_r($aktuelleDaten,1),"*- ",8);
 
 
   /***************************************************************************
@@ -529,14 +517,14 @@ do {
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"]+10);
 
   if ($i == 1)
-    $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",8);
+    Log::write(var_export($aktuelleDaten,1),"   ",8);
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/sma_wr_math.php")) {
-    include 'sma_wr_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/sma_wr_math.php")) {
+    include $basedir.'/custom/sma_wr_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
 
@@ -547,8 +535,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -579,7 +567,7 @@ do {
   $aktuelleDaten["Demodaten"] = false;
 
 
-  $funktionen->log_schreiben(print_r($aktuelleDaten,1),"*- ",10);
+  Log::write(print_r($aktuelleDaten,1),"*- ",10);
 
 
   /*********************************************************************
@@ -589,9 +577,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -601,31 +589,31 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
 
 
 
 
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time() - $Start));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+    Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
     sleep(floor((56 - (time() - $Start))/($Wiederholungen-$i+1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",5);
+    Log::write("Schleife ".$i." Ausgang...","   ",5);
     break;
   }
 
@@ -642,8 +630,8 @@ if ($aktuelleDaten["KeineSonne"] == false) {
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
     $aktuelleDaten["Solarspannung"] = $aktuelleDaten["Solarspannung1"];
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-    require($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -652,14 +640,14 @@ if ($aktuelleDaten["KeineSonne"] == false) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-    require($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...","   ",8);
+    require($basedir."/services/meldungen_senden.php");
   }
 
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);
+  Log::write("OK. Datenübertragung erfolgreich.","   ",7);
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.","!! ",6);
+  Log::write("Keine gültigen Daten empfangen.","!! ",6);
 }
 
 
@@ -678,7 +666,7 @@ if (file_exists($StatusFile) and isset($aktuelleDaten["DC_Leistung"])) {
   // aktuellen Wert in die Datei schreiben:
   $whProTag = ($whProTag + ($aktuelleDaten["DC_Leistung"]/60));
   $rc = file_put_contents($StatusFile,$whProTag);
-  $funktionen->log_schreiben("Solarleistung: ".$aktuelleDaten["DC_Leistung"]." Watt -  WattstundenGesamtHeute: ".round($whProTag,2),"   ",5);
+  Log::write("Solarleistung: ".$aktuelleDaten["DC_Leistung"]." Watt -  WattstundenGesamtHeute: ".round($whProTag,2),"   ",5);
 }
 
 
@@ -686,7 +674,7 @@ Ausgang:
 
 fclose($COM1);
 
-$funktionen->log_schreiben("-------------   Stop   sma_wr.php    -------------------------- ","|--",6);
+Log::write("-------------   Stop   sma_wr.php    -------------------------- ","|--",6);
 
 return;
 

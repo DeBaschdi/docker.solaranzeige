@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 /*****************************************************************************
 //  Solaranzeige Projekt             Copyright (C) [2015-2020]  [Ulrich Kunz]
@@ -26,19 +25,6 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
-
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
-
-
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -49,9 +35,9 @@ $RemoteDaten = true;
 $crc_algo = $CRC_16_ARC_;
 $Version = "";
 $Start = time();  // Timestamp festhalten
-$funktionen->log_schreiben("-------------   Start  delta_wechselrichter.php   ----------------- ","|--",6);
+Log::write("-------------   Start  delta_wechselrichter.php   ----------------- ","|--",6);
 
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 
@@ -69,7 +55,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",8);
+Log::write("Hardware Version: ".$Version,"o  ",8);
 
 switch($Version) {
   case "2B":
@@ -89,19 +75,19 @@ switch($Version) {
 //  pro Tag zu speichern.
 //
 *****************************************************************************/
-$StatusFile = $Pfad."/database/".$GeraeteNummer.".WhProTag.txt";
+$StatusFile = $basedir."/database/".$GeraeteNummer.".WhProTag.txt";
 if (!file_exists($StatusFile)) {
   /***************************************************************************
   //  Inhalt der Status Datei anlegen, wenn nicht existiert.
   ***************************************************************************/
   $rc = file_put_contents($StatusFile,"0");
   if ($rc === false) {
-    $funktionen->log_schreiben("Konnte die Datei whProTag_delta.txt nicht anlegen.",5);
+    Log::write("Konnte die Datei whProTag_delta.txt nicht anlegen.",5);
   }
 }
 else {
   $aktuelleDaten["WattstundenGesamtGestern"] = file_get_contents($StatusFile);
-  $funktionen->log_schreiben("WattstundenGesamtGestern: ".$aktuelleDaten["WattstundenGesamtGestern"],"   ",8);
+  Log::write("WattstundenGesamtGestern: ".$aktuelleDaten["WattstundenGesamtGestern"],"   ",8);
 }
 
 
@@ -116,21 +102,21 @@ else {
   $WR_ID = str_pad(dechex(substr($WR_Adresse,-2)),2,"0",STR_PAD_LEFT);
 }
 
-$funktionen->log_schreiben("WR_ID: ".$WR_ID,"+  ",9);
+Log::write("WR_ID: ".$WR_ID,"+  ",9);
 
 
 
 
-$USB1 = $funktionen->openUSB($USBRegler);
+$USB1 = USB::openUSB($USBRegler);
 if (!is_resource($USB1)) {
-  $funktionen->log_schreiben("USB Port kann nicht geöffnet werden. [1]","XX ",7);
-  $funktionen->log_schreiben("Exit.... ","XX ",7);
+  Log::write("USB Port kann nicht geöffnet werden. [1]","XX ",7);
+  Log::write("Exit.... ","XX ",7);
   goto Ausgang;
 }
 
 $i = 1;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...","+  ",9);
+  Log::write("Die Daten werden ausgelesen...","+  ",9);
 
   /****************************************************************************
   //  Ab hier wird der Regler ausgelesen.
@@ -171,48 +157,48 @@ do {
   $Framedaten["ID"] = $WR_ID;
   $Framedaten["Command"] = "0000";
 
-  $CRC = $funktionen->crc16_arc(hex2bin($Framedaten["Byte1"].$Framedaten["ID"].$Framedaten["Byte2"].$Framedaten["Command"]));
+  $CRC = Utils::crc16_arc(hex2bin($Framedaten["Byte1"].$Framedaten["ID"].$Framedaten["Byte2"].$Framedaten["Command"]));
 
   $hex_string = $Framedaten["Byte1"].$Framedaten["ID"].$Framedaten["Byte2"].$Framedaten["Command"];
   $Framedaten["CRC"] = substr($CRC,2,2).substr($CRC,0,2);
 
-  $Daten = $funktionen->delta_lesen($USB1,$Framedaten);
+  $Daten = Delta::delta_lesen($USB1,$Framedaten);
 
   if ($Daten == false) {
-    $funktionen->log_schreiben("Zu wenig Sonne vorhanden....","   ",7);
+    Log::write("Zu wenig Sonne vorhanden....","   ",7);
     break;
   }
 
   $aktuelleDaten["Variant"] = hexdec(substr($Daten,6,2));
-  $aktuelleDaten["Modell"] = $funktionen->Hex2String(substr($Daten,8,-2));
+  $aktuelleDaten["Modell"] = Utils::Hex2String(substr($Daten,8,-2));
 
-  $funktionen->log_schreiben("Variant: ".$aktuelleDaten["Variant"]." Modell: ".$aktuelleDaten["Modell"],"   ",5);
+  Log::write("Variant: ".$aktuelleDaten["Variant"]." Modell: ".$aktuelleDaten["Modell"],"   ",5);
 
 
   $Framedaten["Command"] = "0040"; // Software Type
 
-  $CRC = $funktionen->crc16_arc(hex2bin($Framedaten["Byte1"].$Framedaten["ID"].$Framedaten["Byte2"].$Framedaten["Command"]));
+  $CRC = Utils::crc16_arc(hex2bin($Framedaten["Byte1"].$Framedaten["ID"].$Framedaten["Byte2"].$Framedaten["Command"]));
 
   $hex_string = $Framedaten["Byte1"].$Framedaten["ID"].$Framedaten["Byte2"].$Framedaten["Command"];
   $Framedaten["CRC"] = substr($CRC,2,2).substr($CRC,0,2);
 
-  $Daten = $funktionen->delta_lesen($USB1,$Framedaten);
+  $Daten = Delta::delta_lesen($USB1,$Framedaten);
 
   $aktuelleDaten["Firmware"] = hexdec(substr($Daten,4,2)).".".hexdec(substr($Daten,6,2));
 
   if ($aktuelleDaten["Variant"] == 1) {
     $Framedaten["Command"] = "6001"; // Daten auslesen
 
-    $CRC = $funktionen->crc16_arc(hex2bin($Framedaten["Byte1"].$Framedaten["ID"].$Framedaten["Byte2"].$Framedaten["Command"]));
+    $CRC = Utils::crc16_arc(hex2bin($Framedaten["Byte1"].$Framedaten["ID"].$Framedaten["Byte2"].$Framedaten["Command"]));
     $hex_string = $Framedaten["Byte1"].$Framedaten["ID"].$Framedaten["Byte2"].$Framedaten["Command"];
     $Framedaten["CRC"] = substr($CRC,2,2).substr($CRC,0,2);
 
-    $Daten = $funktionen->delta_lesen($USB1,$Framedaten);
+    $Daten = Delta::delta_lesen($USB1,$Framedaten);
 
-    $aktuelleDaten["PN"] = $funktionen->Hex2String(substr($Daten,4,22));
-    $aktuelleDaten["SN"] = $funktionen->Hex2String(substr($Daten,26,36));
-    $aktuelleDaten["DateCode"] = $funktionen->Hex2String(substr($Daten,62,8));
-    $aktuelleDaten["Revision"] = $funktionen->Hex2String(substr($Daten,70,4));
+    $aktuelleDaten["PN"] = Utils::Hex2String(substr($Daten,4,22));
+    $aktuelleDaten["SN"] = Utils::Hex2String(substr($Daten,26,36));
+    $aktuelleDaten["DateCode"] = Utils::Hex2String(substr($Daten,62,8));
+    $aktuelleDaten["Revision"] = Utils::Hex2String(substr($Daten,70,4));
     $aktuelleDaten["Solarstrom"] = hexdec(substr($Daten,90,4))/10;
     $aktuelleDaten["Solarspannung"] = hexdec(substr($Daten,94,4));
     $aktuelleDaten["AC_Strom"] = hexdec(substr($Daten,102,4))/10;
@@ -220,8 +206,8 @@ do {
     $aktuelleDaten["AC_Leistung"] = hexdec(substr($Daten,110,4));
     $aktuelleDaten["Frequenz"] = hexdec(substr($Daten,114,4))/100;
     $aktuelleDaten["WattstundenGesamtHeute"] = hexdec(substr($Daten,118,4));
-    $aktuelleDaten["DC_Temperatur"] = $funktionen->hexdecs(substr($Daten,126,4));
-    $aktuelleDaten["AC_Temperatur"] = $funktionen->hexdecs(substr($Daten,134,4));
+    $aktuelleDaten["DC_Temperatur"] = Utils::hexdecs(substr($Daten,126,4));
+    $aktuelleDaten["AC_Temperatur"] = Utils::hexdecs(substr($Daten,134,4));
     $aktuelleDaten["Max_AC_Strom"] = hexdec(substr($Daten,182,4))/10;
     $aktuelleDaten["Min_AC_Volt"] = hexdec(substr($Daten,186,4));
     $aktuelleDaten["Max_AC_Volt"] = hexdec(substr($Daten,190,4));
@@ -237,16 +223,16 @@ do {
 
     $Framedaten["Command"] = "6001"; // Daten auslesen
 
-    $CRC = $funktionen->crc16_arc(hex2bin($Framedaten["Byte1"].$Framedaten["ID"].$Framedaten["Byte2"].$Framedaten["Command"]));
+    $CRC = Utils::crc16_arc(hex2bin($Framedaten["Byte1"].$Framedaten["ID"].$Framedaten["Byte2"].$Framedaten["Command"]));
     $hex_string = $Framedaten["Byte1"].$Framedaten["ID"].$Framedaten["Byte2"].$Framedaten["Command"];
     $Framedaten["CRC"] = substr($CRC,2,2).substr($CRC,0,2);
 
-    $Daten = $funktionen->delta_lesen($USB1,$Framedaten);
+    $Daten = Delta::delta_lesen($USB1,$Framedaten);
 
-    $aktuelleDaten["PN"] = $funktionen->Hex2String(substr($Daten,4,22));
-    $aktuelleDaten["SN"] = $funktionen->Hex2String(substr($Daten,26,26));
-    $aktuelleDaten["DateCode"] = $funktionen->Hex2String(substr($Daten,52,8));
-    $aktuelleDaten["Revision"] = $funktionen->Hex2String(substr($Daten,60,4));
+    $aktuelleDaten["PN"] = Utils::Hex2String(substr($Daten,4,22));
+    $aktuelleDaten["SN"] = Utils::Hex2String(substr($Daten,26,26));
+    $aktuelleDaten["DateCode"] = Utils::Hex2String(substr($Daten,52,8));
+    $aktuelleDaten["Revision"] = Utils::Hex2String(substr($Daten,60,4));
 
     $aktuelleDaten["AC_Spannung_R"] = hexdec(substr($Daten,104,4))/10;
     $aktuelleDaten["AC_Strom_R"] = hexdec(substr($Daten,108,4))/100;
@@ -270,7 +256,7 @@ do {
     $aktuelleDaten["WattstundenGesamtHeute"] = hexdec(substr($Daten,212,8));
     $aktuelleDaten["WattstundenGesamt"] = hexdec(substr($Daten,228,8))*1000;
     $aktuelleDaten["Betriebsstunden"] = hexdec(substr($Daten,236,8));
-    $aktuelleDaten["DC_Temperatur"] = $funktionen->hexdecs(substr($Daten,244,4));
+    $aktuelleDaten["DC_Temperatur"] = Utils::hexdecs(substr($Daten,244,4));
     $aktuelleDaten["AC_Spannung"] = $aktuelleDaten["AC_Spannung_R"];
     $aktuelleDaten["AC_Strom"] = ($aktuelleDaten["AC_Strom_R"] + $aktuelleDaten["AC_Strom_S"] + $aktuelleDaten["AC_Strom_T"]);
     $aktuelleDaten["AC_Frequenz"] = $aktuelleDaten["AC_Frequenz_R"];
@@ -299,14 +285,14 @@ do {
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"]+10);
 
   if ($i == 1) 
-    $funktionen->log_schreiben(print_r($aktuelleDaten,1),"   ",8);
+    Log::write(print_r($aktuelleDaten,1),"   ",8);
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/delta_wechselrichter_math.php")) {
-    include 'delta_wechselrichter_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/delta_wechselrichter_math.php")) {
+    include $basedir.'/custom/delta_wechselrichter_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
 
@@ -316,8 +302,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
 
@@ -356,9 +342,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -368,31 +354,31 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
 
 
 
 
   if ($Wiederholungen <= $i or $i >= 6) {
-      $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",8);
+      Log::write("Schleife ".$i." Ausgang...","   ",8);
       break;
   }
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (9 - (time() - $Start));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+    Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
     sleep(floor((56 - (time() - $Start))/($Wiederholungen-$i+1)));
   }
   $i++;
@@ -407,8 +393,8 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-    require($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -417,14 +403,14 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-    require($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...","   ",8);
+    require($basedir."/services/meldungen_senden.php");
   }
 
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);
+  Log::write("OK. Datenübertragung erfolgreich.","   ",7);
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.","!! ",6);
+  Log::write("Keine gültigen Daten empfangen.","!! ",6);
 }
 
 
@@ -435,12 +421,12 @@ else {
 *****************************************************************************/
 if (date("H:i") == "00:00" or date("H:i") == "00:01") {
   $rc = file_put_contents($StatusFile, $aktuelleDaten["WattstundenGesamt"]);
-  $funktionen->log_schreiben("WattstundenGesamtGestern  gesetzt.","o--",5);
+  Log::write("WattstundenGesamtGestern  gesetzt.","o--",5);
 }
 
 Ausgang:
 
-$funktionen->log_schreiben("-------------   Stop   delta_wechselrichter.php   ----------------- ","|--",6);
+Log::write("-------------   Stop   delta_wechselrichter.php   ----------------- ","|--",6);
 
 return;
 

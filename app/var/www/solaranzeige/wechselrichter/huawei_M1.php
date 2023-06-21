@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 /*****************************************************************************
 //  Solaranzeige Projekt             Copyright (C) [2015-2016]  [Ulrich Kunz]
@@ -25,18 +24,6 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
-
-
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -69,9 +56,9 @@ $Befehl = array(
 
 
 $Startzeit = time();  // Timestamp festhalten
-$funktionen->log_schreiben("-------------   Start  huawei_M1.php  ----------------------------- ","|--",6);
+Log::write("-------------   Start  huawei_M1.php  ----------------------------- ","|--",6);
 
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 
@@ -89,7 +76,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",8);
+Log::write("Hardware Version: ".$Version,"o  ",8);
 
 switch($Version) {
   case "2B":
@@ -104,20 +91,20 @@ switch($Version) {
   break;
 }
 
-$USB1 = $funktionen->openUSB($USBRegler);
+$USB1 = USB::openUSB($USBRegler);
 if (!is_resource($USB1)) {
-  $funktionen->log_schreiben("USB Port kann nicht geöffnet werden. [1]","XX ",7);
-  $funktionen->log_schreiben("Exit.... ","XX ",7);
+  Log::write("USB Port kann nicht geöffnet werden. [1]","XX ",7);
+  Log::write("Exit.... ","XX ",7);
   goto Ausgang;
 }
 
 
 $i = 0;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...",">  ",9);
+  Log::write("Die Daten werden ausgelesen...",">  ",9);
   $i++;
   if ($i > 6) {
-    $funktionen->log_schreiben("Fehler beim Auslesen....",">  ",5);
+    Log::write("Fehler beim Auslesen....",">  ",5);
     goto Ausgang;
   }
   /****************************************************************************
@@ -131,36 +118,36 @@ do {
   $Befehl["RegisterAddress"] = dechex(30000);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "000f";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
-  $aktuelleDaten["Firmware"] = trim($funktionen->Hex2String($rc["data"]));
+  $aktuelleDaten["Firmware"] = trim(Utils::Hex2String($rc["data"]));
 
   $Befehl["RegisterAddress"] = dechex(30015);
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "000a";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
-  $aktuelleDaten["Seriennummer"] = trim($funktionen->Hex2String($rc["data"]));
+  $aktuelleDaten["Seriennummer"] = trim(Utils::Hex2String($rc["data"]));
 
   $Befehl["RegisterAddress"] = dechex(30070);
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
   $aktuelleDaten["ModellID"] = hexdec($rc["data"]);
-  $funktionen->log_schreiben("Gerätetyp: ".$aktuelleDaten["Firmware"]."  Modell ID: ".$aktuelleDaten["ModellID"],">  ",5);
+  Log::write("Gerätetyp: ".$aktuelleDaten["Firmware"]."  Modell ID: ".$aktuelleDaten["ModellID"],">  ",5);
 
 
   $Befehl["RegisterAddress"] = dechex(30071);
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -169,7 +156,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(30072);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -178,62 +165,62 @@ do {
   $Befehl["RegisterAddress"] = dechex(32000);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
   $aktuelleDaten["Status1"] = $rc["data"];
-  $aktuelleDaten["Status1Bit"] = $funktionen->d2b(hexdec($rc["data"]));
+  $aktuelleDaten["Status1Bit"] = Utils::d2b(hexdec($rc["data"]));
 
   $Befehl["RegisterAddress"] = dechex(32002);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
   $aktuelleDaten["Status2"] = $rc["data"];
-  $aktuelleDaten["Status2Bit"] = $funktionen->d2b(hexdec($rc["data"]));
+  $aktuelleDaten["Status2Bit"] = Utils::d2b(hexdec($rc["data"]));
 
   $Befehl["RegisterAddress"] = dechex(32003);
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0002";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
   $aktuelleDaten["Status3"] = $rc["data"];
-  $aktuelleDaten["Status3Bit"] = $funktionen->d2b(hexdec($rc["data"]));
+  $aktuelleDaten["Status3Bit"] = Utils::d2b(hexdec($rc["data"]));
 
   $Befehl["RegisterAddress"] = dechex(32008);
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
   $aktuelleDaten["Alarm1"] = $rc["data"];
-  $aktuelleDaten["Alarm1Bit"] = $funktionen->d2b(hexdec($rc["data"]));
+  $aktuelleDaten["Alarm1Bit"] = Utils::d2b(hexdec($rc["data"]));
 
   $Befehl["RegisterAddress"] = dechex(32009);
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
   $aktuelleDaten["Alarm2"] = $rc["data"];
-  $aktuelleDaten["Alarm2Bit"] = $funktionen->d2b(hexdec($rc["data"]));
+  $aktuelleDaten["Alarm2Bit"] = Utils::d2b(hexdec($rc["data"]));
 
   $Befehl["RegisterAddress"] = dechex(32010);
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
   $aktuelleDaten["Alarm3"] = $rc["data"];
-  $aktuelleDaten["Alarm3Bit"] = $funktionen->d2b(hexdec($rc["data"]));
+  $aktuelleDaten["Alarm3Bit"] = Utils::d2b(hexdec($rc["data"]));
 
   $aktuelleDaten["PV_Leistung"] = 0;
 
@@ -245,29 +232,29 @@ do {
     $Befehl["RegisterAddress"] = dechex((32014+($j*2)));   
     $Befehl["BefehlFunctionCode"] = "03";
     $Befehl["RegisterCount"] = "0001";
-    $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+    $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
     if ($rc == false) {
       //continue 2;
     }
     $aktuelleDaten["PV".$j."_Spannung"] = (hexdec($rc["data"])/10);
-    $funktionen->log_schreiben("PV Spannung ".$j." = ".$aktuelleDaten["PV".$j."_Spannung"],">  ", 9);
+    Log::write("PV Spannung ".$j." = ".$aktuelleDaten["PV".$j."_Spannung"],">  ", 9);
 
     $Befehl["RegisterAddress"] = dechex((32015+($j*2)));
     $Befehl["BefehlFunctionCode"] = "03";
     $Befehl["RegisterCount"] = "0001";
-    $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+    $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
     if ($rc == false) {
       //continue 2;
     }
-    if ($funktionen->hexdecs($rc["data"]) >= 0) {
+    if (Utils::hexdecs($rc["data"]) >= 0) {
       // Wenn ein negative Strom gemeldet wird, stimmt was nicht.
       $aktuelleDaten["PV".$j."_Strom"] = (hexdec($rc["data"])/100);
-      $funktionen->log_schreiben("PV Strom ".$j." = ".(hexdec($rc["data"])/100),">  ", 9);
+      Log::write("PV Strom ".$j." = ".(hexdec($rc["data"])/100),">  ", 9);
     }
     else {
       // Negative Werte beim PV Strom darf es nicht geben.
       // Dann wird der Strom auf 0 gesetzt.
-      $funktionen->log_schreiben("PV Strom ".$j." in HEX  = ".$rc["data"]. " = 0",">  ", $j + 6 ); 
+      Log::write("PV Strom ".$j." in HEX  = ".$rc["data"]. " = 0",">  ", $j + 6 ); 
     }
     $aktuelleDaten["PV_Leistung"] = round(($aktuelleDaten["PV_Leistung"] + ($aktuelleDaten["PV".$j."_Strom"] * $aktuelleDaten["PV".$j."_Spannung"])),2);
   }
@@ -275,7 +262,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(32064);
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0002";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -284,7 +271,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(32069);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -293,7 +280,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(32070);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -302,7 +289,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(32071);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -311,7 +298,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(32080);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0002";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -326,7 +313,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(32085);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -335,7 +322,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(32086);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -344,7 +331,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(32087);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -353,7 +340,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(32088);
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -362,7 +349,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(32089);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -373,7 +360,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(32090);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -384,7 +371,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(32106);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0002";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -393,7 +380,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(32114);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0002";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -402,7 +389,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(37000);
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -411,13 +398,13 @@ do {
   $Befehl["RegisterAddress"] = dechex(37001);   
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0002";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
 
   if ($aktuelleDaten["Batterie_Status"] == 2 ) {
-    $aktuelleDaten["Batterie_Leistung"] = $funktionen->hexdecs($rc["data"]);
+    $aktuelleDaten["Batterie_Leistung"] = Utils::hexdecs($rc["data"]);
   }
   else {
     $aktuelleDaten["Batterie_Leistung"] = 0;
@@ -426,7 +413,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(37004);
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0001";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -436,16 +423,16 @@ do {
   $Befehl["RegisterAddress"] = dechex(37113);
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0002";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
-  $aktuelleDaten["Einspeisung_Bezug"] = $funktionen->hexdecs($rc["data"]);
+  $aktuelleDaten["Einspeisung_Bezug"] = Utils::hexdecs($rc["data"]);
 
   $Befehl["RegisterAddress"] = dechex(37119);
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0002";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -454,7 +441,7 @@ do {
   $Befehl["RegisterAddress"] = dechex(37121);
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterCount"] = "0002";
-  $rc = $funktionen->phocos_pv18_auslesen($USB1,$Befehl);
+  $rc = Phocos::phocos_pv18_auslesen($USB1,$Befehl);
   if ($rc == false) {
     continue;
   }
@@ -504,15 +491,15 @@ do {
   $aktuelleDaten["Produkt"]  = $aktuelleDaten["Firmware"];
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"]+10);
 
-  $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ", 8);
+  Log::write(var_export($aktuelleDaten,1),"   ", 8);
 
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/huawei_M1_math.php")) {
-    include 'huawei_M1_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/huawei_M1_math.php")) {
+    include $basedir.'/custom/huawei_M1_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
 
@@ -523,8 +510,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT and strtoupper($MQTTAuswahl) != "OPENWB") {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -561,9 +548,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = true;
         }
@@ -573,19 +560,19 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
 
 
 
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (9 - (time() - $Startzeit));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
@@ -594,14 +581,14 @@ do {
   else { 
     if ($i < 6) {
       if (floor(((9*$i) - (time() - $Startzeit)) / ($Wiederholungen - $i+1)) >= 0) {
-        $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor(((9*$i) - (time() - $Startzeit))/($Wiederholungen-$i+1))),"   ",3);
+        Log::write("Schleife: ".($i)." Zeitspanne: ".(floor(((9*$i) - (time() - $Startzeit))/($Wiederholungen-$i+1))),"   ",3);
         sleep(floor(((9*$i) - (time() - $Startzeit)) / ($Wiederholungen - $i+1)));
       }
     }
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben("OK. Daten gelesen.","   ",9);
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",8);
+    Log::write("OK. Daten gelesen.","   ",9);
+    Log::write("Schleife ".$i." Ausgang...","   ",8);
     break;
   }
 
@@ -616,8 +603,8 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-    require($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -626,20 +613,20 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-    require($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...","   ",8);
+    require($basedir."/services/meldungen_senden.php");
   }
 
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);    
+  Log::write("OK. Datenübertragung erfolgreich.","   ",7);    
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.","!! ",6);
+  Log::write("Keine gültigen Daten empfangen.","!! ",6);
 }
 
 Ausgang:
 
 
-$funktionen->log_schreiben("-------------   Stop   huawei_M1.php    --------------------------- ","|--",6);
+Log::write("-------------   Stop   huawei_M1.php    --------------------------- ","|--",6);
 
 return;
 

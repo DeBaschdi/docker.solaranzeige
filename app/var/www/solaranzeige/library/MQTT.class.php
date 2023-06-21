@@ -9,7 +9,7 @@ class MQTT {
   //  MQTT Fuktionen zum senden der mqtt Messages
   //  Call back functions for MQTT library
   ***************************************************************/
-  function mqtt_connect($r) {
+  public static function mqtt_connect($r) {
     global $MQTTDaten;
     $MQTTDaten["MQTTConnectReturnCode"] = $r;
     if ($r == 0)
@@ -20,27 +20,26 @@ class MQTT {
       $MQTTDaten["MQTTConnectReturnText"] = "{$r}-Connection refused (identifier rejected)|";
     if ($r == 3)
       $MQTTDaten["MQTTConnectReturnText"] = "{$r}-Connection refused (broker unavailable )|";
-    return;
   }
 
-  function mqtt_publish() {
+  public static function mqtt_publish() {
     global $MQTTDaten;
     $MQTTDaten["MQTTPublishReturnText"] = "Message published";
   }
 
-  function mqtt_disconnect() {
+  public static function mqtt_disconnect() {
     global $MQTTDaten;
     $MQTTDaten["MQTTDisconnectReturnText"] = "Disconnected";
   }
 
-  function mqtt_subscribe() {
+  public static function mqtt_subscribe() {
     global $MQTTDaten;
     //**Store the status to a global variable - debug purposes
     // $GLOBALS['statusmsg'] = $GLOBALS['statusmsg'] . "SUB-OK|";
     $MQTTDaten["MQTTSubscribeReturnText"] = "SUB-OK|";
   }
 
-  function mqtt_message($message) {
+  public static function mqtt_message($message) {
     global $MQTTDaten;
     $MQTTDaten["MQTTRetain"] = 0;
     //**Store the status to a global variable - debug purposes

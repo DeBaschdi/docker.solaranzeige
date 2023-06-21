@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -48,16 +47,6 @@ $HM_Geraetetyp[4] = "HM-CC-RT-DN";     // Heizungsthermostat
 $HM_Seriennummer[4] = "OEQ2421488";    // Küche
 
 ****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -68,18 +57,18 @@ $aktuelleDaten = array();
 $Device = "HM"; // HM = HomeMatic
 $Start = time( ); // Timestamp festhalten
 $Version = "";
-$funktionen->log_schreiben( "-------------   Start  hm_geraet.php    -------------------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "-------------   Start  hm_geraet.php    -------------------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten["WattstundenGesamtHeute"] = 0;
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale( LC_TIME, "de_DE.utf8" );
-$funktionen->log_schreiben( "HomeMatic: ".$WR_IP." Port: ".$WR_Port." GeräteID: ".$WR_Adresse, "   ", 7 );
+Log::write( "HomeMatic: ".$WR_IP." Port: ".$WR_Port." GeräteID: ".$WR_Adresse, "   ", 7 );
 
 
 //  Hardware Version ermitteln.
 $Teile = explode( " ", $Platine );
 if ($Teile[1] == "Pi") {
-  $funktionen->log_schreiben( "Hardware Version: ".$Platine, "o  ", 8 );
+  Log::write( "Hardware Version: ".$Platine, "o  ", 8 );
   $Version = trim( $Teile[2] );
   if ($Teile[3] == "Model") {
     $Version .= trim( $Teile[4] );
@@ -117,22 +106,22 @@ curl_setopt( $rCurlHandle, CURLOPT_NOBODY, TRUE );
 curl_setopt( $rCurlHandle, CURLOPT_RETURNTRANSFER, TRUE );
 $strResponse = curl_exec( $rCurlHandle );
 $Connect = curl_errno( $rCurlHandle );
-$funktionen->log_schreiben( print_r( curl_getinfo( $rCurlHandle ), 1 ), "1  ", 9 );
+Log::write( print_r( curl_getinfo( $rCurlHandle ), 1 ), "1  ", 9 );
 curl_close( $rCurlHandle );
 if ($Connect == 0) {
   //  Verbindung ist OK
   $HM_Verbindung = true;
-  $funktionen->log_schreiben( "Verbindung zur Homematic Zentrale besteht. IP: ".$WR_IP, "   ", 8 );
+  Log::write( "Verbindung zur Homematic Zentrale besteht. IP: ".$WR_IP, "   ", 8 );
 }
 else {
-  $funktionen->log_schreiben( "Keine Verbindung zur Homematic Zentrale! IP: ".$WR_IP." Fehlernummer: [ ".$Connect." ]", "   ", 4 );
+  Log::write( "Keine Verbindung zur Homematic Zentrale! IP: ".$WR_IP." Fehlernummer: [ ".$Connect." ]", "   ", 4 );
   $HM_Verbindung = false;
   goto Ausgang;
 }
 $i = 1;
 error_reporting( E_ALL & ~ E_NOTICE & ~ E_DEPRECATED );
 do {
-  $funktionen->log_schreiben( "Die Daten werden ausgelesen...", "+  ", 7 );
+  Log::write( "Die Daten werden ausgelesen...", "+  ", 7 );
 
   /****************************************************************************
   //  Ab hier wird die HomeMatic ausgelesen.
@@ -154,12 +143,12 @@ do {
       $strResponse = curl_exec( $rCurlHandle1 );
       $rc_info = curl_getinfo( $rCurlHandle1 );
       if (curl_errno( $rCurlHandle1 )) {
-        $funktionen->log_schreiben( "Curl Fehler! HomeMatic wurde nicht gelesen! No. ".curl_errno( $ch ), "   ", 5 );
+        Log::write( "Curl Fehler! HomeMatic wurde nicht gelesen! No. ".curl_errno( $ch ), "   ", 5 );
       }
       if ($rc_info["http_code"] == 200 or $rc_info["http_code"] == 204) {
-        $funktionen->log_schreiben( "HomeMatic Daten gelesen. ", "*  ", 8 );
+        Log::write( "HomeMatic Daten gelesen. ", "*  ", 8 );
       }
-      $funktionen->log_schreiben( "Gerät ".$s." => ".$HM_Seriennummer[$s], "*  ", 8 );
+      Log::write( "Gerät ".$s." => ".$HM_Seriennummer[$s], "*  ", 8 );
       $xml = XMLReader::xml( $strResponse );
       while ($xml->name !== 'deviceList') {
         $xml->read( );
@@ -192,10 +181,10 @@ do {
       $strResponse = curl_exec( $rCurlHandle2 );
       $rc_info = curl_getinfo( $rCurlHandle2 );
       if (curl_errno( $rCurlHandle2 )) {
-        $funktionen->log_schreiben( "Curl Fehler! HomeMatic konnte nicht gelesen werden! No. ".curl_errno( $ch ), "   ", 5 );
+        Log::write( "Curl Fehler! HomeMatic konnte nicht gelesen werden! No. ".curl_errno( $ch ), "   ", 5 );
       }
       if ($rc_info["http_code"] == 200 or $rc_info["http_code"] == 204) {
-        $funktionen->log_schreiben( "HomeMatic Daten gelesen. ", "*  ", 8 );
+        Log::write( "HomeMatic Daten gelesen. ", "*  ", 8 );
       }
       $xml = XMLReader::xml( $strResponse );
       while ($xml->name !== 'state') {
@@ -203,13 +192,13 @@ do {
       }
       $dom = $xml->expand( new DOMDocument( ));
       $doc = (array) simplexml_import_dom( $dom );
-      $funktionen->log_schreiben( print_r( (array) $doc["device"], 1 ), "   ", 8 );
+      Log::write( print_r( (array) $doc["device"], 1 ), "   ", 8 );
       for ($i = 0; $i < count( $doc["device"] ); $i++) {
         for ($k = 0; $k < 30; $k++) {
-          $funktionen->log_schreiben( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
+          Log::write( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
           if (strtoupper( substr( $HM_Geraetetyp[$s], 0, 8 )) == "HMIP-STH") {
             // Thermostat
-            $funktionen->log_schreiben( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
+            Log::write( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
             if ((string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"] == "ACTUAL_TEMPERATURE") {
               $aktuelleDaten["HM_Seriennummer".$s]["Temperatur"] = round( (string) $doc["device"][0]->channel[$i]->datapoint[$k]["value"], 1 );
               $aktuelleDaten["HM_Seriennummer".$s]["Temperatur_Unit"] = "°C";
@@ -230,7 +219,7 @@ do {
           }
           elseif (strtoupper( substr( $HM_Geraetetyp[$s], 0, 8 )) == "HMIP-WTH") {
             // Einstellbares Raum Thermostat
-            $funktionen->log_schreiben( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
+            Log::write( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
             if ((string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"] == "ACTUAL_TEMPERATURE") {
               $aktuelleDaten["HM_Seriennummer".$s]["Temperatur"] = round( (string) $doc["device"][0]->channel[$i]->datapoint[$k]["value"], 1 );
               $aktuelleDaten["HM_Seriennummer".$s]["Temperatur_Unit"] = "°C";
@@ -261,7 +250,7 @@ do {
           }
           elseif (strtoupper( substr( $HM_Geraetetyp[$s], 0, 13 )) == "HMIP-STE2-PCB") {
             // 2 x Thermometer
-            $funktionen->log_schreiben( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
+            Log::write( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
             if ((string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"] == "ACTUAL_TEMPERATURE") {
               $aktuelleDaten["HM_Seriennummer".$s]["Temperatur".$i] = round( (string) $doc["device"][0]->channel[$i]->datapoint[$k]["value"], 1 );
               $aktuelleDaten["HM_Seriennummer".$s]["Temperatur".$i."_Unit"] = "°C";
@@ -269,7 +258,7 @@ do {
           }
           elseif (substr( $HM_Geraetetyp[$s], 0, 8 ) == "HmIP-DLD") {
             // Schließanlage
-            $funktionen->log_schreiben( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
+            Log::write( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
             if ((string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"] == "LOCK_STATE") {
               $aktuelleDaten["HM_Seriennummer".$s]["Status"] = (string) $doc["device"][0]->channel[$i]->datapoint[$k]["value"];
             }
@@ -280,7 +269,7 @@ do {
           }
           elseif (strtoupper(substr( $HM_Geraetetyp[$s], 0, 9 )) == "HMIP-ETRV" or substr( $HM_Geraetetyp[$s], 0, 11) == "HM-CC-RT-DN") {
             // HomeMatic Heizungsregler
-            $funktionen->log_schreiben( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
+            Log::write( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
             if ((string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"] == "OPERATING_VOLTAGE") {
               $aktuelleDaten["HM_Seriennummer".$s]["Batteriespannung"] = round( (string) $doc["device"][0]->channel[$i]->datapoint[$k]["value"], 1 );
               $aktuelleDaten["HM_Seriennummer".$s]["Batteriespannung_Unit"] = "V";
@@ -312,7 +301,7 @@ do {
           }
           elseif (strtoupper(substr( $HM_Geraetetyp[$s], 0, 8 )) == "HMIP-SLO") {
             // HomeMatic Sonnensensor
-            $funktionen->log_schreiben( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
+            Log::write( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
             if ((string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"] == "OPERATING_VOLTAGE") {
               $aktuelleDaten["HM_Seriennummer".$s]["Batteriespannung"] = round( (string) $doc["device"][0]->channel[$i]->datapoint[$k]["value"], 1 );
               $aktuelleDaten["HM_Seriennummer".$s]["Batteriespannung_Unit"] = "V";
@@ -326,7 +315,7 @@ do {
           }
           elseif (strtoupper( substr( $HM_Geraetetyp[$s], 0, 9 )) == "HMIP-SWDO" or substr( $HM_Geraetetyp[$s], 0, 10 ) == "HM-Sec-SCo") {
             // HomeMatic Türkontakte
-            $funktionen->log_schreiben( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
+            Log::write( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
             if ((string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"] == "STATE") {
               if ((string) $doc["device"][0]->channel[$i]->datapoint[$k]["value"] == "true") {
                 $aktuelleDaten["HM_Seriennummer".$s]["Kontakt"] = 1;
@@ -346,7 +335,7 @@ do {
           }
           elseif (strtoupper( substr( $HM_Geraetetyp[$s], 0, 8 )) == "HMIP-PSM" or strtoupper(substr($HM_Geraetetyp[$s], 0, 8)) == "HMIP-FSM") {
             //  Steckdose mit Messfunktion / Schalt-Mess-Aktor
-            $funktionen->log_schreiben( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
+            Log::write( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
             if ((string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"] == "POWER") {
               $aktuelleDaten["HM_Seriennummer".$s]["AC_Leistung"] = round( (string) $doc["device"][0]->channel[$i]->datapoint[$k]["value"], 1 );
               $aktuelleDaten["HM_Seriennummer".$s]["AC_Leistung_Unit"] = "W";
@@ -373,9 +362,9 @@ do {
           }
           elseif (strtoupper(substr( $HM_Geraetetyp[$s], 0, 7 )) == "HMIP-PS") {
             // Steckdose
-            $funktionen->log_schreiben( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
+            Log::write( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
             if ((string) $doc["device"][0]->channel[3]->datapoint[$k]["type"] == "STATE") {
-              $funktionen->log_schreiben( print_r( (array) $doc["device"][0]->channel[3]->datapoint[$k], 1 ), "   ", 8 );
+              Log::write( print_r( (array) $doc["device"][0]->channel[3]->datapoint[$k], 1 ), "   ", 8 );
               if ((string) $doc["device"][0]->channel[3]->datapoint[$k]["value"] == "true") {
                 $aktuelleDaten["HM_Seriennummer".$s]["Kontakt"] = 1;
                 //  (string) $doc["device"][0]->channel[$i]->datapoint[$k]["value"]              }
@@ -391,7 +380,7 @@ do {
           }
           elseif ($HM_Geraetetyp[$s] == "HM-ES-TX-WM") {
             // Gas und Stromzähler
-            $funktionen->log_schreiben( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
+            Log::write( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
             if ((string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"] == "OPERATING_VOLTAGE") {
               $aktuelleDaten["HM_Seriennummer".$s]["Batteriespannung"] = round( (string) $doc["device"][0]->channel[$i]->datapoint[$k]["value"], 1 );
               $aktuelleDaten["HM_Seriennummer".$s]["Batteriespannung_Unit"] = "V";
@@ -430,7 +419,7 @@ do {
           }
           elseif (strtoupper( substr( $HM_Geraetetyp[$s], 0, 10 )) == "HMIP-SWO-P" or strtoupper( substr( $HM_Geraetetyp[$s], 0, 8 )) == "HMIP-SRD") {
             //  Wetterstation
-            $funktionen->log_schreiben( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
+            Log::write( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
             if ((string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"] == "ACTUAL_TEMPERATURE") {
               $aktuelleDaten["HM_Seriennummer".$s]["Temperatur"] = round( (string) $doc["device"][0]->channel[$i]->datapoint[$k]["value"], 1 );
               $aktuelleDaten["HM_Seriennummer".$s]["Temperatur_Unit"] = "°C";
@@ -492,15 +481,15 @@ do {
           }
           elseif ($HM_Geraetetyp[$s] == "HM-WDS30-OT2-SM") {
             // Temperatur Differenz Sensor 5 fach
-            $funktionen->log_schreiben( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
+            Log::write( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 8 );
             if ((string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"] == "TEMPERATURE") {
               $aktuelleDaten["HM_Seriennummer".$s]["Temperatur".$i] = round( (string) $doc["device"][0]->channel[$i]->datapoint[$k]["value"], 1 );
               $aktuelleDaten["HM_Seriennummer".$s]["Temperatur".$i."_Unit"] = "°C";
             }
           }
           else {
-            $funktionen->log_schreiben( "Gerätetyp noch unbekannt: ".$HM_Geraetetyp[$s]." Bitte melden: support@solaranzeige.de", "   ", 5 );
-            $funktionen->log_schreiben( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 7 );
+            Log::write( "Gerätetyp noch unbekannt: ".$HM_Geraetetyp[$s]." Bitte melden: support@solaranzeige.de", "   ", 5 );
+            Log::write( $i." ".$k." ".(string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"], "   ", 7 );
           }
           if (empty((string) $doc["device"][0]->channel[$i]->datapoint[$k]["type"])) {
             break;
@@ -529,12 +518,12 @@ do {
       $strResponse = curl_exec( $rCurlHandle3 );
       $rc_info = curl_getinfo( $rCurlHandle3 );
       if (curl_errno( $rCurlHandle3 )) {
-        $funktionen->log_schreiben( "Curl Fehler! HomeMatic wurde nicht gelesen! No. ".curl_errno( $ch ), "   ", 5 );
+        Log::write( "Curl Fehler! HomeMatic wurde nicht gelesen! No. ".curl_errno( $ch ), "   ", 5 );
       }
       if ($rc_info["http_code"] == 200 or $rc_info["http_code"] == 204) {
-        $funktionen->log_schreiben( "HomeMatic Daten gelesen. ", "*  ", 8 );
+        Log::write( "HomeMatic Daten gelesen. ", "*  ", 8 );
       }
-      $funktionen->log_schreiben( "Gerät ".$s." => ".$HM_Systemvariable[$s], "*  ", 8 );
+      Log::write( "Gerät ".$s." => ".$HM_Systemvariable[$s], "*  ", 8 );
       $xml = XMLReader::xml( $strResponse );
 
       while ($xml->name !== 'systemVariables') {
@@ -542,13 +531,13 @@ do {
       }
       $dom = $xml->expand( new DOMDocument( ));
       $doc = (array) simplexml_import_dom( $dom );
-      $funktionen->log_schreiben( print_r( (array) $doc, 1 ), "   ", 8 );
+      Log::write( print_r( (array) $doc, 1 ), "   ", 8 );
 
       for ($i = 0; $i < count( $doc["systemVariable"] ); $i++) {
-        $funktionen->log_schreiben( print_r( (array) $doc["systemVariable"][$i], 1 ), "   ", 8 );
+        Log::write( print_r( (array) $doc["systemVariable"][$i], 1 ), "   ", 8 );
 
         if ((string) $doc["systemVariable"][$i]->attributes( ) ["name"] == $HM_Systemvariable[$s]) {
-            $funktionen->log_schreiben( print_r( (array) $doc["systemVariable"][$i], 1 ), "   ", 8 );
+            Log::write( print_r( (array) $doc["systemVariable"][$i], 1 ), "   ", 8 );
             $aktuelleDaten["HM_Systemvariable".$s]["Name"] = (string) $doc["systemVariable"][$i]->attributes( ) ["name"];
             $aktuelleDaten["HM_Systemvariable".$s]["Wert"] = (string) $doc["systemVariable"][$i]->attributes( ) ["value"];
             $aktuelleDaten["HM_Systemvariable".$s]["Typ"]  = (string) $doc["systemVariable"][$i]->attributes( ) ["type"];
@@ -593,13 +582,13 @@ do {
   $aktuelleDaten["Firmware"] = "unbekannt";
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"] + 10);
   $aktuelleDaten["WattstundenGesamtHeute"] = 0; // dummy
-  $funktionen->log_schreiben( var_export( $aktuelleDaten, 1 ), "   ", 8 );
+  Log::write( var_export( $aktuelleDaten, 1 ), "   ", 8 );
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( "/var/www/html/hm_geraet_math.php" )) {
-    include 'hm_geraet_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists($basedir."/custom/hm_geraet_math.php" )) {
+    include $basedir.'/custom/hm_geraet_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -608,8 +597,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -643,9 +632,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test( );
+      $rc = InfluxDB::influx_remote_test( );
       if ($rc) {
-        $rc = $funktionen->influx_remote( $aktuelleDaten );
+        $rc = InfluxDB::influx_remote( $aktuelleDaten );
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -655,28 +644,28 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
   }
   else {
-    $rc = $funktionen->influx_local( $aktuelleDaten );
+    $rc = InfluxDB::influx_local( $aktuelleDaten );
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time( ) - $Start));
-    $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+    Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
     if ($Zeitspanne > 0) {
       sleep( $Zeitspanne );
     }
     break;
   }
   else {
-    $funktionen->log_schreiben( "Schleife: ".($s)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / $Wiederholungen )), "   ", 7 );
+    Log::write( "Schleife: ".($s)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / $Wiederholungen )), "   ", 7 );
     sleep( floor( (56 - (time( ) - $Start)) / $Wiederholungen ));
   }
   if ($Wiederholungen <= $i or $i >= 1) {
     //  Die RCT Wechselrichter dürfen nur einmal pro Minute ausgelesen werden!
-    $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 5 );
+    Log::write( "Schleife ".$i." Ausgang...", "   ", 5 );
     break;
   }
   $i++;
@@ -688,16 +677,16 @@ do {
 //  Gerät aktiviert sein.
 *********************************************************************/
 if (isset($Messenger) and $Messenger == true) {
-  $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-  require ($Pfad."/meldungen_senden.php");
+  Log::write( "Nachrichten versenden...", "   ", 8 );
+  require($basedir."/services/meldungen_senden.php");
 }
-$funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 
 /*************************/
 Ausgang:
 
 /*************************/
 error_reporting( E_ALL );
-$funktionen->log_schreiben( "-------------   Stop   hm_geraet.php    -------------------------- ", "|--", 6 );
+Log::write( "-------------   Stop   hm_geraet.php    -------------------------- ", "|--", 6 );
 return;
 ?>

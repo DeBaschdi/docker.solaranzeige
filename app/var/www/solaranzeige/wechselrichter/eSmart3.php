@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 /*****************************************************************************
 //  Solaranzeige Projekt             Copyright (C) [2015-2020]  [Ulrich Kunz]
@@ -25,17 +24,6 @@
 //  Achtung! Der Regler sendet zwischendurch immer wieder asynchrone Daten!
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
-
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -55,9 +43,9 @@ $aktuelleDaten = array(
     "Temperatur" => 0
     );
 $Start = time();  // Timestamp festhalten
-$funktionen->log_schreiben("---------   Start  eSmart3.php    ---------------------------- ","|--",6);
+Log::write("---------   Start  eSmart3.php    ---------------------------- ","|--",6);
 
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 
 setlocale(LC_TIME,"de_DE.utf8");
@@ -74,7 +62,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",9);
+Log::write("Hardware Version: ".$Version,"o  ",9);
 
 switch($Version) {
   case "2B":
@@ -104,20 +92,20 @@ if ($HF2211) {
   // HF2211 WLAN Gateway wird benutzt
   $USB1 = fsockopen($WR_IP, $WR_Port, $errno, $errstr, 5);   // 5 Sekunden Timeout
   if ($USB1 === false) {
-    $funktionen->log_schreiben("Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
-    $funktionen->log_schreiben("Exit.... ","XX ",3);
+    Log::write("Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
+    Log::write("Exit.... ","XX ",3);
     goto Ausgang;
   }
 }
 else {
-  $USB1 = $funktionen->openUSB($USBRegler);
+  $USB1 = USB::openUSB($USBRegler);
   if (!is_resource($USB1)) {
-    $funktionen->log_schreiben("USB Port kann nicht geöffnet werden. [1]","XX ",7);
-    $funktionen->log_schreiben("Exit.... ","XX ",7);
+    Log::write("USB Port kann nicht geöffnet werden. [1]","XX ",7);
+    Log::write("Exit.... ","XX ",7);
     goto Ausgang;
   }
 }
-$funktionen->log_schreiben("USB Port: ".$USBRegler,"   ",7);
+Log::write("USB Port: ".$USBRegler,"   ",7);
 
 
 $StartByte = "AA"; 
@@ -130,7 +118,7 @@ if (1==1) {
 
   $i = 1;
   do {
-    $funktionen->log_schreiben("Die Daten werden ausgelesen...","+  ",9);
+    Log::write("Die Daten werden ausgelesen...","+  ",9);
 
     /**************************************************************************
     //  Ab hier wird der Regler ausgelesen.
@@ -156,16 +144,16 @@ if (1==1) {
 
     $Datenlaenge = str_pad ( dechex((strlen($Daten)/2)), 2, '0', STR_PAD_LEFT );
     $Datenstring = $StartByte.$DeviceType.$Adresse.$CommandID.$DataItem.$Datenlaenge.$Daten;
-    $CRC = $funktionen->eSmart3_CRC($Datenstring);
+    $CRC = eSmart3::eSmart3_CRC($Datenstring);
 
 
-    $rc = $funktionen->eSmart3_auslesen($USB1,$Datenstring.$CRC);
+    $rc = eSmart3::eSmart3_auslesen($USB1,$Datenstring.$CRC);
     if ($rc === false) {
-      $funktionen->log_schreiben("Datenfehler, nochmal... ".$Datenstring,"!! ",7);
+      Log::write("Datenfehler, nochmal... ".$Datenstring,"!! ",7);
       continue;
     }
-    $aktuelleDaten = array_merge($aktuelleDaten, $funktionen->eSmart3_ergebnis_auswerten($rc));
-    $funktionen->log_schreiben($rc,"   ",8);
+    $aktuelleDaten = array_merge($aktuelleDaten, eSmart3::eSmart3_ergebnis_auswerten($rc));
+    Log::write($rc,"   ",8);
 
 
 
@@ -176,17 +164,17 @@ if (1==1) {
 
     $Datenlaenge = str_pad ( dechex((strlen($Daten)/2)), 2, '0', STR_PAD_LEFT );
     $Datenstring = $StartByte.$DeviceType.$Adresse.$CommandID.$DataItem.$Datenlaenge.$Daten;
-    $CRC = $funktionen->eSmart3_CRC($Datenstring);
+    $CRC = eSmart3::eSmart3_CRC($Datenstring);
 
 
-    $rc = $funktionen->eSmart3_auslesen($USB1,$Datenstring.$CRC);
+    $rc = eSmart3::eSmart3_auslesen($USB1,$Datenstring.$CRC);
     if ($rc === false) {
-      $funktionen->log_schreiben("Datenfehler, nochmal... ".$Datenstring,"!! ",7);
+      Log::write("Datenfehler, nochmal... ".$Datenstring,"!! ",7);
       continue;
     }
-    $funktionen->log_schreiben($rc,"   ",8);
+    Log::write($rc,"   ",8);
 
-    $aktuelleDaten = array_merge($aktuelleDaten, $funktionen->eSmart3_ergebnis_auswerten($rc));
+    $aktuelleDaten = array_merge($aktuelleDaten, eSmart3::eSmart3_ergebnis_auswerten($rc));
 
 
 
@@ -198,17 +186,17 @@ if (1==1) {
 
     $Datenlaenge = str_pad ( dechex((strlen($Daten)/2)), 2, '0', STR_PAD_LEFT );
     $Datenstring = $StartByte.$DeviceType.$Adresse.$CommandID.$DataItem.$Datenlaenge.$Daten;
-    $CRC = $funktionen->eSmart3_CRC($Datenstring);
+    $CRC = eSmart3::eSmart3_CRC($Datenstring);
 
 
-    $rc = $funktionen->eSmart3_auslesen($USB1,$Datenstring.$CRC);
+    $rc = eSmart3::eSmart3_auslesen($USB1,$Datenstring.$CRC);
     if ($rc === false) {
-      $funktionen->log_schreiben("Datenfehler, nochmal... ".$Datenstring,"!! ",7);
+      Log::write("Datenfehler, nochmal... ".$Datenstring,"!! ",7);
       continue;
     }
-    $funktionen->log_schreiben($rc,"   ",8);
+    Log::write($rc,"   ",8);
 
-    $aktuelleDaten = array_merge($aktuelleDaten, $funktionen->eSmart3_ergebnis_auswerten($rc));
+    $aktuelleDaten = array_merge($aktuelleDaten, eSmart3::eSmart3_ergebnis_auswerten($rc));
 
 
 
@@ -221,17 +209,17 @@ if (1==1) {
 
     $Datenlaenge = str_pad ( dechex((strlen($Daten)/2)), 2, '0', STR_PAD_LEFT );
     $Datenstring = $StartByte.$DeviceType.$Adresse.$CommandID.$DataItem.$Datenlaenge.$Daten;
-    $CRC = $funktionen->eSmart3_CRC($Datenstring);
+    $CRC = eSmart3::eSmart3_CRC($Datenstring);
 
 
-    $rc = $funktionen->eSmart3_auslesen($USB1,$Datenstring.$CRC);
+    $rc = eSmart3::eSmart3_auslesen($USB1,$Datenstring.$CRC);
     if ($rc === false) {
-      $funktionen->log_schreiben("Datenfehler, nochmal... ".$Datenstring,"!! ",7);
+      Log::write("Datenfehler, nochmal... ".$Datenstring,"!! ",7);
       continue;
     }
-    $funktionen->log_schreiben($rc,"   ",8);
+    Log::write($rc,"   ",8);
 
-    $aktuelleDaten = array_merge($aktuelleDaten, $funktionen->eSmart3_ergebnis_auswerten($rc));
+    $aktuelleDaten = array_merge($aktuelleDaten, eSmart3::eSmart3_ergebnis_auswerten($rc));
 
 
 
@@ -244,14 +232,14 @@ if (1==1) {
 
 
     if ($i == 1) 
-      $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",8);
+      Log::write(var_export($aktuelleDaten,1),"   ",8);
 
 
     /**************************************************************************
     //  User PHP Script, falls gewünscht oder nötig
     **************************************************************************/
-    if ( file_exists ("/var/www/html/eSmart3_math.php")) {
-      include 'eSmart3_math.php';  // Falls etwas neu berechnet werden muss.
+    if ( file_exists($basedir."/custom/eSmart3_math.php")) {
+      include $basedir.'/custom/eSmart3_math.php';  // Falls etwas neu berechnet werden muss.
     }
 
 
@@ -261,8 +249,8 @@ if (1==1) {
     //  an den mqtt-Broker Mosquitto gesendet.
     **************************************************************************/
     if ($MQTT) {
-      $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-      require($Pfad."/mqtt_senden.php");
+      Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+      require($basedir."/services/mqtt_senden.php");
     }
 
 
@@ -302,9 +290,9 @@ if (1==1) {
     if ($InfluxDB_remote) {
       // Test ob die Remote Verbindung zur Verfügung steht.
       if ($RemoteDaten) {
-        $rc = $funktionen->influx_remote_test();
+        $rc = InfluxDB::influx_remote_test();
         if ($rc) {
-          $rc = $funktionen->influx_remote($aktuelleDaten);
+          $rc = InfluxDB::influx_remote($aktuelleDaten);
           if ($rc) {
             $RemoteDaten = false;
           }
@@ -314,30 +302,30 @@ if (1==1) {
         }
       }
       if ($InfluxDB_local) {
-        $rc = $funktionen->influx_local($aktuelleDaten);
+        $rc = InfluxDB::influx_local($aktuelleDaten);
       }
     }
     else {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
 
 
-    if (is_file($Pfad."/1.user.config.php")) {
+    if (is_file($basedir."/config/1.user.config.php")) {
       // Ausgang Multi-Regler-Version
       $Zeitspanne = (7 - (time() - $Start));
-      $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+      Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
       if ($Zeitspanne > 0) {
         sleep($Zeitspanne);
       }
       break;
     }
     else {
-      $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+      Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
       sleep(floor((56 - (time() - $Start))/($Wiederholungen-$i+1)));
     }
     if ($Wiederholungen <= $i or $i >= 6) {
-      $funktionen->log_schreiben("OK. Daten gelesen.","   ",8);
-      $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",8);
+      Log::write("OK. Daten gelesen.","   ",8);
+      Log::write("Schleife ".$i." Ausgang...","   ",8);
       break;
     }
 
@@ -354,8 +342,8 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-    require($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -364,22 +352,22 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-    require($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...","   ",8);
+    require($basedir."/services/meldungen_senden.php");
   }
 
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);
+  Log::write("OK. Datenübertragung erfolgreich.","   ",7);
 
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.","!! ",6);
+  Log::write("Keine gültigen Daten empfangen.","!! ",6);
 }
 
 
 
 Ausgang:
 
-$funktionen->log_schreiben("---------   Stop   eSmart3.php    ---------------------------- ","|--",6);
+Log::write("---------   Stop   eSmart3.php    ---------------------------- ","|--",6);
 
 return;
 

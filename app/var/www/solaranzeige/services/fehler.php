@@ -27,11 +27,6 @@
 *****************************************************************************/
 $basedir = dirname(__FILE__,2);
 require_once($basedir."/library/base.inc.php");
-require_once($basedir."/config/user.config.php");
-
-if (!isset($InfluxDBLokal)) {
-  $InfluxDBLokal = "solaranzeige";
-}
 
 $Tracelevel = 10;  //  1 bis 10  10 = Debug
 setlocale(LC_TIME,"de_DE.utf8");
@@ -41,7 +36,7 @@ Log::write("------  Fehler!    Fehler!    Fehler!    Fehler!  ------------ ","|-
 
 Log::write("Es ist kein Laderegler / Wechselrichter / sonstiges Gerät  ausgewählt.","   ",1);
 Log::write("Die Konfiguration wurde nicht richtig durchgeführt.","   ",1);
-Log::write("Wert für SA_REGLER ist nicht gesetzt oder unbekannt: '".getEnvAsString("SA_REGLER","0")."'","   ",1);
+Log::write("Wert für SA_REGLER ist nicht gesetzt oder unbekannt: '".Utils::getEnvAsString("SA_REGLER","0")."'","   ",1);
 
 Log::write("------  Fehler!    Fehler!    Fehler!    Fehler!  ------------ ","|--",1);
 

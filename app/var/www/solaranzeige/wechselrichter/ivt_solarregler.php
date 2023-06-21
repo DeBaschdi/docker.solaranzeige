@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 /*****************************************************************************
 //  Solaranzeige Projekt             Copyright (C) [2015-2020]  [Ulrich Kunz]
@@ -25,17 +24,6 @@
 //  Achtung! Der Regler sendet zwischendurch immer wieder asynchrone Daten!
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
-
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -45,9 +33,9 @@ $Tracelevel = 7;  //  1 bis 10  10 = Debug
 $Version = "";
 $Device = "LR"; // LR = Laderegler
 $Start = time();  // Timestamp festhalten
-$funktionen->log_schreiben("-------------   Start  ivt_solarregler.php   ----------------- ","|--",6);
+Log::write("-------------   Start  ivt_solarregler.php   ----------------- ","|--",6);
 
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 
@@ -65,7 +53,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",8);
+Log::write("Hardware Version: ".$Version,"o  ",8);
 
 switch($Version) {
   case "2B":
@@ -85,32 +73,32 @@ switch($Version) {
 //  pro Tag zu speichern.
 //
 *****************************************************************************/
-$StatusFile = $Pfad."/database/".$GeraeteNummer.".WhProTag.txt";
+$StatusFile = $basedir."/database/".$GeraeteNummer.".WhProTag.txt";
 if (!file_exists($StatusFile)) {
   /***************************************************************************
   //  Inhalt der Status Datei anlegen, wenn nicht existiert.
   ***************************************************************************/
   $rc = file_put_contents($StatusFile,"0");
   if ($rc === false) {
-    $funktionen->log_schreiben("Konnte die Datei whProTag_ivt.txt nicht anlegen.",5);
+    Log::write("Konnte die Datei whProTag_ivt.txt nicht anlegen.",5);
   }
 }
 else {
   $aktuelleDaten["WattstundenGesamtGestern"] = file_get_contents($StatusFile);
-  $funktionen->log_schreiben("WattstundenGesamtGestern: ".$aktuelleDaten["WattstundenGesamtGestern"],"   ",8);
+  Log::write("WattstundenGesamtGestern: ".$aktuelleDaten["WattstundenGesamtGestern"],"   ",8);
 }
 
 
-$USB1 = $funktionen->openUSB($USBRegler);
+$USB1 = USB::openUSB($USBRegler);
 if (!is_resource($USB1)) {
-  $funktionen->log_schreiben("USB Port kann nicht geöffnet werden. [1]","XX ",7);
-  $funktionen->log_schreiben("Exit.... ","XX ",7);
+  Log::write("USB Port kann nicht geöffnet werden. [1]","XX ",7);
+  Log::write("Exit.... ","XX ",7);
   goto Ausgang;
 }
 
 $i = 1;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...","+  ",9);
+  Log::write("Die Daten werden ausgelesen...","+  ",9);
 
   /****************************************************************************
   //  Ab hier wird der Regler ausgelesen.
@@ -137,20 +125,20 @@ do {
   //
   ****************************************************************************/
 
-  $Ergebnis = $funktionen->ivt_lesen($USB1,'pc.solar.gettype');
-  $funktionen->log_schreiben("Hardware Version: ".hexdec(substr(bin2hex($Ergebnis),0,2))." Volt / ".hexdec(substr(bin2hex($Ergebnis),-2))." Ampere","   ",9);
+  $Ergebnis = IVT::ivt_lesen($USB1,'pc.solar.gettype');
+  Log::write("Hardware Version: ".hexdec(substr(bin2hex($Ergebnis),0,2))." Volt / ".hexdec(substr(bin2hex($Ergebnis),-2))." Ampere","   ",9);
 
   $aktuelleDaten["Firmware"] = 0;
   $aktuelleDaten["Produkt"] = "SC ".hexdec(substr(bin2hex($Ergebnis),0,2))." V / ".hexdec(substr(bin2hex($Ergebnis),-2))." A";
 
-  $funktionen->log_schreiben(bin2hex($Ergebnis),"   ",9);
+  Log::write(bin2hex($Ergebnis),"   ",9);
 
-  $Ergebnis = $funktionen->ivt_lesen($USB1);  //  USB Speicher löschen
+  $Ergebnis = IVT::ivt_lesen($USB1);  //  USB Speicher löschen
 
-  $Ergebnis = $funktionen->ivt_lesen($USB1,'pc.solar.getdata');
+  $Ergebnis = IVT::ivt_lesen($USB1,'pc.solar.getdata');
 
   if ($Ergebnis === false) {
-    $funktionen->log_schreiben("Daten waren falsch oder unvollständig. 1 Sekunde warten.","   ",6);
+    Log::write("Daten waren falsch oder unvollständig. 1 Sekunde warten.","   ",6);
     if ($i > 2) {
       break;
     }
@@ -159,9 +147,9 @@ do {
     continue;
   }
 
-  $funktionen->log_schreiben(bin2hex($Ergebnis),"   ",9);
+  Log::write(bin2hex($Ergebnis),"   ",9);
 
-  $DatenArray = $funktionen->ivt_entschluesseln($Ergebnis);
+  $DatenArray = IVT::ivt_entschluesseln($Ergebnis);
 
 
   $aktuelleDaten["Batteriespannung"] = $DatenArray["BatVL"].".".$DatenArray["BatVR"];
@@ -199,14 +187,14 @@ do {
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"]+10);
 
 
-  $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",8);
+  Log::write(var_export($aktuelleDaten,1),"   ",8);
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/ivt_solarregler_math.php")) {
-    include 'ivt_solarregler_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/ivt_solarregler_math.php")) {
+    include $basedir.'/custom/ivt_solarregler_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
 
@@ -216,8 +204,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
 
@@ -255,9 +243,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -267,30 +255,30 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
 
 
 
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time() - $Start));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+    Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
     sleep(floor((56 - (time() - $Start))/($Wiederholungen-$i+1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",8);
+    Log::write("Schleife ".$i." Ausgang...","   ",8);
     break;
   }
 
@@ -307,8 +295,8 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-    require($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -317,15 +305,15 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-    require($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...","   ",8);
+    require($basedir."/services/meldungen_senden.php");
   }
 
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);
+  Log::write("OK. Datenübertragung erfolgreich.","   ",7);
 
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.","!! ",6);
+  Log::write("Keine gültigen Daten empfangen.","!! ",6);
 }
 
 
@@ -336,12 +324,12 @@ else {
 *****************************************************************************/
 if (date("H:i") == "00:00" or date("H:i") == "00:01") {
   $rc = file_put_contents($StatusFile, $aktuelleDaten["WattstundenGesamt"]);
-  $funktionen->log_schreiben("WattstundenGesamtGestern  gesetzt.","o--",5);
+  Log::write("WattstundenGesamtGestern  gesetzt.","o--",5);
 }
 
 Ausgang:
 
-$funktionen->log_schreiben("-------------   Stop   ivt_solarregler.php   ----------------- ","|--",6);
+Log::write("-------------   Stop   ivt_solarregler.php   ----------------- ","|--",6);
 
 return;
 

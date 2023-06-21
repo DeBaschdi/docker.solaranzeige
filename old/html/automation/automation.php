@@ -272,8 +272,8 @@ for ($i = 1; $i < 20; $i++) {
 /****************************************************************************
 //  User PHP Script, falls gewünscht oder nötig
 ****************************************************************************/
-if (file_exists( "/var/www/html/auto-math.php" )) {
-  include 'auto-math.php'; // Falls etwas neu berechnet werden muss.
+if (file_exists($basedir."/custom/auto-math.php" )) {
+  include $basedir.'/custom/auto-math.php'; // Falls etwas neu berechnet werden muss.
 }
 
 /**********************************************************************

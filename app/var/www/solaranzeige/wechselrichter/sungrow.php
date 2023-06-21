@@ -27,7 +27,6 @@
 //
 //
 *****************************************************************************/
-
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -108,7 +107,7 @@ do {
   $RegisterAnzahl = "000F";   // Hex
   $DatenTyp = "String";
   $Timebase = 6000; //  Wie lange soll auf eine Antwort gewartet werden?
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     if ($Ergebnis["Befehl"] == "84") {
       Log::write( "Das Register 4954 gibt es nicht.", "   ", 8 );
@@ -128,7 +127,7 @@ do {
   $RegisterAdresse = (4990 -1);  // Dezimal
   $RegisterAnzahl = "000A";   // Hex
   $DatenTyp = "String";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     if ($Ergebnis["Befehl"] == "84") {
       Log::write( "Dieses Register gibt es nicht. [4990]", "   ", 5 );
@@ -150,7 +149,7 @@ do {
   $RegisterAdresse = (5000 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "Hex";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Produkt"] = $Ergebnis["Wert"];
     $aktuelleDaten["ModellID"] = hexdec($Ergebnis["Wert"]);
@@ -172,7 +171,7 @@ do {
   $RegisterAdresse = (5001 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Leistungsklasse"] = ($Ergebnis["Wert"]*100);  // in Watt
   }
@@ -184,7 +183,7 @@ do {
   $RegisterAdresse = (5002 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Phasen"] = $Ergebnis["Wert"];  // 0 = 1 Phase,   1 = 3 Phasen mit Nullleiter,    2 = 3 Phasen Drehstrom
   }
@@ -197,7 +196,7 @@ do {
   $RegisterAdresse = (5003 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     if ( $aktuelleDaten["ModellGruppe"] == "SG" ) {
       $aktuelleDaten["WattstundenGesamtHeute"] = ($Ergebnis["Wert"]*100);
@@ -214,7 +213,7 @@ do {
   $RegisterAdresse = (5004 -1);  // Dezimal
   $RegisterAnzahl = "0002";      // HEX
   $DatenTyp = "U32S";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     if ( $aktuelleDaten["ModellGruppe"] == "SG" ) {
       $aktuelleDaten["WattstundenGesamt"] = ($Ergebnis["Wert"]*1000);
@@ -232,7 +231,7 @@ do {
   $RegisterAdresse = (5008 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "I16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Temperatur"] = ($Ergebnis["Wert"]/10);  // in °C
   }
@@ -244,7 +243,7 @@ do {
   $RegisterAdresse = (5011 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "I16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["PV1_Spannung"] = ($Ergebnis["Wert"]/10);  // in Volt
   }
@@ -256,7 +255,7 @@ do {
   $RegisterAdresse = (5013 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "I16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["PV2_Spannung"] = ($Ergebnis["Wert"]/10);  // in Volt
   }
@@ -268,7 +267,7 @@ do {
   $RegisterAdresse = (5015 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "I16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["PV3_Spannung"] = ($Ergebnis["Wert"]/10);  // in Volt
   }
@@ -286,7 +285,7 @@ do {
   $RegisterAdresse = (5012 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "I16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["PV1_Strom"] = ($Ergebnis["Wert"]/10);  // in Ampere
   }
@@ -298,7 +297,7 @@ do {
   $RegisterAdresse = (5014 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "I16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["PV2_Strom"] = ($Ergebnis["Wert"]/10);  // in Ampere
   }
@@ -310,7 +309,7 @@ do {
   $RegisterAdresse = (5016 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "I16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["PV3_Strom"] = ($Ergebnis["Wert"]/10);  // in Ampere
   }
@@ -323,7 +322,7 @@ do {
   $RegisterAdresse = (5017 -1);  // Dezimal
   $RegisterAnzahl = "0002";      // HEX
   $DatenTyp = "U32S";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["PV_Leistung"] = $Ergebnis["Wert"];  // in Watt
   }
@@ -335,7 +334,7 @@ do {
   $RegisterAdresse = (5019 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["AC_Spannung_R"] = ($Ergebnis["Wert"]/10);  // in Volt
   }
@@ -347,7 +346,7 @@ do {
   $RegisterAdresse = (5020 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["AC_Spannung_S"] = ($Ergebnis["Wert"]/10);  // in Volt
   }
@@ -359,7 +358,7 @@ do {
   $RegisterAdresse = (5021 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["AC_Spannung_T"] = ($Ergebnis["Wert"]/10);  // in Volt
   }
@@ -373,7 +372,7 @@ do {
   $RegisterAdresse = (5036 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["AC_Frequenz"] = ($Ergebnis["Wert"]/10);  // in Hertz
   }
@@ -385,7 +384,7 @@ do {
   $RegisterAdresse = (6196 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["PV_Energie_Heute"] = ($Ergebnis["Wert"]*100);  // in Watt/Stunden
   }
@@ -397,7 +396,7 @@ do {
   $RegisterAdresse = (6227 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["PV_Energie_Monat"] = ($Ergebnis["Wert"]*100);  // in Wh
   }
@@ -409,7 +408,7 @@ do {
   $RegisterAdresse = (13000 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "Hex";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["DeviceStatus"] = $Ergebnis["Wert"];
   }
@@ -421,10 +420,10 @@ do {
   $RegisterAdresse = (13001 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Batterie_Status"] = $Ergebnis["Wert"];
-    $aktuelleDaten["StatusBit"] = $funktionen->d2b($Ergebnis["Wert"]);
+    $aktuelleDaten["StatusBit"] = Utils::d2b($Ergebnis["Wert"]);
   }
   else {
     Log::write( "Lesefehler => Ausgang.", "   ", 5 );
@@ -434,7 +433,7 @@ do {
   $RegisterAdresse = (13002 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Energie_Heute"] = ($Ergebnis["Wert"]*100);
   }
@@ -446,7 +445,7 @@ do {
   $RegisterAdresse = (13003 -1);  // Dezimal
   $RegisterAnzahl = "0002";      // HEX
   $DatenTyp = "U32S";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Energie_Total"] = ($Ergebnis["Wert"]*100);
   }
@@ -459,7 +458,7 @@ do {
   $RegisterAdresse = (13008 -1);  // Dezimal
   $RegisterAnzahl = "0002";      // HEX
   $DatenTyp = "I32S";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Hausverbrauch"] = $Ergebnis["Wert"];
   }
@@ -471,7 +470,7 @@ do {
   $RegisterAdresse = (13010 -1);  // Dezimal
   $RegisterAnzahl = "0002";      // HEX
   $DatenTyp = "I32S";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     if ($Ergebnis["Wert"] > 0) {
       $aktuelleDaten["Einspeisung"] = $Ergebnis["Wert"];
@@ -491,7 +490,7 @@ do {
   $RegisterAdresse = (13020 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Batterie_Spannung"] = ($Ergebnis["Wert"]/10);
   }
@@ -503,7 +502,7 @@ do {
   $RegisterAdresse = (13021 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Batterie_Strom"] = ($Ergebnis["Wert"]/10);
   }
@@ -515,7 +514,7 @@ do {
   $RegisterAdresse = (13022 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Batterie_Leistung"] = $Ergebnis["Wert"];
   }
@@ -527,7 +526,7 @@ do {
   $RegisterAdresse = (13023 -1);  // Dezimal
   $RegisterAnzahl = "0001";       // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["SOC"] = ($Ergebnis["Wert"]/10);
   }
@@ -539,7 +538,7 @@ do {
   $RegisterAdresse = (13025 -1);  // Dezimal
   $RegisterAnzahl = "0001";       // HEX
   $DatenTyp = "I16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Batterie_Temperatur"] = ($Ergebnis["Wert"]/10); // in °C
   }
@@ -551,7 +550,7 @@ do {
   $RegisterAdresse = (13034 -1);  // Dezimal
   $RegisterAnzahl = "0002";      // HEX
   $DatenTyp = "I32S";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["AC_Leistung"] = $Ergebnis["Wert"];
   }
@@ -563,7 +562,7 @@ do {
   $RegisterAdresse = (13026 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Batterie_Entladung"] = ($Ergebnis["Wert"]*100);
   }
@@ -576,7 +575,7 @@ do {
   $RegisterAdresse = (13040 -1);  // Dezimal
   $RegisterAnzahl = "0001";      // HEX
   $DatenTyp = "U16";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["Batterie_Ladung"] = ($Ergebnis["Wert"]*100);
   }
@@ -588,7 +587,7 @@ do {
   $RegisterAdresse = (13050 -1);  // Dezimal
   $RegisterAnzahl = "0002";      // HEX
   $DatenTyp = "U32S";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     $aktuelleDaten["FehlerCode"] = $Ergebnis["Wert"];
   }
@@ -603,7 +602,7 @@ do {
     $RegisterAdresse = (5031 -1);  // Dezimal
     $RegisterAnzahl = "0001";      // HEX
     $DatenTyp = "U16";
-    $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+    $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
     if (is_array( $Ergebnis )) {
       $aktuelleDaten["AC_Leistung"] = $Ergebnis["Wert"];  // in Watt
     }
@@ -615,7 +614,7 @@ do {
     $RegisterAdresse = (5144 -1);  // Dezimal
     $RegisterAnzahl = "0002";      // HEX
     $DatenTyp = "U32S";
-    $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+    $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
     if (is_array( $Ergebnis )) {
       $aktuelleDaten["Energie_Total"] = ($Ergebnis["Wert"]*100);
     }
@@ -627,7 +626,7 @@ do {
     $RegisterAdresse = (5081 -1);  // Dezimal
     $RegisterAnzahl = "0002";      // HEX
     $DatenTyp = "U32S";
-    $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+    $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
     if (is_array( $Ergebnis )) {
       $aktuelleDaten["DeviceStatus2"] = hexdec($Ergebnis["Wert"]);
     }
@@ -640,7 +639,7 @@ do {
     $RegisterAdresse = (5128 -1);  // Dezimal
     $RegisterAnzahl = "0002";      // HEX
     $DatenTyp = "I32S";
-    $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+    $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
     if (is_array( $Ergebnis )) {
       $aktuelleDaten["WattstundenGesamtMonat"] = (hexdec($Ergebnis["Wert"])*100);
     }
@@ -652,7 +651,7 @@ do {
     $RegisterAdresse = (5045 -1);  // Dezimal
     $RegisterAnzahl = "0002";      // HEX
     $DatenTyp = "I32S";
-    $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+    $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
     if (is_array( $Ergebnis )) {
       $aktuelleDaten["FehlerCode"] = hexdec($Ergebnis["Wert"]);
     }
@@ -778,8 +777,8 @@ do {
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( $basedir."/services/rct_wr_math.php" )) {
-    include $basedir."/services/rct_wr_math.php"; // Falls etwas neu berechnet werden muss.
+  if (file_exists( $basedir."/custom/rct_wr_math.php" )) {
+    include $basedir."/custom/rct_wr_math.php"; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************

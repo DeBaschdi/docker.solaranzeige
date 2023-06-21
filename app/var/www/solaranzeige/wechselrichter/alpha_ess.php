@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -26,16 +25,6 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -43,8 +32,8 @@ if (isset($USBDevice) and !empty($USBDevice)) {
 $Tracelevel = 7; //  1 bis 10  10 = Debug
 $RemoteDaten = true;
 $Start = time( ); // Timestamp festhalten
-$funktionen->log_schreiben( "----------------------   Start  alpha_ess.php   --------------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "----------------------   Start  alpha_ess.php   --------------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale( LC_TIME, "de_DE.utf8" );
@@ -59,7 +48,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben( "Hardware Version: ".$Version, "o  ", 8 );
+Log::write( "Hardware Version: ".$Version, "o  ", 8 );
 switch ($Version) {
 
   case "2B":
@@ -83,7 +72,7 @@ switch ($Version) {
 //  pro Tag zu speichern.
 //
 *****************************************************************************/
-$StatusFile = $Pfad."/database/".$GeraeteNummer.".WhProTag.txt";
+$StatusFile = $basedir."/database/".$GeraeteNummer.".WhProTag.txt";
 if (!file_exists( $StatusFile )) {
 
   /***************************************************************************
@@ -91,24 +80,24 @@ if (!file_exists( $StatusFile )) {
   ***************************************************************************/
   $rc = file_put_contents( $StatusFile, "0" );
   if ($rc === false) {
-    $funktionen->log_schreiben( "Konnte die Datei whProTag_delta.txt nicht anlegen.", 5 );
+    Log::write( "Konnte die Datei whProTag_delta.txt nicht anlegen.", 5 );
   }
   $aktuelleDaten["WattstundenGesamtHeute"] = 0;
 }
 else {
   $aktuelleDaten["WattstundenGesamtHeute"] = file_get_contents( $StatusFile );
-  $funktionen->log_schreiben( "WattstundenGesamtHeute: ".$aktuelleDaten["WattstundenGesamtHeute"], "   ", 8 );
+  Log::write( "WattstundenGesamtHeute: ".$aktuelleDaten["WattstundenGesamtHeute"], "   ", 8 );
 }
 /****************/
-$USB1 = $funktionen->openUSB( $USBRegler );
+$USB1 = USB::openUSB( $USBRegler );
 if (!is_resource( $USB1 )) {
-  $funktionen->log_schreiben( "USB Port kann nicht geöffnet werden. [1]", "XX ", 7 );
-  $funktionen->log_schreiben( "Exit.... ", "XX ", 7 );
+  Log::write( "USB Port kann nicht geöffnet werden. [1]", "XX ", 7 );
+  Log::write( "Exit.... ", "XX ", 7 );
   goto Ausgang;
 }
 $i = 1;
 do {
-  $funktionen->log_schreiben( "Die Daten werden ausgelesen...", "+  ", 9 );
+  Log::write( "Die Daten werden ausgelesen...", "+  ", 9 );
   $aktuelleDaten["Produkt"] = "Alpha ESS";
   $aktuelleDaten["Firmware"] = "1.0";
 
@@ -130,18 +119,18 @@ do {
   $Befehl["BefehlFunctionCode"] = "03";
   $Befehl["RegisterAddress"] = "0115";
   $Befehl["RegisterCount"] = "0003";
-  $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-  $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+  $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+  $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
   if ($rc == false) {
-    $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+    Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
     $i++;
     continue;
   }
-  $funktionen->log_schreiben( $rc, "   ", 9 );
-  $aktuelleDaten["BMU-SW-Version"] = $funktionen->hexdecs( substr( $rc, 6, 4 ));
-  $aktuelleDaten["LMU-SW-Version"] = $funktionen->hexdecs( substr( $rc, 10, 4 ));
-  $aktuelleDaten["ISO-SW-Version"] = $funktionen->hexdecs( substr( $rc, 14, 4 ));
-  $funktionen->log_schreiben( "BMU - LMU - ISO  SW-Versionen:   ".$aktuelleDaten["BMU-SW-Version"]." - ".$aktuelleDaten["LMU-SW-Version"]." - ".$aktuelleDaten["ISO-SW-Version"], "   ", 2 );
+  Log::write( $rc, "   ", 9 );
+  $aktuelleDaten["BMU-SW-Version"] = Utils::hexdecs( substr( $rc, 6, 4 ));
+  $aktuelleDaten["LMU-SW-Version"] = Utils::hexdecs( substr( $rc, 10, 4 ));
+  $aktuelleDaten["ISO-SW-Version"] = Utils::hexdecs( substr( $rc, 14, 4 ));
+  Log::write( "BMU - LMU - ISO  SW-Versionen:   ".$aktuelleDaten["BMU-SW-Version"]." - ".$aktuelleDaten["LMU-SW-Version"]." - ".$aktuelleDaten["ISO-SW-Version"], "   ", 2 );
 
   /**************************************************************************
   //  Neuere Software Version                     Handbuch V. 1.23
@@ -161,27 +150,27 @@ do {
     /************/
     $Befehl["RegisterAddress"] = "0000";
     $Befehl["RegisterCount"] = "0036";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
       $i++;
       continue;
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
-    $aktuelleDaten["NetzeinspeisungGesamt"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( 10 ) * 4) + 6), 8 )) / 100);
-    $aktuelleDaten["NetzbezugGesamt"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( 12 ) * 4) + 6), 8 )) / 100);
-    $aktuelleDaten["Netz_Spannung_R"] = $funktionen->hexdecs( substr( $rc, ((hexdec( 14 ) * 4) + 6), 4 )) / 10;
-    $aktuelleDaten["Netz_Spannung_S"] = $funktionen->hexdecs( substr( $rc, ((hexdec( 15 ) * 4) + 6), 4 )) / 10;
-    $aktuelleDaten["Netz_Spannung_T"] = $funktionen->hexdecs( substr( $rc, ((hexdec( 16 ) * 4) + 6), 4 )) / 10;
-    $aktuelleDaten["Netz_Strom_R"] = $funktionen->hexdecs( substr( $rc, ((hexdec( 17 ) * 4) + 6), 4 )) / 100;
-    $aktuelleDaten["Netz_Strom_S"] = $funktionen->hexdecs( substr( $rc, ((hexdec( 18 ) * 4) + 6), 4 )) / 100;
-    $aktuelleDaten["Netz_Strom_T"] = $funktionen->hexdecs( substr( $rc, ((hexdec( 19 ) * 4) + 6), 4 )) / 100;
-    $aktuelleDaten["Netz_Frequenz"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "1A" ) * 4) + 6), 4 )) / 10);
-    $aktuelleDaten["Netz_Wirkleistung_R"] = $funktionen->hexdecs( substr( $rc, ((hexdec( "1B" ) * 4) + 6), 8 ));
-    $aktuelleDaten["Netz_Wirkleistung_S"] = $funktionen->hexdecs( substr( $rc, ((hexdec( "1D" ) * 4) + 6), 8 ));
-    $aktuelleDaten["Netz_Wirkleistung_T"] = $funktionen->hexdecs( substr( $rc, ((hexdec( "1F" ) * 4) + 6), 8 ));
-    $aktuelleDaten["Netz_WirkleistungGesamt"] = $funktionen->hexdecs( substr( $rc, ((hexdec( "21" ) * 4) + 6), 8 ));
+    Log::write( $rc, "   ", 9 );
+    $aktuelleDaten["NetzeinspeisungGesamt"] = (Utils::hexdecs( substr( $rc, ((hexdec( 10 ) * 4) + 6), 8 )) / 100);
+    $aktuelleDaten["NetzbezugGesamt"] = (Utils::hexdecs( substr( $rc, ((hexdec( 12 ) * 4) + 6), 8 )) / 100);
+    $aktuelleDaten["Netz_Spannung_R"] = Utils::hexdecs( substr( $rc, ((hexdec( 14 ) * 4) + 6), 4 )) / 10;
+    $aktuelleDaten["Netz_Spannung_S"] = Utils::hexdecs( substr( $rc, ((hexdec( 15 ) * 4) + 6), 4 )) / 10;
+    $aktuelleDaten["Netz_Spannung_T"] = Utils::hexdecs( substr( $rc, ((hexdec( 16 ) * 4) + 6), 4 )) / 10;
+    $aktuelleDaten["Netz_Strom_R"] = Utils::hexdecs( substr( $rc, ((hexdec( 17 ) * 4) + 6), 4 )) / 100;
+    $aktuelleDaten["Netz_Strom_S"] = Utils::hexdecs( substr( $rc, ((hexdec( 18 ) * 4) + 6), 4 )) / 100;
+    $aktuelleDaten["Netz_Strom_T"] = Utils::hexdecs( substr( $rc, ((hexdec( 19 ) * 4) + 6), 4 )) / 100;
+    $aktuelleDaten["Netz_Frequenz"] = (Utils::hexdecs( substr( $rc, ((hexdec( "1A" ) * 4) + 6), 4 )) / 10);
+    $aktuelleDaten["Netz_Wirkleistung_R"] = Utils::hexdecs( substr( $rc, ((hexdec( "1B" ) * 4) + 6), 8 ));
+    $aktuelleDaten["Netz_Wirkleistung_S"] = Utils::hexdecs( substr( $rc, ((hexdec( "1D" ) * 4) + 6), 8 ));
+    $aktuelleDaten["Netz_Wirkleistung_T"] = Utils::hexdecs( substr( $rc, ((hexdec( "1F" ) * 4) + 6), 8 ));
+    $aktuelleDaten["Netz_WirkleistungGesamt"] = Utils::hexdecs( substr( $rc, ((hexdec( "21" ) * 4) + 6), 8 ));
     // Aus Kompatibilitätsgründen zur Zeit noch nötig
     $aktuelleDaten["AC_Wirkleistung_R"] = $aktuelleDaten["Netz_Wirkleistung_R"];
     $aktuelleDaten["AC_Wirkleistung_S"] = $aktuelleDaten["Netz_Wirkleistung_S"];
@@ -191,36 +180,36 @@ do {
     /************************/
     $Befehl["RegisterAddress"] = "0080";
     $Befehl["RegisterCount"] = "0036";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
       $i++;
       continue;
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    Log::write( $rc, "   ", 9 );
     //  Offset = 80    Speicherstelle 80 = 00 ,  90 = 10
-    $aktuelleDaten["PV_EinspeisungGesamt"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "10" ) * 4) + 6), 8 )) * 10);
-    $aktuelleDaten["PV_BezugGesamt"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "12" ) * 4) + 6), 8 )) * 10);
-    $aktuelleDaten["PV_Wirkleistung_R"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "1B" ) * 4) + 6), 8 )));
-    $aktuelleDaten["PV_Wirkleistung_S"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "1D" ) * 4) + 6), 8 )));
-    $aktuelleDaten["PV_Wirkleistung_T"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "1F" ) * 4) + 6), 8 )));
-    $aktuelleDaten["PV_LeistungGesamt"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "21" ) * 4) + 6), 8 )));
+    $aktuelleDaten["PV_EinspeisungGesamt"] = (Utils::hexdecs( substr( $rc, ((hexdec( "10" ) * 4) + 6), 8 )) * 10);
+    $aktuelleDaten["PV_BezugGesamt"] = (Utils::hexdecs( substr( $rc, ((hexdec( "12" ) * 4) + 6), 8 )) * 10);
+    $aktuelleDaten["PV_Wirkleistung_R"] = (Utils::hexdecs( substr( $rc, ((hexdec( "1B" ) * 4) + 6), 8 )));
+    $aktuelleDaten["PV_Wirkleistung_S"] = (Utils::hexdecs( substr( $rc, ((hexdec( "1D" ) * 4) + 6), 8 )));
+    $aktuelleDaten["PV_Wirkleistung_T"] = (Utils::hexdecs( substr( $rc, ((hexdec( "1F" ) * 4) + 6), 8 )));
+    $aktuelleDaten["PV_LeistungGesamt"] = (Utils::hexdecs( substr( $rc, ((hexdec( "21" ) * 4) + 6), 8 )));
     $aktuelleDaten["AC_LeistungGesamt"] = $aktuelleDaten["PV_LeistungGesamt"];
 
     /*********/
     $Befehl["RegisterAddress"] = "0100";
     $Befehl["RegisterCount"] = "0048";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
       $i++;
       continue;
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    Log::write( $rc, "   ", 9 );
     $aktuelleDaten["Batteriespannung"] = (hexdec( substr( $rc, ((hexdec( "0" ) * 4) + 6), 4 )) / 10);
-    $aktuelleDaten["Batteriestrom"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "1" ) * 4) + 6), 4 )) / 10);
+    $aktuelleDaten["Batteriestrom"] = (Utils::hexdecs( substr( $rc, ((hexdec( "1" ) * 4) + 6), 4 )) / 10);
     if ($aktuelleDaten["BMU-SW-Version"] >= 157) {
       $aktuelleDaten["SOC"] = (hexdec( substr( $rc, ((hexdec( "2" ) * 4) + 6), 4 )) / 10);
     }
@@ -236,26 +225,26 @@ do {
     $aktuelleDaten["BatterieladeenergieGesamt"] = (hexdec( substr( $rc, ((hexdec( "20" ) * 4) + 6), 8 )) * 100);
     $aktuelleDaten["BatterieentladeenergieGesamt"] = (hexdec( substr( $rc, ((hexdec( "22" ) * 4) + 6), 8 )) * 100);
     $aktuelleDaten["Netzladeenergie"] = (hexdec( substr( $rc, ((hexdec( "24" ) * 4) + 6), 8 )) * 100);
-    $aktuelleDaten["Batterieleistung"] = $funktionen->hexdecs( substr( $rc, ((hexdec( "24" ) * 4) + 6), 4 ));
+    $aktuelleDaten["Batterieleistung"] = Utils::hexdecs( substr( $rc, ((hexdec( "24" ) * 4) + 6), 4 ));
     $aktuelleDaten["BatterieRemainingTime"] = (hexdec( substr( $rc, ((hexdec( "27" ) * 4) + 6), 4 )));
     $aktuelleDaten["BatterieImplementationChargeSOC"] = (hexdec( substr( $rc, ((hexdec( "28" ) * 4) + 6), 4 )) / 10);
-    $aktuelleDaten["BatterieImplementationDischargeSOC"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "29" ) * 4) + 6), 4 )) / 10);
+    $aktuelleDaten["BatterieImplementationDischargeSOC"] = (Utils::hexdecs( substr( $rc, ((hexdec( "29" ) * 4) + 6), 4 )) / 10);
     $aktuelleDaten["BatterieRemainingChargeSOC"] = (hexdec( substr( $rc, ((hexdec( "2A" ) * 4) + 6), 4 )) / 10);
-    $aktuelleDaten["BatterieRemainingDischargeSOC"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "2B" ) * 4) + 6), 4 )) / 10);
+    $aktuelleDaten["BatterieRemainingDischargeSOC"] = (Utils::hexdecs( substr( $rc, ((hexdec( "2B" ) * 4) + 6), 4 )) / 10);
     $aktuelleDaten["BatterieMaxChargePower"] = (hexdec( substr( $rc, ((hexdec( "2C" ) * 4) + 6), 4 )));
-    $aktuelleDaten["BatterieMaxDischargePower"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "2D" ) * 4) + 6), 4 )));
+    $aktuelleDaten["BatterieMaxDischargePower"] = (Utils::hexdecs( substr( $rc, ((hexdec( "2D" ) * 4) + 6), 4 )));
 
     /*******************/
     $Befehl["RegisterAddress"] = "0400";
     $Befehl["RegisterCount"] = "0041";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
       $i++;
       continue;
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    Log::write( $rc, "   ", 9 );
     $aktuelleDaten["AC_Spannung_R"] = (hexdec( substr( $rc, ((hexdec( "0" ) * 4) + 6), 4 )) / 10);
     $aktuelleDaten["AC_Spannung_S"] = (hexdec( substr( $rc, ((hexdec( "1" ) * 4) + 6), 4 )) / 10);
     $aktuelleDaten["AC_Spannung_T"] = (hexdec( substr( $rc, ((hexdec( "2" ) * 4) + 6), 4 )) / 10);
@@ -304,34 +293,34 @@ do {
     /*********/
     $Befehl["RegisterAddress"] = "072D";
     $Befehl["RegisterCount"] = "0002";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 8 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 8 );
     }
     $aktuelleDaten["Batteriemodus"] = hexdec( substr( $rc, 6, 4 ));
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    Log::write( $rc, "   ", 9 );
     $Befehl["RegisterAddress"] = "074B";
     $Befehl["RegisterCount"] = "0003";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
       $i++;
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
-    $aktuelleDaten["EMS-SW-Version"] = $funktionen->hexdecs( substr( $rc, ((hexdec( 0 ) * 4) + 6), 4 )).".".$funktionen->hexdecs( substr( $rc, ((hexdec( 1 ) * 4) + 6), 4 )).".".$funktionen->hexdecs( substr( $rc, ((hexdec( 2 ) * 4) + 6), 4 ));
-    $funktionen->log_schreiben( "Neue Software Version:  ".$aktuelleDaten["EMS-SW-Version"], "   ", 5 );
+    Log::write( $rc, "   ", 9 );
+    $aktuelleDaten["EMS-SW-Version"] = Utils::hexdecs( substr( $rc, ((hexdec( 0 ) * 4) + 6), 4 )).".".Utils::hexdecs( substr( $rc, ((hexdec( 1 ) * 4) + 6), 4 )).".".Utils::hexdecs( substr( $rc, ((hexdec( 2 ) * 4) + 6), 4 ));
+    Log::write( "Neue Software Version:  ".$aktuelleDaten["EMS-SW-Version"], "   ", 5 );
     $Befehl["RegisterAddress"] = "0800";
     $Befehl["RegisterCount"] = "0001";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
     }
-    $aktuelleDaten["Netzeinspeisung"] = $funktionen->hexdecs( substr( $rc, ((hexdec( "00" ) * 4) + 6), 4 ));
-    $aktuelleDaten["Netzeinspeisung_Prozent"] = $funktionen->hexdecs( substr( $rc, ((hexdec( "00" ) * 4) + 6), 4 ));
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    $aktuelleDaten["Netzeinspeisung"] = Utils::hexdecs( substr( $rc, ((hexdec( "00" ) * 4) + 6), 4 ));
+    $aktuelleDaten["Netzeinspeisung_Prozent"] = Utils::hexdecs( substr( $rc, ((hexdec( "00" ) * 4) + 6), 4 ));
+    Log::write( $rc, "   ", 9 );
   }
   if ($aktuelleDaten["BMU-SW-Version"] > 150) {
 
@@ -420,59 +409,59 @@ do {
     $aktuelleDaten["PV_Leistung6"] = 0;
     $Befehl["RegisterAddress"] = "0000";
     $Befehl["RegisterCount"] = "0016";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
       $i++;
       continue;
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
-    $aktuelleDaten["AC_Wirkleistung_R"] = $funktionen->hexdecs( substr( $rc, 6, 8 ));
-    $aktuelleDaten["AC_Wirkleistung_S"] = $funktionen->hexdecs( substr( $rc, 14, 8 ));
-    $aktuelleDaten["AC_Wirkleistung_T"] = $funktionen->hexdecs( substr( $rc, 22, 8 ));
-    $aktuelleDaten["AC_Wirkleistung"] = $funktionen->hexdecs( substr( $rc, 30, 8 ));
-    $aktuelleDaten["NetzeinspeisungGesamt"] = ($funktionen->hexdecs( substr( $rc, 38, 8 )) * 10);
-    $aktuelleDaten["NetzbezugGesamt"] = ($funktionen->hexdecs( substr( $rc, 46, 8 )) * 10);
-    $aktuelleDaten["PV_Wirkleistung_R"] = $funktionen->hexdecs( substr( $rc, 54, 8 ));
-    $aktuelleDaten["PV_Wirkleistung_S"] = $funktionen->hexdecs( substr( $rc, 62, 8 ));
-    $aktuelleDaten["PV_Wirkleistung_T"] = $funktionen->hexdecs( substr( $rc, 70, 8 ));
-    $aktuelleDaten["AC_LeistungGesamt"] = $funktionen->hexdecs( substr( $rc, 78, 8 ));
-    $aktuelleDaten["PV_EinspeisungGesamt"] = ($funktionen->hexdecs( substr( $rc, 86, 8 )) * 10);
+    Log::write( $rc, "   ", 9 );
+    $aktuelleDaten["AC_Wirkleistung_R"] = Utils::hexdecs( substr( $rc, 6, 8 ));
+    $aktuelleDaten["AC_Wirkleistung_S"] = Utils::hexdecs( substr( $rc, 14, 8 ));
+    $aktuelleDaten["AC_Wirkleistung_T"] = Utils::hexdecs( substr( $rc, 22, 8 ));
+    $aktuelleDaten["AC_Wirkleistung"] = Utils::hexdecs( substr( $rc, 30, 8 ));
+    $aktuelleDaten["NetzeinspeisungGesamt"] = (Utils::hexdecs( substr( $rc, 38, 8 )) * 10);
+    $aktuelleDaten["NetzbezugGesamt"] = (Utils::hexdecs( substr( $rc, 46, 8 )) * 10);
+    $aktuelleDaten["PV_Wirkleistung_R"] = Utils::hexdecs( substr( $rc, 54, 8 ));
+    $aktuelleDaten["PV_Wirkleistung_S"] = Utils::hexdecs( substr( $rc, 62, 8 ));
+    $aktuelleDaten["PV_Wirkleistung_T"] = Utils::hexdecs( substr( $rc, 70, 8 ));
+    $aktuelleDaten["AC_LeistungGesamt"] = Utils::hexdecs( substr( $rc, 78, 8 ));
+    $aktuelleDaten["PV_EinspeisungGesamt"] = (Utils::hexdecs( substr( $rc, 86, 8 )) * 10);
 
     /***********/
     $Befehl["RegisterAddress"] = "0700";
     $Befehl["RegisterCount"] = "0002";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
     }
     $aktuelleDaten["Netzeinspeisung"] = hexdec( substr( $rc, 6, 4 ));
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    Log::write( $rc, "   ", 9 );
 
     /***********/
     $Befehl["RegisterAddress"] = "072D";
     $Befehl["RegisterCount"] = "0002";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 8 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 8 );
     }
     $aktuelleDaten["Batteriemodus"] = hexdec( substr( $rc, 6, 4 ));
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    Log::write( $rc, "   ", 9 );
     $Befehl["RegisterAddress"] = "0100";
     $Befehl["RegisterCount"] = "0005";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
       $i++;
       continue;
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    Log::write( $rc, "   ", 9 );
     $aktuelleDaten["Batteriespannung"] = (hexdec( substr( $rc, 6, 4 )) / 10);
-    $aktuelleDaten["Batteriestrom"] = ($funktionen->hexdecs( substr( $rc, 10, 4 )) / 10);
+    $aktuelleDaten["Batteriestrom"] = (Utils::hexdecs( substr( $rc, 10, 4 )) / 10);
     $aktuelleDaten["SOC"] = (hexdec( substr( $rc, 14, 4 )) / 10);
     $aktuelleDaten["Batteriestatus"] = (substr( $rc, 18, 4 ));
     $aktuelleDaten["Batterierelaisstatus"] = (substr( $rc, 22, 4 ));
@@ -480,23 +469,23 @@ do {
     /***********/
     $Befehl["RegisterAddress"] = "0118";
     $Befehl["RegisterCount"] = "001A";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 8 );
-      $funktionen->log_schreiben( "Dieses Gerät liefert nicht alle Werte.", "   ", 8 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 8 );
+      Log::write( "Dieses Gerät liefert nicht alle Werte.", "   ", 8 );
       $i++;
       $Befehl["RegisterAddress"] = "0118";
       $Befehl["RegisterCount"] = "000E";
-      $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-      $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+      $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+      $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
       if ($rc == false) {
-        $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+        Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
         $i++;
         continue;
       }
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    Log::write( $rc, "   ", 9 );
     $aktuelleDaten["Batterieanzahl"] = hexdec( substr( $rc, 6, 4 ));
     $aktuelleDaten["Batteriekapazitaet"] = (hexdec( substr( $rc, 10, 4 )) * 100);
     $aktuelleDaten["Batteriewarnungen"] = base_convert( substr( $rc, 22, 8 ), 16, 2 );
@@ -504,7 +493,7 @@ do {
     $aktuelleDaten["BatterieladeenergieGesamt"] = (hexdec( substr( $rc, 38, 8 )) * 100);
     $aktuelleDaten["BatterieentladeenergieGesamt"] = (hexdec( substr( $rc, 46, 8 )) * 100);
     $aktuelleDaten["Netzladeenergie"] = (hexdec( substr( $rc, 54, 8 )) * 100);
-    $aktuelleDaten["Batterieleistung"] = $funktionen->hexdecs( substr( $rc, 62, 4 ));
+    $aktuelleDaten["Batterieleistung"] = Utils::hexdecs( substr( $rc, 62, 4 ));
     $aktuelleDaten["BatterieRemainingTime"] = (hexdec( substr( $rc, 66, 4 )));
     $aktuelleDaten["BatterieImplementationChargeSOC"] = hexdec( substr( $rc, 70, 4 ));
     $aktuelleDaten["BatterieImplementationDischargeSOC"] = hexdec( substr( $rc, 74, 4 ));
@@ -514,14 +503,14 @@ do {
     /***********/
     $Befehl["RegisterAddress"] = "0400";
     $Befehl["RegisterCount"] = "0030";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
       $i++;
       continue;
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    Log::write( $rc, "   ", 9 );
     $aktuelleDaten["AC_Spannung_R"] = (hexdec( substr( $rc, 6, 4 )) / 10);
     $aktuelleDaten["AC_Spannung_S"] = (hexdec( substr( $rc, 10, 4 )) / 10);
     $aktuelleDaten["AC_Spannung_T"] = (hexdec( substr( $rc, 14, 4 )) / 10);
@@ -565,27 +554,27 @@ do {
     **************************************************************************/
     $Befehl["RegisterAddress"] = "0000";
     $Befehl["RegisterCount"] = "0036";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
       $i++;
       continue;
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
-    $aktuelleDaten["NetzeinspeisungGesamt"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( 10 ) * 4) + 6), 8 )) / 100);
-    $aktuelleDaten["NetzbezugGesamt"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( 12 ) * 4) + 6), 8 )) / 100);
-    $aktuelleDaten["Netz_Spannung_R"] = $funktionen->hexdecs( substr( $rc, ((hexdec( 14 ) * 4) + 6), 4 )) / 10;
-    $aktuelleDaten["Netz_Spannung_S"] = $funktionen->hexdecs( substr( $rc, ((hexdec( 15 ) * 4) + 6), 4 )) / 10;
-    $aktuelleDaten["Netz_Spannung_T"] = $funktionen->hexdecs( substr( $rc, ((hexdec( 16 ) * 4) + 6), 4 )) / 10;
-    $aktuelleDaten["Netz_Strom_R"] = $funktionen->hexdecs( substr( $rc, ((hexdec( 17 ) * 4) + 6), 4 )) / 100;
-    $aktuelleDaten["Netz_Strom_S"] = $funktionen->hexdecs( substr( $rc, ((hexdec( 18 ) * 4) + 6), 4 )) / 100;
-    $aktuelleDaten["Netz_Strom_T"] = $funktionen->hexdecs( substr( $rc, ((hexdec( 19 ) * 4) + 6), 4 )) / 100;
-    $aktuelleDaten["Netz_Frequenz"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "1A" ) * 4) + 6), 4 )) / 10);
-    $aktuelleDaten["Netz_Wirkleistung_R"] = $funktionen->hexdecs( substr( $rc, ((hexdec( "1B" ) * 4) + 6), 8 ));
-    $aktuelleDaten["Netz_Wirkleistung_S"] = $funktionen->hexdecs( substr( $rc, ((hexdec( "1D" ) * 4) + 6), 8 ));
-    $aktuelleDaten["Netz_Wirkleistung_T"] = $funktionen->hexdecs( substr( $rc, ((hexdec( "1F" ) * 4) + 6), 8 ));
-    $aktuelleDaten["Netz_WirkleistungGesamt"] = $funktionen->hexdecs( substr( $rc, ((hexdec( "21" ) * 4) + 6), 8 ));
+    Log::write( $rc, "   ", 9 );
+    $aktuelleDaten["NetzeinspeisungGesamt"] = (Utils::hexdecs( substr( $rc, ((hexdec( 10 ) * 4) + 6), 8 )) / 100);
+    $aktuelleDaten["NetzbezugGesamt"] = (Utils::hexdecs( substr( $rc, ((hexdec( 12 ) * 4) + 6), 8 )) / 100);
+    $aktuelleDaten["Netz_Spannung_R"] = Utils::hexdecs( substr( $rc, ((hexdec( 14 ) * 4) + 6), 4 )) / 10;
+    $aktuelleDaten["Netz_Spannung_S"] = Utils::hexdecs( substr( $rc, ((hexdec( 15 ) * 4) + 6), 4 )) / 10;
+    $aktuelleDaten["Netz_Spannung_T"] = Utils::hexdecs( substr( $rc, ((hexdec( 16 ) * 4) + 6), 4 )) / 10;
+    $aktuelleDaten["Netz_Strom_R"] = Utils::hexdecs( substr( $rc, ((hexdec( 17 ) * 4) + 6), 4 )) / 100;
+    $aktuelleDaten["Netz_Strom_S"] = Utils::hexdecs( substr( $rc, ((hexdec( 18 ) * 4) + 6), 4 )) / 100;
+    $aktuelleDaten["Netz_Strom_T"] = Utils::hexdecs( substr( $rc, ((hexdec( 19 ) * 4) + 6), 4 )) / 100;
+    $aktuelleDaten["Netz_Frequenz"] = (Utils::hexdecs( substr( $rc, ((hexdec( "1A" ) * 4) + 6), 4 )) / 10);
+    $aktuelleDaten["Netz_Wirkleistung_R"] = Utils::hexdecs( substr( $rc, ((hexdec( "1B" ) * 4) + 6), 8 ));
+    $aktuelleDaten["Netz_Wirkleistung_S"] = Utils::hexdecs( substr( $rc, ((hexdec( "1D" ) * 4) + 6), 8 ));
+    $aktuelleDaten["Netz_Wirkleistung_T"] = Utils::hexdecs( substr( $rc, ((hexdec( "1F" ) * 4) + 6), 8 ));
+    $aktuelleDaten["Netz_WirkleistungGesamt"] = Utils::hexdecs( substr( $rc, ((hexdec( "21" ) * 4) + 6), 8 ));
     // Aus Kompatibilitätsgründen zur Zeit noch nötig
     $aktuelleDaten["AC_Wirkleistung_R"] = $aktuelleDaten["Netz_Wirkleistung_R"];
     $aktuelleDaten["AC_Wirkleistung_S"] = $aktuelleDaten["Netz_Wirkleistung_S"];
@@ -595,36 +584,36 @@ do {
     /************************/
     $Befehl["RegisterAddress"] = "0080";
     $Befehl["RegisterCount"] = "0026";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
       $i++;
       continue;
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    Log::write( $rc, "   ", 9 );
     //  Offset = 80    Speicherstelle 80 = 00 ,  90 = 10
-    $aktuelleDaten["PV_EinspeisungGesamt"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "10" ) * 4) + 6), 8 )) / 100);
-    $aktuelleDaten["PV_BezugGesamt"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "12" ) * 4) + 6), 8 )) / 100);
-    $aktuelleDaten["PV_Wirkleistung_R"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "1B" ) * 4) + 6), 8 )));
-    $aktuelleDaten["PV_Wirkleistung_S"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "1D" ) * 4) + 6), 8 )));
-    $aktuelleDaten["PV_Wirkleistung_T"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "1F" ) * 4) + 6), 8 )));
-    $aktuelleDaten["PV_LeistungGesamt"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "21" ) * 4) + 6), 8 )));
+    $aktuelleDaten["PV_EinspeisungGesamt"] = (Utils::hexdecs( substr( $rc, ((hexdec( "10" ) * 4) + 6), 8 )) / 100);
+    $aktuelleDaten["PV_BezugGesamt"] = (Utils::hexdecs( substr( $rc, ((hexdec( "12" ) * 4) + 6), 8 )) / 100);
+    $aktuelleDaten["PV_Wirkleistung_R"] = (Utils::hexdecs( substr( $rc, ((hexdec( "1B" ) * 4) + 6), 8 )));
+    $aktuelleDaten["PV_Wirkleistung_S"] = (Utils::hexdecs( substr( $rc, ((hexdec( "1D" ) * 4) + 6), 8 )));
+    $aktuelleDaten["PV_Wirkleistung_T"] = (Utils::hexdecs( substr( $rc, ((hexdec( "1F" ) * 4) + 6), 8 )));
+    $aktuelleDaten["PV_LeistungGesamt"] = (Utils::hexdecs( substr( $rc, ((hexdec( "21" ) * 4) + 6), 8 )));
     $aktuelleDaten["AC_LeistungGesamt"] = $aktuelleDaten["PV_LeistungGesamt"];
 
     /*********/
     $Befehl["RegisterAddress"] = "0100";
     $Befehl["RegisterCount"] = "0048";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
       $i++;
       continue;
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    Log::write( $rc, "   ", 9 );
     $aktuelleDaten["Batteriespannung"] = (hexdec( substr( $rc, ((hexdec( "0" ) * 4) + 6), 4 )) / 10);
-    $aktuelleDaten["Batteriestrom"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "1" ) * 4) + 6), 4 )) / 10);
+    $aktuelleDaten["Batteriestrom"] = (Utils::hexdecs( substr( $rc, ((hexdec( "1" ) * 4) + 6), 4 )) / 10);
     $aktuelleDaten["SOC"] = (hexdec( substr( $rc, ((hexdec( "2" ) * 4) + 6), 4 )) / 10);
     $aktuelleDaten["Batteriestatus"] = (substr( $rc, ((hexdec( "3" ) * 4) + 6), 4 ));
     $aktuelleDaten["Batterierelaisstatus"] = (substr( $rc, ((hexdec( "4" ) * 4) + 6), 4 ));
@@ -635,26 +624,26 @@ do {
     $aktuelleDaten["BatterieladeenergieGesamt"] = (hexdec( substr( $rc, ((hexdec( "20" ) * 4) + 6), 8 )) * 100);
     $aktuelleDaten["BatterieentladeenergieGesamt"] = (hexdec( substr( $rc, ((hexdec( "22" ) * 4) + 6), 8 )) * 100);
     $aktuelleDaten["Netzladeenergie"] = (hexdec( substr( $rc, ((hexdec( "24" ) * 4) + 6), 8 )) * 100);
-    $aktuelleDaten["Batterieleistung"] = $funktionen->hexdecs( substr( $rc, ((hexdec( "24" ) * 4) + 6), 4 ));
+    $aktuelleDaten["Batterieleistung"] = Utils::hexdecs( substr( $rc, ((hexdec( "24" ) * 4) + 6), 4 ));
     $aktuelleDaten["BatterieRemainingTime"] = (hexdec( substr( $rc, ((hexdec( "27" ) * 4) + 6), 4 )));
     $aktuelleDaten["BatterieImplementationChargeSOC"] = (hexdec( substr( $rc, ((hexdec( "28" ) * 4) + 6), 4 )) / 10);
-    $aktuelleDaten["BatterieImplementationDischargeSOC"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "29" ) * 4) + 6), 4 )) / 10);
+    $aktuelleDaten["BatterieImplementationDischargeSOC"] = (Utils::hexdecs( substr( $rc, ((hexdec( "29" ) * 4) + 6), 4 )) / 10);
     $aktuelleDaten["BatterieRemainingChargeSOC"] = (hexdec( substr( $rc, ((hexdec( "2A" ) * 4) + 6), 4 )) / 10);
-    $aktuelleDaten["BatterieRemainingDischargeSOC"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "2B" ) * 4) + 6), 4 )) / 10);
+    $aktuelleDaten["BatterieRemainingDischargeSOC"] = (Utils::hexdecs( substr( $rc, ((hexdec( "2B" ) * 4) + 6), 4 )) / 10);
     $aktuelleDaten["BatterieMaxChargePower"] = (hexdec( substr( $rc, ((hexdec( "2C" ) * 4) + 6), 4 )));
-    $aktuelleDaten["BatterieMaxDischargePower"] = ($funktionen->hexdecs( substr( $rc, ((hexdec( "2D" ) * 4) + 6), 4 )));
+    $aktuelleDaten["BatterieMaxDischargePower"] = (Utils::hexdecs( substr( $rc, ((hexdec( "2D" ) * 4) + 6), 4 )));
 
     /*******************/
     $Befehl["RegisterAddress"] = "0400";
     $Befehl["RegisterCount"] = "0041";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
       $i++;
       continue;
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    Log::write( $rc, "   ", 9 );
     $aktuelleDaten["AC_Spannung_R"] = (hexdec( substr( $rc, ((hexdec( "0" ) * 4) + 6), 4 )) / 10);
     $aktuelleDaten["AC_Spannung_S"] = (hexdec( substr( $rc, ((hexdec( "1" ) * 4) + 6), 4 )) / 10);
     $aktuelleDaten["AC_Spannung_T"] = (hexdec( substr( $rc, ((hexdec( "2" ) * 4) + 6), 4 )) / 10);
@@ -703,51 +692,51 @@ do {
     /*********/
     $Befehl["RegisterAddress"] = "072D";
     $Befehl["RegisterCount"] = "0002";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 8 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 8 );
     }
     $aktuelleDaten["Batteriemodus"] = hexdec( substr( $rc, 6, 4 ));
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    Log::write( $rc, "   ", 9 );
     $Befehl["RegisterAddress"] = "074B";
     $Befehl["RegisterCount"] = "0003";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
       $i++;
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
-    $aktuelleDaten["EMS-SW-Version"] = $funktionen->hexdecs( substr( $rc, ((hexdec( 0 ) * 4) + 6), 4 )).".".$funktionen->hexdecs( substr( $rc, ((hexdec( 1 ) * 4) + 6), 4 )).".".$funktionen->hexdecs( substr( $rc, ((hexdec( 2 ) * 4) + 6), 4 ));
+    Log::write( $rc, "   ", 9 );
+    $aktuelleDaten["EMS-SW-Version"] = Utils::hexdecs( substr( $rc, ((hexdec( 0 ) * 4) + 6), 4 )).".".Utils::hexdecs( substr( $rc, ((hexdec( 1 ) * 4) + 6), 4 )).".".Utils::hexdecs( substr( $rc, ((hexdec( 2 ) * 4) + 6), 4 ));
     $aktuelleDaten["Firmware"] = $aktuelleDaten["EMS-SW-Version"];
-    $funktionen->log_schreiben( "Software Version:  ".$aktuelleDaten["EMS-SW-Version"], "   ", 5 );
+    Log::write( "Software Version:  ".$aktuelleDaten["EMS-SW-Version"], "   ", 5 );
     $Befehl["RegisterAddress"] = "0800";
     $Befehl["RegisterCount"] = "0001";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
     }
-    $aktuelleDaten["Netzeinspeisung"] = $funktionen->hexdecs( substr( $rc, ((hexdec( "00" ) * 4) + 6), 4 ));
-    $aktuelleDaten["Netzeinspeisung_Prozent"] = $funktionen->hexdecs( substr( $rc, ((hexdec( "00" ) * 4) + 6), 4 ));
-    $funktionen->log_schreiben( $rc, "   ", 9 );
+    $aktuelleDaten["Netzeinspeisung"] = Utils::hexdecs( substr( $rc, ((hexdec( "00" ) * 4) + 6), 4 ));
+    $aktuelleDaten["Netzeinspeisung_Prozent"] = Utils::hexdecs( substr( $rc, ((hexdec( "00" ) * 4) + 6), 4 ));
+    Log::write( $rc, "   ", 9 );
     $Befehl["RegisterAddress"] = "0743";
     $Befehl["RegisterCount"] = "0008";
-    $CRC = bin2hex( $funktionen->crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
-    $rc = $funktionen->alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
+    $CRC = bin2hex( Utils::crc16( hex2bin( $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"] )));
+    $rc = Delta::alpha_auslesen( $USB1, $Befehl["DeviceID"].$Befehl["BefehlFunctionCode"].$Befehl["RegisterAddress"].$Befehl["RegisterCount"].$CRC );
     if ($rc == false) {
-      $funktionen->log_schreiben( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
+      Log::write( "Datenfehler! Adresse: ".$Befehl["RegisterAddress"], "   ", 7 );
       $i++;
       continue;
     }
-    $funktionen->log_schreiben( $rc, "   ", 9 );
-    $aktuelleDaten["Seriennummer"] = $funktionen->Hex2String( substr( $rc, 6, 30 ));
+    Log::write( $rc, "   ", 9 );
+    $aktuelleDaten["Seriennummer"] = Utils::Hex2String( substr( $rc, 6, 30 ));
     $aktuelleDaten["Produkt"] = "SMILE5";
-    $funktionen->log_schreiben( "Produkt:  ".$aktuelleDaten["Produkt"], "   ", 5 );
+    Log::write( "Produkt:  ".$aktuelleDaten["Produkt"], "   ", 5 );
   }
   else {
-    $funktionen->log_schreiben( "Softwarestand unbekannt. Gerät kann nicht ausgelesen werden!", "   ", 2 );
+    Log::write( "Softwarestand unbekannt. Gerät kann nicht ausgelesen werden!", "   ", 2 );
     goto Ausgang;
 
     /**********/
@@ -757,7 +746,7 @@ do {
   //  ENDE REGLER AUSLESEN      ENDE REGLER AUSLESEN      ENDE REGLER AUSLESEN
   ****************************************************************************/
   $aktuelleDaten["PV_Leistung"] = ($aktuelleDaten["PV_Leistung1"] + $aktuelleDaten["PV_Leistung2"] + $aktuelleDaten["PV_Leistung3"] + $aktuelleDaten["PV_Leistung4"] + $aktuelleDaten["PV_Leistung5"] + $aktuelleDaten["PV_Leistung6"]);
-  $funktionen->log_schreiben( print_r( $aktuelleDaten, 1 ), "   ", 8 );
+  Log::write( print_r( $aktuelleDaten, 1 ), "   ", 8 );
 
   /**************************************************************************
   //  Falls ein ErrorCode vorliegt, wird er hier in einen lesbaren
@@ -780,8 +769,8 @@ do {
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( "/var/www/html/alpha_ess_math.php" )) {
-    include 'alpha_ess_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists($basedir."/custom/alpha_ess_math.php" )) {
+    include $basedir.'/custom/alpha_ess_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -790,8 +779,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -826,9 +815,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test( );
+      $rc = InfluxDB::influx_remote_test( );
       if ($rc) {
-        $rc = $funktionen->influx_remote( $aktuelleDaten );
+        $rc = InfluxDB::influx_remote( $aktuelleDaten );
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -838,27 +827,27 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
   }
   elseif ($InfluxDB_local) {
-    $rc = $funktionen->influx_local( $aktuelleDaten );
+    $rc = InfluxDB::influx_local( $aktuelleDaten );
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 8 );
+    Log::write( "Schleife ".$i." Ausgang...", "   ", 8 );
     break;
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (9 - (time( ) - $Start));
-    $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+    Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
     if ($Zeitspanne > 0) {
       sleep( $Zeitspanne );
     }
     break;
   }
   else {
-    $funktionen->log_schreiben( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
+    Log::write( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
     sleep( floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1)));
   }
   $i++;
@@ -870,8 +859,8 @@ if (isset($aktuelleDaten["Temperatur"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-    require ($Pfad."/homematic.php");
+    Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -880,13 +869,13 @@ if (isset($aktuelleDaten["Temperatur"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-    require ($Pfad."/meldungen_senden.php");
+    Log::write( "Nachrichten versenden...", "   ", 8 );
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+  Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 }
 else {
-  $funktionen->log_schreiben( "Keine gültigen Daten empfangen.", "!! ", 6 );
+  Log::write( "Keine gültigen Daten empfangen.", "!! ", 6 );
 }
 
 /*****************************************************************************
@@ -906,7 +895,7 @@ if (file_exists( $StatusFile )) {
   ***************************************************************************/
   if (date( "H:i" ) == "00:00" or date( "H:i" ) == "00:01") {
     $rc = file_put_contents( $StatusFile, "0" );
-    $funktionen->log_schreiben( "WattstundenGesamtHeute  gesetzt.", "o- ", 5 );
+    Log::write( "WattstundenGesamtHeute  gesetzt.", "o- ", 5 );
   }
 
   /***************************************************************************
@@ -915,8 +904,8 @@ if (file_exists( $StatusFile )) {
   $whProTag = file_get_contents( $StatusFile );
   $whProTag = ($whProTag + ($aktuelleDaten["PV_Leistung"]) / 60);
   $rc = file_put_contents( $StatusFile, round( $whProTag, 2 ));
-  $funktionen->log_schreiben( "WattstundenGesamtHeute: ".round( $whProTag, 2 ), "   ", 5 );
+  Log::write( "WattstundenGesamtHeute: ".round( $whProTag, 2 ), "   ", 5 );
 }
-Ausgang:$funktionen->log_schreiben( "----------------------   Stop   alpha_ess.php   --------------------- ", "|--", 6 );
+Ausgang:Log::write( "----------------------   Stop   alpha_ess.php   --------------------- ", "|--", 6 );
 return;
 ?>

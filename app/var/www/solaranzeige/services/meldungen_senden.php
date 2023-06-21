@@ -37,15 +37,13 @@
 //  Wenn nicht dan Standort Frankfurt nehmen
 if (isset($Breitengrad)) {
   $breite = $Breitengrad;
-}
-else {
+} else {
   $breite = 50.1143999;
 }
 
 if (isset($Laengengrad)) {
   $laenge = $Laengengrad;
-}
-else {
+} else {
   $laenge=8.6585178;
 }
 
@@ -61,7 +59,7 @@ if ($InfluxDB_local === true) {
   //
   //  Wann ist Mitternacht?
   $HeuteMitternacht = strtotime('today midnight');
-  $funktionen->log_schreiben("Mitternacht: ".date("d.m.Y H:i:s",$HeuteMitternacht)." Timestamp: ".$HeuteMitternacht,"*  ",9);
+  Log::write("Mitternacht: ".date("d.m.Y H:i:s",$HeuteMitternacht)." Timestamp: ".$HeuteMitternacht,"*  ",9);
 
   //
   //  Sonnenaufgang und Sonnenuntergang berechnen (default Standort ist Frankfurt)
@@ -96,9 +94,9 @@ if ($InfluxDB_local === true) {
   //  $rc[0] = Timestamp an dem die Meldung gesendet wurde.
   //  $rc[1] = Anzahl der gesendeten Meldungen.
   //  $rc[2] = Meldungsname. In diesem Fall "Ertrag"
-  $rc = $funktionen->po_messageControl("Sonnenuntergang",0,$GeraeteNummer);
+  $rc = PushoverTools::po_messageControl("Sonnenuntergang",0,$GeraeteNummer);
 
-  $funktionen->log_schreiben("Eintrag: Sonnenuntergang  Datum: ".date("d.m.Y",$rc[0])." Anzahl: ".$rc[1],"*  ",8);
+  Log::write("Eintrag: Sonnenuntergang  Datum: ".date("d.m.Y",$rc[0])." Anzahl: ".$rc[1],"*  ",8);
 
   if ($rc === false or date("Ymd",$rc[0]) <> date("Ymd")) {
 
@@ -119,13 +117,13 @@ if ($InfluxDB_local === true) {
     if (($Sonnenuntergang + 600) < time()) {
     // if (1 == 1) {
       // Die Influx Datenbank abfragen, ob ein bestimmtes Ereignis passiert ist.
-      $rc = $funktionen->po_influxdb_lesen($aktuelleDaten);
-      $funktionen->log_schreiben(var_export($rc,1),"*  ",9);
-      $funktionen->log_schreiben($aktuelleDaten["Query"],"*  ",9);
+      $rc = PushoverTools::po_influxdb_lesen($aktuelleDaten);
+      Log::write(var_export($rc,1),"*  ",9);
+      Log::write($aktuelleDaten["Query"],"*  ",9);
       $Meldungen["Wh_Heute"] = $rc["results"][0]["series"][0]["values"][0][1];
       $Meldungen["Timestamp"] = $rc["results"][0]["series"][0]["values"][0][0];
 
-      $funktionen->log_schreiben(print_r($Meldungen,1),"*  ",9);
+      Log::write(print_r($Meldungen,1),"*  ",9);
 
       //  Step 3
       //  Die Nachricht, die gesendet werden soll, wird hier zusammen
@@ -141,22 +139,22 @@ if ($InfluxDB_local === true) {
         // if (1==1) {
         //  10 Minuten nach Sonnenuntergang.
         //  Ertrag senden ...
-        $funktionen->log_schreiben(strip_tags($Nachricht),"*  ",6);
+        Log::write(strip_tags($Nachricht),"*  ",6);
         //  Step 5
         //  Soll die Nachricht an mehrere Empfänger gesendet werden?
         for ($Ui = 1; $Ui <= count($User_Key); $Ui++) {
           //  Die Nachricht wird an alle Empfänger gesendet, die in der
           //  user.config.php stehen.
-          $rc = $funktionen->po_send_message($API_Token,$User_Key[$Ui],$Nachricht);
+          $rc = PushoverTools::po_send_message($API_Token,$User_Key[$Ui],$Nachricht);
           if ($rc) {
-            $funktionen->log_schreiben("Nachricht wurde versendet an User_Key[".$Ui."]","*  ",6);
+            Log::write("Nachricht wurde versendet an User_Key[".$Ui."]","*  ",6);
           }
         }
         //  Step 6
         //  Es wird festgehalten, wann die Nachricht gesendet wurde und eventuell
         //  das wievielte mal. (2. Parameter) In dem Beispiel gibt es nur eine
         //  Meldung pro Tag.
-        $rc = $funktionen->po_messageControl("Sonnenuntergang",1);
+        $rc = PushoverTools::po_messageControl("Sonnenuntergang",1);
       }
     }
   }
@@ -182,9 +180,9 @@ if ($InfluxDB_local === true) {
   //  FehlermeldungText ist noch nicht ueberall gefüllt. 
   //  Zur Zeit nur ein Dummy.
   //**************************************************************************
-  $rc = $funktionen->po_messageControl("Fehlermeldung",0,$GeraeteNummer);
+  $rc = PushoverTools::po_messageControl("Fehlermeldung",0,$GeraeteNummer);
   //  Wurde die Meldung heute schon gesendet?
-  $funktionen->log_schreiben("Eintrag: Fehlermeldung  Datum: ".date("d.m.Y",$rc[0])." Anzahl: ".$rc[1],"*  ",6);
+  Log::write("Eintrag: Fehlermeldung  Datum: ".date("d.m.Y",$rc[0])." Anzahl: ".$rc[1],"*  ",6);
 
   if ($rc === false or date("YmdH",$rc[0]) <> date("YmdH")) {
     //  Es wird jede Stunde eine Fehlermeldung gesendet, solange sie nicht
@@ -196,18 +194,18 @@ if ($InfluxDB_local === true) {
       $Nachricht = "Solaranzeige Gerät [".$GeraeteNummer."] <br>".$FehlermeldungText;
       // Wurde das Ereignis schon mehrfach gespeichert?
 
-      $funktionen->log_schreiben(strip_tags($Nachricht),"*  ",7);
+      Log::write(strip_tags($Nachricht),"*  ",7);
       //  Soll die Nachricht an mehrere Empfänger gesendet werden?
       for ($Ui = 1; $Ui <= count($User_Key); $Ui++) {
         //  Die Nachricht wird an alle Empfänger gesendet, die in der
         //  user.config.php stehen.
-        $rc = $funktionen->po_send_message($API_Token,$User_Key[$Ui],$Nachricht);
+        $rc = PushoverTools::po_send_message($API_Token,$User_Key[$Ui],$Nachricht);
         if ($rc) {
-          $funktionen->log_schreiben("Nachricht wurde versendet an User_Key[".$Ui."]","*  ",6);
+          Log::write("Nachricht wurde versendet an User_Key[".$Ui."]","*  ",6);
         }
       }
       //  Es wird festgehalten, wann die Nachricht gesendet wurde
-      $rc = $funktionen->po_messageControl("Fehlermeldung",1,$GeraeteNummer);
+      $rc = PushoverTools::po_messageControl("Fehlermeldung",1,$GeraeteNummer);
     }
   }
   /****************************************************************************
@@ -236,9 +234,8 @@ if ($InfluxDB_local === true) {
 
 
 
-}
-else {
-  $funktionen->log_schreiben("Die lokale Datenbank ist ausgeschaltet. Die Messengerdienste stehen dadurch nicht zur Verfügung.","*  ",3);
+} else {
+  Log::write("Die lokale Datenbank ist ausgeschaltet. Die Messengerdienste stehen dadurch nicht zur Verfügung.","*  ",3);
 }
 
 

@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -27,16 +26,6 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -46,8 +35,8 @@ $RemoteDaten = true;
 $Header ="";
 $Device = "WB"; // WB = Wallbox
 $Start = time( ); // Timestamp festhalten
-$funktionen->log_schreiben( "-------------   Start  hardy_barth.php   --------------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "-------------   Start  hardy_barth.php   --------------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale( LC_TIME, "de_DE.utf8" );
@@ -62,7 +51,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben( "Hardware Version: ".$Version, "o  ", 8 );
+Log::write( "Hardware Version: ".$Version, "o  ", 8 );
 switch ($Version) {
 
   case "2B":
@@ -86,14 +75,14 @@ switch ($Version) {
 //  pro Ladung zu speichern.
 //
 *****************************************************************************/
-$StatusFile = $Pfad."/database/".$GeraeteNummer.".WhProLadung.txt";
+$StatusFile = $basedir."/database/".$GeraeteNummer.".WhProLadung.txt";
 if (file_exists( $StatusFile )) {
 
   /***************************************************************************
   //  Daten einlesen ...
   ***************************************************************************/
   $aktuelleDaten["WattstundenProLadung"] = file_get_contents( $StatusFile );
-  $funktionen->log_schreiben( "WattstundenProLadung: ".round( $aktuelleDaten["WattstundenProLadung"], 2 ), "   ", 8 );
+  Log::write( "WattstundenProLadung: ".round( $aktuelleDaten["WattstundenProLadung"], 2 ), "   ", 8 );
   if (empty($aktuelleDaten["WattstundenProLadung"])) {
     $aktuelleDaten["WattstundenProLadung"] = 0;
   }
@@ -105,7 +94,7 @@ else {
   ***************************************************************************/
   $rc = file_put_contents( $StatusFile, "0" );
   if ($rc === false) {
-    $funktionen->log_schreiben( "Konnte die Datei WhProLadung.txt nicht anlegen.", "XX ", 5 );
+    Log::write( "Konnte die Datei WhProLadung.txt nicht anlegen.", "XX ", 5 );
   }
 }
 if (empty($WR_Adresse)) {
@@ -116,8 +105,8 @@ else {
 }
 $COM = fsockopen( $WR_IP, $WR_Port, $errno, $errstr, 5 );
 if (!is_resource( $COM )) {
-  $funktionen->log_schreiben( "Kein Kontakt zur Wallbox ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
-  $funktionen->log_schreiben( "Exit.... ", "XX ", 3 );
+  Log::write( "Kein Kontakt zur Wallbox ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
+  Log::write( "Exit.... ", "XX ", 3 );
   goto Ausgang;
 }
 
@@ -127,11 +116,11 @@ if (!is_resource( $COM )) {
 //
 //
 ***************************************************************************/
-if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
-  $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
-  $Inhalt = file_get_contents( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+if (file_exists( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" )) {
+  Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
+  $Inhalt = file_get_contents( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
   $Befehle = explode( "\n", trim( $Inhalt ));
-  $funktionen->log_schreiben( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
+  Log::write( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
   for ($i = 0; $i < count( $Befehle ); $i++) {
     if ($i > 6) {
       //  Es werden nur maximal 6 Befehle pro Datei verarbeitet!
@@ -146,16 +135,16 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
     //  QPI ist nur zum Testen ...
     //  Siehe Dokument:  Befehle_senden.pdf
     *********************************************************************************/
-    if (file_exists( $Pfad."/befehle.ini.php" )) {
-      $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 9 );
-      $INI_File = parse_ini_file( $Pfad.'/befehle.ini.php', true );
+    if (file_exists( $basedir."/config/befehle.ini" )) {
+      Log::write( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 9 );
+      $INI_File = parse_ini_file( $basedir."/config/befehle.ini", true );
       $Regler60 = $INI_File["Regler60"];
-      $funktionen->log_schreiben( "Befehlsliste: ".print_r( $Regler60, 1 ), "|- ", 8 );
+      Log::write( "Befehlsliste: ".print_r( $Regler60, 1 ), "|- ", 8 );
       foreach ($Regler60 as $Template) {
         $Subst = $Befehle[$i];
         $l = strlen( $Template );
         for ($p = 1; $p < $l;++$p) {
-          $funktionen->log_schreiben( "Template: ".$Template." Subst: ".$Subst." l: ".$l, "|- ", 10 );
+          Log::write( "Template: ".$Template." Subst: ".$Subst." l: ".$l, "|- ", 10 );
           if ($Template[$p] == "#") {
             $Subst[$p] = "#";
           }
@@ -165,70 +154,70 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
         }
       }
       if ($Template != $Subst) {
-        $funktionen->log_schreiben( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
-        $funktionen->log_schreiben( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
+        Log::write( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
+        Log::write( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
         break;
       }
     }
     else {
-      $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
+      Log::write( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
       break;
     }
     $Teile = explode( "_", $Befehle[$i] );
     $Antwort = "";
     // Auf "manual" Mode umschalten! Damit Befehle entgegemngenommen werden.
     $http_daten = array("URL" => "http://".$WR_IP."/api/v1/pvmode", "Port" => $WR_Port, "Header" => array('Content-Type: application/x-www-form-urlencoded', 'Accept: application/json'), "Data" => "pvmode=manual");
-    $Daten = $funktionen->http_read( $http_daten );
-    $funktionen->log_schreiben( "Wallbox auf PVMode = manual  umschalten", "   ", 7 );
+    $Daten = Utils::http_read( $http_daten );
+    Log::write( "Wallbox auf PVMode = manual  umschalten", "   ", 7 );
     // Hier wird der Befehl gesendet...
     // -----------------------------------------------------
     // $Teile[0] , $Teile[1]
     if ($Teile[0] == "start") {
       $http_daten = array("URL" => "http://".$WR_IP."/api/v1/chargecontrols/".$WBID."/start", "Port" => $WR_Port, "Header" => array('Content-Type: application/json', 'Accept: application/json', 'Content-length: 0'), "Data" => "");
-      $Daten = $funktionen->http_read( $http_daten );
+      $Daten = Utils::http_read( $http_daten );
       if (isset($Daten["errors"]["message"])) {
-        $funktionen->log_schreiben( "Fehler!: ".$Daten["errors"]["message"], "   ", 1 );
+        Log::write( "Fehler!: ".$Daten["errors"]["message"], "   ", 1 );
       }
-      $funktionen->log_schreiben( "Wallbox: Ladung gestartet.", "   ", 7 );
+      Log::write( "Wallbox: Ladung gestartet.", "   ", 7 );
     }
     elseif ($Teile[0] == "stop") {
       $http_daten = array("URL" => "http://".$WR_IP."/api/v1/chargecontrols/".$WBID."/stop", "Port" => $WR_Port, "Header" => array('Content-Type: application/json', 'Accept: application/json', 'Content-length: 0'), "Data" => "");
-      $Daten = $funktionen->http_read( $http_daten );
+      $Daten = Utils::http_read( $http_daten );
       if (isset($Daten["errors"]["message"])) {
-        $funktionen->log_schreiben( "Fehler!: ".$Daten["errors"]["message"], "   ", 1 );
+        Log::write( "Fehler!: ".$Daten["errors"]["message"], "   ", 1 );
       }
-      $funktionen->log_schreiben( "Wallbox: Ladung unterbrochen.", "   ", 7 );
+      Log::write( "Wallbox: Ladung unterbrochen.", "   ", 7 );
     }
     elseif ($Teile[0] == "ampere") {
       $http_daten = array("URL" => "http://".$WR_IP."/api/v1/pvmode/manual/ampere", "Port" => $WR_Port, "Header" => array('Content-Type: application/x-www-form-urlencoded', 'Accept: application/json'), "Data" => "manualmodeamp=".$Teile[1]);
-      $Daten = $funktionen->http_read( $http_daten );
-      $funktionen->log_schreiben( "Wallbox: Stromstärke eingestellt auf ".$Teile[1]." Ampere", "   ", 7 );
+      $Daten = Utils::http_read( $http_daten );
+      Log::write( "Wallbox: Stromstärke eingestellt auf ".$Teile[1]." Ampere", "   ", 7 );
     }
     // -----------------------------------------------------
   }
-  $rc = unlink( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+  $rc = unlink( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
   if ($rc) {
-    $funktionen->log_schreiben( "Datei  /../pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 9 );
+    Log::write( "Datei  /../pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 9 );
   }
   sleep( 3 );
 }
 else {
-  $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
+  Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
 }
 $i = 1;
 do {
-  $funktionen->log_schreiben( "Die Daten werden ausgelesen...", "+  ", 9 );
+  Log::write( "Die Daten werden ausgelesen...", "+  ", 9 );
 
   /****************************************************************************
   //  Ab hier wird die Wallbox ausgelesen.
   //
   ****************************************************************************/
   $URL = "api/v1/meters/".$WBID."/";
-  $Daten = $funktionen->read( $WR_IP, $WR_Port, $URL );
+  $Daten = Utils::read( $WR_IP, $WR_Port, $URL );
   if ($Daten === false) {
-    $funktionen->log_schreiben( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
+    Log::write( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
     if ($i >= 2) {
-      $funktionen->log_schreiben( var_export( $funktionen->read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
+      Log::write( var_export( Utils::read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
       break;
     }
     $i++;
@@ -274,7 +263,7 @@ do {
     }
     $aktuelleDaten["PVMode"] = $Daten["secc"]["port0"]["salia"]["chargemode"];
 
-    $funktionen->log_schreiben( var_export( $funktionen->read( $WR_IP, $WR_Port, "api/", $Header ), 1 ), "o=>", 9 );
+    Log::write( var_export( Utils::read( $WR_IP, $WR_Port, "api/", $Header ), 1 ), "o=>", 9 );
 
   }
   else {
@@ -298,11 +287,11 @@ do {
     $aktuelleDaten["Seriennummer"] = $Daten["meter"]["serial"];
     $aktuelleDaten["Protokoll-Version"] = $Daten["protocol-version"];
     $URL = "api/v1/chargecontrols/".$WBID;
-    $Daten = $funktionen->read( $WR_IP, $WR_Port, $URL );
+    $Daten = Utils::read( $WR_IP, $WR_Port, $URL );
     if ($Daten === false) {
-      $funktionen->log_schreiben( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
+      Log::write( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
       if ($i >= 2) {
-        $funktionen->log_schreiben( var_export( $funktionen->read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
+        Log::write( var_export( Utils::read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
         break;
       }
       $i++;
@@ -330,22 +319,22 @@ do {
       $aktuelleDaten["Connected"] = 1;
     }
     $URL = "api/v1/rfidtags";
-    $Daten = $funktionen->read( $WR_IP, $WR_Port, $URL );
+    $Daten = Utils::read( $WR_IP, $WR_Port, $URL );
     if ($Daten === false) {
-      $funktionen->log_schreiben( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
+      Log::write( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
       if ($i >= 2) {
-        $funktionen->log_schreiben( var_export( $funktionen->read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
+        Log::write( var_export( Utils::read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
         break;
       }
       $i++;
       continue;
     }
     $URL = "api/v1/pvmode";
-    $Daten = $funktionen->read( $WR_IP, $WR_Port, $URL );
+    $Daten = Utils::read( $WR_IP, $WR_Port, $URL );
     if ($Daten === false) {
-      $funktionen->log_schreiben( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
+      Log::write( "Parameter sind falsch... nochmal lesen.", "   ", 3 );
       if ($i >= 2) {
-        $funktionen->log_schreiben( var_export( $funktionen->read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
+        Log::write( var_export( Utils::read( $WR_IP, $WR_Port, $URL, $Header ), 1 ), "o=>", 9 );
         break;
       }
       $i++;
@@ -369,13 +358,13 @@ do {
   $aktuelleDaten["Wh_Ladevorgang"] = round( $aktuelleDaten["WattstundenProLadung"] );
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"] + 10);
 
-  $funktionen->log_schreiben( var_export( $aktuelleDaten, 1 ), "   ", 8 );
+  Log::write( var_export( $aktuelleDaten, 1 ), "   ", 8 );
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( "/var/www/html/hardy_barth_math.php" )) {
-    include 'hardy_barth_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists($basedir."/custom/hardy_barth_math.php" )) {
+    include $basedir.'/custom/hardy_barth_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -384,13 +373,13 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+    require($basedir."/services/mqtt_senden.php");
   }
   if ($aktuelleDaten["Connected"] == 0 and $aktuelleDaten["WattstundenProLadung"] > 0) {
     $aktuelleDaten["WattstundenProLadung"] = 0; // Zähler pro Ladung zurücksetzen
     $rc = file_put_contents( $StatusFile, "0" );
-    $funktionen->log_schreiben( "WattstundenProLadung gelöscht.", "    ", 5 );
+    Log::write( "WattstundenProLadung gelöscht.", "    ", 5 );
   }
 
   /****************************************************************************
@@ -426,9 +415,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test( );
+      $rc = InfluxDB::influx_remote_test( );
       if ($rc) {
-        $rc = $funktionen->influx_remote( $aktuelleDaten );
+        $rc = InfluxDB::influx_remote( $aktuelleDaten );
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -438,27 +427,27 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
   }
   else {
-    $rc = $funktionen->influx_local( $aktuelleDaten );
+    $rc = InfluxDB::influx_local( $aktuelleDaten );
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time( ) - $Start));
-    $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+    Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
     if ($Zeitspanne > 0) {
       sleep( $Zeitspanne );
     }
     break;
   }
   else {
-    $funktionen->log_schreiben( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
+    Log::write( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
     sleep( floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 5 );
+    Log::write( "Schleife ".$i." Ausgang...", "   ", 5 );
     break;
   }
   $i++;
@@ -471,8 +460,8 @@ if (1 == 1) {
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
     $aktuelleDaten["Solarspannung"] = $aktuelleDaten["Solarspannung1"];
-    $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-    require ($Pfad."/homematic.php");
+    Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -481,13 +470,13 @@ if (1 == 1) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-    require ($Pfad."/meldungen_senden.php");
+    Log::write( "Nachrichten versenden...", "   ", 8 );
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+  Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 }
 else {
-  $funktionen->log_schreiben( "Keine gültigen Daten empfangen.", "!! ", 6 );
+  Log::write( "Keine gültigen Daten empfangen.", "!! ", 6 );
 }
 fclose( $COM );
 
@@ -503,8 +492,8 @@ if (file_exists( $StatusFile ) and $aktuelleDaten["Connected"] == 1) {
   $whProLadung = file_get_contents( $StatusFile );
   $whProLadung = ($whProLadung + ($aktuelleDaten["Wh_Leistung_aktuell"] / 60));
   $rc = file_put_contents( $StatusFile, $whProLadung );
-  $funktionen->log_schreiben( "WattstundenProLadung: ".round( $whProLadung ), "   ", 5 );
+  Log::write( "WattstundenProLadung: ".round( $whProLadung ), "   ", 5 );
 }
-Ausgang:$funktionen->log_schreiben( "-------------   Stop   hardy_arth.php   ---------------------- ", "|--", 6 );
+Ausgang:Log::write( "-------------   Stop   hardy_arth.php   ---------------------- ", "|--", 6 );
 return;
 ?>

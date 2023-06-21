@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 /****************************************************************************/
 //  Solaranzeige Projekt             Copyright (C) [2015-2016]  [Ulrich Kunz]
@@ -30,18 +29,6 @@
 //
 //
 /****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
-
-
-require_once($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -66,14 +53,14 @@ else {
 }
 
 $Startzeit = time();  // Timestamp festhalten
-$funktionen->log_schreiben("-------------   Start  huawei_LAN.php  ----------------------------- ","|--",6);
+Log::write("-------------   Start  huawei_LAN.php  ----------------------------- ","|--",6);
 
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 
 setlocale(LC_TIME,"de_DE.utf8");
-$funktionen->log_schreiben( "Huawei: ".$WR_IP." Port: ".$WR_Port." GeräteID: ".$WR_Adresse, "   ", 7 ); 
+Log::write( "Huawei: ".$WR_IP." Port: ".$WR_Port." GeräteID: ".$WR_Adresse, "   ", 7 ); 
 
 //  Hardware Version ermitteln.
 $Teile =  explode(" ",$Platine);
@@ -87,7 +74,7 @@ if ($Teile[1] == "Pi") {
   }
 }
 
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",8);
+Log::write("Hardware Version: ".$Version,"o  ",8);
 
 switch($Version) {
   case "2B":
@@ -104,8 +91,8 @@ switch($Version) {
 
 $COM1 = fsockopen($WR_IP, $WR_Port, $errno, $errstr, 5);   // 5 = Timeout in Sekunden
 if (!is_resource($COM1)) {
-  $funktionen->log_schreiben("Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
-  $funktionen->log_schreiben("Exit.... ","XX ",9);
+  Log::write("Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
+  Log::write("Exit.... ","XX ",9);
   goto Ausgang;
 }
 
@@ -114,7 +101,7 @@ usleep(800000); // normal 800000,   bei Kaskade 500000
 
 $i = 0;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...",">  ",9);
+  Log::write("Die Daten werden ausgelesen...",">  ",9);
   $i++;
   sleep(1);
   /****************************************************************************
@@ -130,40 +117,40 @@ do {
 
   $Timebase = 100000; // Je nach Dongle Firmware zwischen 60000 und 200000
 
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "03", "30000", "51", "Hex", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "03", "30000", "51", "Hex", $Timebase );
   if ($rc == false and $i < 2) {
-    $funktionen->log_schreiben("Fehler! Keine gültigen Daten empfangen. ","   ",5);
+    Log::write("Fehler! Keine gültigen Daten empfangen. ","   ",5);
     continue;
   }
-  $aktuelleDaten["Modell"] = $funktionen->hex2string( substr( $rc["Wert"], 0, 30 ));
-  $aktuelleDaten["Firmware"] =  $funktionen->hex2string( substr( $rc["Wert"], 0, 30 ));
-  $aktuelleDaten["Seriennummer"] = $funktionen->hex2string( substr( $rc["Wert"], 60, 24 ));
-  $aktuelleDaten["PN"] =  $funktionen->hex2string( substr( $rc["Wert"], 100, 24 ));
+  $aktuelleDaten["Modell"] = Utils::hex2string( substr( $rc["Wert"], 0, 30 ));
+  $aktuelleDaten["Firmware"] =  Utils::hex2string( substr( $rc["Wert"], 0, 30 ));
+  $aktuelleDaten["Seriennummer"] = Utils::hex2string( substr( $rc["Wert"], 60, 24 ));
+  $aktuelleDaten["PN"] =  Utils::hex2string( substr( $rc["Wert"], 100, 24 ));
   $aktuelleDaten["ModellID"] = hexdec( substr( $rc["Wert"], 280, 4 ));
-  $funktionen->log_schreiben("Gerätetyp: ".$aktuelleDaten["Modell"]."  Modell ID: ".$aktuelleDaten["ModellID"],">  ",5);
+  Log::write("Gerätetyp: ".$aktuelleDaten["Modell"]."  Modell ID: ".$aktuelleDaten["ModellID"],">  ",5);
   $aktuelleDaten["Anz_PV_Strings"] = hexdec( substr( $rc["Wert"], 284, 4 ));
   $aktuelleDaten["Anz_MPP_Trackers"] = hexdec( substr( $rc["Wert"], 288, 4 ));
 
   sleep(1);
 
   if ($rc == false and $i >= 2) {
-    $funktionen->log_schreiben("Fehler! Gerät antwortet nicht.","   ",5);
-    $funktionen->log_schreiben(print_r($rc,1),"   ",5);
+    Log::write("Fehler! Gerät antwortet nicht.","   ",5);
+    Log::write(print_r($rc,1),"   ",5);
     goto Ausgang;
   }
 
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "03", "32000", "74", "Hex", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "03", "32000", "74", "Hex", $Timebase );
   if ($rc == false and $i < 2) {
-    $funktionen->log_schreiben("Fehler! Keine gültigen Daten empfangen. ","   ",5);
+    Log::write("Fehler! Keine gültigen Daten empfangen. ","   ",5);
     continue;
   }
 
   $aktuelleDaten["Status1"] = hexdec( substr( $rc["Wert"], 0, 4 ));
-  $aktuelleDaten["Status1Bit"] = $funktionen->d2b(hexdec(substr( $rc["Wert"], 0, 4 )));
+  $aktuelleDaten["Status1Bit"] = Utils::d2b(hexdec(substr( $rc["Wert"], 0, 4 )));
   $aktuelleDaten["Alarm1"] =  hexdec( substr( $rc["Wert"], 32, 4 ));
-  $aktuelleDaten["Alarm1Bit"] = $funktionen->d2b(hexdec(substr( $rc["Wert"], 32, 4 )));
+  $aktuelleDaten["Alarm1Bit"] = Utils::d2b(hexdec(substr( $rc["Wert"], 32, 4 )));
 
-  $funktionen->log_schreiben("Alarm 1 Bits: ".$aktuelleDaten["Alarm1Bit"],">  ",8);
+  Log::write("Alarm 1 Bits: ".$aktuelleDaten["Alarm1Bit"],">  ",8);
   $aktuelleDaten["PV_Leistung"] = 0;
 
 
@@ -171,21 +158,21 @@ do {
     $aktuelleDaten["PV".$j."_Spannung"] = 0;
     $aktuelleDaten["PV".$j."_Strom"] = 0;
 
-    $aktuelleDaten["PV".$j."_Spannung"] = $funktionen->hexdecs( substr( $rc["Wert"], 56+($j*8), 4 ))/10;
-    $aktuelleDaten["PV".$j."_Strom"] = $funktionen->hexdecs( substr( $rc["Wert"], 60+($j*8), 4 ))/100;
+    $aktuelleDaten["PV".$j."_Spannung"] = Utils::hexdecs( substr( $rc["Wert"], 56+($j*8), 4 ))/10;
+    $aktuelleDaten["PV".$j."_Strom"] = Utils::hexdecs( substr( $rc["Wert"], 60+($j*8), 4 ))/100;
 
     $aktuelleDaten["PV".$j."_Leistung"] = round(($aktuelleDaten["PV".$j."_Strom"] * $aktuelleDaten["PV".$j."_Spannung"]),2);
 
     $aktuelleDaten["PV_Leistung"] = round(($aktuelleDaten["PV_Leistung"] + ($aktuelleDaten["PV".$j."_Strom"] * $aktuelleDaten["PV".$j."_Spannung"])),2);
   }
 
-  $aktuelleDaten["AC_Eingangsleistung"] = $funktionen->hexdecs( substr( $rc["Wert"], 256, 8 ));
+  $aktuelleDaten["AC_Eingangsleistung"] = Utils::hexdecs( substr( $rc["Wert"], 256, 8 ));
   $aktuelleDaten["AC_Spannung_R"] = (hexdec( substr( $rc["Wert"], 276, 4 ))/10);
   $aktuelleDaten["AC_Spannung_S"] = (hexdec( substr( $rc["Wert"], 280, 4 ))/10);
   $aktuelleDaten["AC_Spannung_T"] = (hexdec( substr( $rc["Wert"], 284, 4 ))/10);
-  $aktuelleDaten["AC_Leistung"] = $funktionen->hexdecs( substr( $rc["Wert"], 320, 8 ));
+  $aktuelleDaten["AC_Leistung"] = Utils::hexdecs( substr( $rc["Wert"], 320, 8 ));
   $aktuelleDaten["AC_Frequenz"] = (hexdec( substr( $rc["Wert"], 340, 4 ))/100);
-  $aktuelleDaten["Effizienz"] = ($funktionen->hexdecs( substr( $rc["Wert"], 344, 4 ))/100);
+  $aktuelleDaten["Effizienz"] = (Utils::hexdecs( substr( $rc["Wert"], 344, 4 ))/100);
   $aktuelleDaten["Temperatur"] = (hexdec( substr( $rc["Wert"], 348, 4 ))/10);
   $aktuelleDaten["DeviceStatus"] = hexdec( substr( $rc["Wert"], 356, 4 ));
   $aktuelleDaten["FehlerCode"] = hexdec( substr( $rc["Wert"], 360, 4 ));
@@ -195,20 +182,20 @@ do {
 
 
   sleep(1);
-  $rc = $funktionen->modbus_tcp_lesen( $COM1, $WR_ID, "03", "37000", "7D", "Hex", $Timebase );
+  $rc = ModBus::modbus_tcp_lesen( $COM1, $WR_ID, "03", "37000", "7D", "Hex", $Timebase );
   if ($rc == false and $i < 2) {
-    $funktionen->log_schreiben("Fehler! Keine gültigen Daten empfangen. ","   ",5);
+    Log::write("Fehler! Keine gültigen Daten empfangen. ","   ",5);
     continue;
   }
   $aktuelleDaten["Batterie_Status"] = hexdec( substr( $rc["Wert"], 0, 4 ));
   if ($aktuelleDaten["Batterie_Status"] == 2 ) {
-    $aktuelleDaten["Batterie_Leistung"] = $funktionen->hexdecs( substr( $rc["Wert"], 4, 8 ));
+    $aktuelleDaten["Batterie_Leistung"] = Utils::hexdecs( substr( $rc["Wert"], 4, 8 ));
   }
   else {
     $aktuelleDaten["Batterie_Leistung"] = 0;
   }
   $aktuelleDaten["SOC"] = (hexdec( substr( $rc["Wert"], 16, 4 ))/10);
-  $aktuelleDaten["Einspeisung_Bezug"] = $funktionen->hexdecs( substr( $rc["Wert"], 452, 8 ));
+  $aktuelleDaten["Einspeisung_Bezug"] = Utils::hexdecs( substr( $rc["Wert"], 452, 8 ));
   $aktuelleDaten["WattstundengesamtExport"] = (hexdec( substr( $rc["Wert"], 476, 8 ))*10);
   $aktuelleDaten["WattstundengesamtImport"] = (hexdec( substr( $rc["Wert"], 484, 8 ))*10);
 
@@ -260,14 +247,14 @@ do {
   $aktuelleDaten["Produkt"]  = $aktuelleDaten["Modell"];
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"]+10);
 
-  $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",8);
+  Log::write(var_export($aktuelleDaten,1),"   ",8);
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/huawei_LAN_math.php")) {
-    include 'huawei_LAN_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/huawei_LAN_math.php")) {
+    include $basedir.'/custom/huawei_LAN_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
 
@@ -278,8 +265,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT and strtoupper($MQTTAuswahl) != "OPENWB") {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -316,9 +303,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -328,17 +315,17 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
 
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (9 - (time() - $Startzeit));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
     if ($Zeitspanne > 0) {
       // sleep($Zeitspanne);
       // Der Huawei mit sDongle ist sehr langsam. Deshalb keine Pause.
@@ -347,13 +334,13 @@ do {
   }
   else {
     if (floor(((9*$i) - (time() - $Startzeit)) / ($Wiederholungen - $i+1)) > 0) {
-      $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor(((9*$i) - (time() - $Startzeit))/($Wiederholungen-$i+1))),"   ",3);
+      Log::write("Schleife: ".($i)." Zeitspanne: ".(floor(((9*$i) - (time() - $Startzeit))/($Wiederholungen-$i+1))),"   ",3);
       sleep(floor(((9*$i) - (time() - $Startzeit)) / ($Wiederholungen - $i+1)));
     }
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben("OK. Daten gelesen.","   ",9);
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",8);
+    Log::write("OK. Daten gelesen.","   ",9);
+    Log::write("Schleife ".$i." Ausgang...","   ",8);
     break;
   }
 } while (($Startzeit + 56) > time());
@@ -367,8 +354,8 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-    require($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -377,20 +364,20 @@ if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-    require($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...","   ",8);
+    require($basedir."/services/meldungen_senden.php");
   }
 
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);    
+  Log::write("OK. Datenübertragung erfolgreich.","   ",7);    
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.","!! ",6);
+  Log::write("Keine gültigen Daten empfangen.","!! ",6);
 }
 
 Ausgang:
 
 
-$funktionen->log_schreiben("-------------   Stop   huawei_LAN.php    --------------------------- ","|--",6);
+Log::write("-------------   Stop   huawei_LAN.php    --------------------------- ","|--",6);
 
 return;
 

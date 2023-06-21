@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -26,16 +25,6 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -44,8 +33,8 @@ $Tracelevel = 7; //  1 bis 10  10 = Debug
 $RemoteDaten = true;
 $Version = "";
 $Start = time( ); // Timestamp festhalten
-$funktionen->log_schreiben( "-------------   Start  keba_wallbox.php   --------------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "-------------   Start  keba_wallbox.php   --------------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 $aktuelleDaten["AnzPhasen"] = 0;
@@ -61,7 +50,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben( "Hardware Version: ".$Version, "o  ", 8 );
+Log::write( "Hardware Version: ".$Version, "o  ", 8 );
 switch ($Version) {
 
   case "2B":
@@ -83,20 +72,20 @@ switch ($Version) {
 if (!($sock = socket_create( AF_INET, SOCK_DGRAM, 0 ))) {
   $errorcode = socket_last_error( );
   $errormsg = socket_strerror( $errorcode );
-  $funktionen->log_schreiben( "UDP Socket konnte nicht geöffnet werden", "XX ", 3 );
-  $funktionen->log_schreiben( "Kein Kontakt zur Wallbox ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
-  $funktionen->log_schreiben( $errormsg, "XX ", 3 );
+  Log::write( "UDP Socket konnte nicht geöffnet werden", "XX ", 3 );
+  Log::write( "Kein Kontakt zur Wallbox ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
+  Log::write( $errormsg, "XX ", 3 );
   goto Ausgang;
 }
 if (!socket_bind( $sock, "0.0.0.0", $WR_Port )) { // Bind an localhost
   $errorcode = socket_last_error( );
   $errormsg = socket_strerror( $errorcode );
-  $funktionen->log_schreiben( "UDP Socket Bind Fehler", "XX ", 3 );
-  $funktionen->log_schreiben( $errormsg, "XX ", 3 );
+  Log::write( "UDP Socket Bind Fehler", "XX ", 3 );
+  Log::write( $errormsg, "XX ", 3 );
   goto Ausgang;
 }
 socket_set_option( $sock, SOL_SOCKET, SO_RCVTIMEO, array("sec" => 1, "usec" => 500000));
-$funktionen->log_schreiben( "UDP Socket Bind OK.", "   ", 8 );
+Log::write( "UDP Socket Bind OK.", "   ", 8 );
 
 /***************************************************************************
 //  Einen Befehl an die Wallbox senden
@@ -105,11 +94,11 @@ $funktionen->log_schreiben( "UDP Socket Bind OK.", "   ", 8 );
 //  Per HTTP  alw_0
 //
 ***************************************************************************/
-if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
-  $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
-  $Inhalt = file_get_contents( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+if (file_exists( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" )) {
+  Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----", "|- ", 5 );
+  $Inhalt = file_get_contents( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
   $Befehle = explode( "\n", trim( $Inhalt ));
-  $funktionen->log_schreiben( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
+  Log::write( "Befehle: ".print_r( $Befehle, 1 ), "|- ", 9 );
   for ($i = 0; $i < count( $Befehle ); $i++) {
     if ($i >= 6) {
       //  Es werden nur maximal 7 Befehle pro Datei verarbeitet!
@@ -124,16 +113,16 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
     //  curr_6000 ist nur zum Testen ...
     //  Siehe Dokument:  Befehle_senden.pdf
     *********************************************************************************/
-    if (file_exists( $Pfad."/befehle.ini.php" )) {
-      $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 9 );
-      $INI_File = parse_ini_file( $Pfad.'/befehle.ini.php', true );
+    if (file_exists( $basedir."/config/befehle.ini" )) {
+      Log::write( "Die Befehlsliste 'befehle.ini.php' ist vorhanden----", "|- ", 9 );
+      $INI_File = parse_ini_file( $basedir."/config/befehle.ini", true );
       $Regler30 = $INI_File["Regler30"];
-      $funktionen->log_schreiben( "Befehlsliste: ".print_r( $Regler30, 1 ), "|- ", 9 );
+      Log::write( "Befehlsliste: ".print_r( $Regler30, 1 ), "|- ", 9 );
       foreach ($Regler30 as $Template) {
         $Subst = $Befehle[$i];
         $l = strlen( $Template );
         for ($p = 1; $p < $l;++$p) {
-          $funktionen->log_schreiben( "Template: ".$Template." Subst: ".$Subst." l: ".$l, "|- ", 10 );
+          Log::write( "Template: ".$Template." Subst: ".$Subst." l: ".$l, "|- ", 10 );
           if ($Template[$p] == "#") {
             $Subst[$p] = "#";
           }
@@ -143,13 +132,13 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
         }
       }
       if ($Template != $Subst) {
-        $funktionen->log_schreiben( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
-        $funktionen->log_schreiben( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
+        Log::write( "Dieser Befehl ist nicht zugelassen. ".$Befehle[$i], "|o ", 3 );
+        Log::write( "Die Verarbeitung der Befehle wird abgebrochen.", "|o ", 3 );
         break;
       }
     }
     else {
-      $funktionen->log_schreiben( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
+      Log::write( "Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----", "|- ", 3 );
       break;
     }
     $Teile = explode( "_", $Befehle[$i] );
@@ -171,22 +160,22 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
       $Teile[1] = $Teile[1]." 00000000000000000000";
     }
     $data = $Teile[0]." ".$Teile[1];
-    $funktionen->log_schreiben( "Befehl wird verarbeitet: ".$data, "    ", 7 );
+    Log::write( "Befehl wird verarbeitet: ".$data, "    ", 7 );
     socket_sendto( $sock, $data, strlen( $data ), 0, $WR_IP, $WR_Port );
     for ($t = 1; $t < 6; $t++) {
       // Receive some data
       $rc = socket_recvfrom( $sock, $buf, 512, 0, $WR_IP, $WR_Port );
       usleep( 500000 );
-      $funktionen->log_schreiben( "Antwort: ".trim( $buf ), "    ", 7 );
+      Log::write( "Antwort: ".trim( $buf ), "    ", 7 );
       if ($buf) {
         $Msg = "Befehl: ".$Teile[0]." ".$Teile[1];
         $Teile2 = explode( ":", $buf );
         if (trim( $Teile2[0] ) == "TCH-OK") {
-          $funktionen->log_schreiben( $Msg." gesendet!", "    ", 7 );
+          Log::write( $Msg." gesendet!", "    ", 7 );
           break;
         }
         elseif (trim( $Teile2[0] ) == "TCH-ERR") {
-          $funktionen->log_schreiben( $Msg." nicht gesendet: ".trim( $Teile[2] ), "    ", 7 );
+          Log::write( $Msg." nicht gesendet: ".trim( $Teile[2] ), "    ", 7 );
           break;
         }
       }
@@ -195,13 +184,13 @@ if (file_exists( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" )) {
   }
   // Buffer leeren...
   $rc = socket_recvfrom( $sock, $buf, 512, 0, $WR_IP, $WR_Port );
-  $rc = unlink( $Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung" );
+  $rc = unlink( "/var/www/pipe/".$GeraeteNummer.".befehl.steuerung" );
   if ($rc) {
-    $funktionen->log_schreiben( "Datei  /../pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 9 );
+    Log::write( "Datei  /../pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.", "    ", 9 );
   }
 }
 else {
-  $funktionen->log_schreiben( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
+  Log::write( "Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----", "|- ", 9 );
 }
 $i = 1;
 do {
@@ -211,7 +200,7 @@ do {
   //
   ***************************************************************************/
   $data = "i";  // Command => i  (Firmware Version)
-  $funktionen->log_schreiben( "Abfrage: ".$data, "   ", 9 );
+  Log::write( "Abfrage: ".$data, "   ", 9 );
   for ($t = 1; $t < 4; $t++) {
     socket_sendto( $sock, $data, strlen( $data ), 0, $WR_IP, $WR_Port );
     // Receive some data
@@ -223,7 +212,7 @@ do {
         $Teile = explode( ":", $buf );
         $aktuelleDaten[trim( $Teile[0], "\"" )] = trim( $Teile[1], "\"" );
         $aktuelleDaten["Modell"] = trim( substr( trim( $Teile[1], "\"" ), 0, 4 ));
-        $funktionen->log_schreiben( "Modell: ".$aktuelleDaten["Modell"], "   ", 3 );
+        Log::write( "Modell: ".$aktuelleDaten["Modell"], "   ", 3 );
         break;
       }
     }
@@ -235,7 +224,7 @@ do {
   }
   $buf = "";
   $data = "report 1"; // Command => report 1 
-  $funktionen->log_schreiben( "Abfrage: ".$data, "   ", 9 );
+  Log::write( "Abfrage: ".$data, "   ", 9 );
   for ($t = 1; $t < 3; $t++) {
     socket_sendto( $sock, $data, strlen( $data ), 0, $WR_IP, $WR_Port );
     //Receive some data
@@ -243,7 +232,7 @@ do {
     usleep( 50000 );
     if ($buf) {
       $Zeile = explode( ",", $buf );
-      $funktionen->log_schreiben( "buf: ".$buf, "   ", 9 );
+      Log::write( "buf: ".$buf, "   ", 9 );
       for ($k = 1; $k < count( $Zeile ); $k++) {
         $Teile = explode( ":", trim( $Zeile[$k] ));
         $Teile[1] = trim( $Teile[1], " " );
@@ -259,10 +248,10 @@ do {
     sleep( 1 );
     break;
   }
-  $funktionen->log_schreiben( "Produkt: ".$aktuelleDaten["Product"], "   ", 3 );
+  Log::write( "Produkt: ".$aktuelleDaten["Product"], "   ", 3 );
   $buf = "";
   $data = "report 2";  // Command => report 2
-  $funktionen->log_schreiben( "Abfrage: ".$data, "   ", 9 );
+  Log::write( "Abfrage: ".$data, "   ", 9 );
   for ($t = 1; $t < 3; $t++) {
     socket_sendto( $sock, $data, strlen( $data ), 0, $WR_IP, $WR_Port );
     //Receive some data
@@ -288,7 +277,7 @@ do {
   }
   $buf = "";
   $data = "report 3";
-  $funktionen->log_schreiben( "Abfrage: ".$data, "   ", 9 );
+  Log::write( "Abfrage: ".$data, "   ", 9 );
   for ($t = 1; $t < 3; $t++) {
     socket_sendto( $sock, $data, strlen( $data ), 0, $WR_IP, $WR_Port );
     //Receive some data
@@ -336,7 +325,7 @@ do {
   ************************************************************/
   $buf = "";
   $data = "report 100";
-  $funktionen->log_schreiben( "Abfrage: ".$data, "   ", 9 );
+  Log::write( "Abfrage: ".$data, "   ", 9 );
   for ($t = 1; $t < 3; $t++) {
     socket_sendto( $sock, $data, strlen( $data ), 0, $WR_IP, $WR_Port );
     //Receive some data
@@ -344,7 +333,7 @@ do {
     usleep( 50000 );
     if ($buf) {
       $Zeile = explode( ",", $buf );
-      $funktionen->log_schreiben( "buf: ".$buf, "   ", 9 );
+      Log::write( "buf: ".$buf, "   ", 9 );
       for ($k = 1; $k < count( $Zeile ); $k++) {
         $Teile = explode( ":", trim( $Zeile[$k] ));
         $Teile[1] = strtr( $Teile[1], "\n}\"", "   " );
@@ -386,7 +375,7 @@ do {
   }
   $FehlermeldungText = "";
 
-  $funktionen->log_schreiben( var_export( $aktuelleDaten, 1 ), "   ", 8 );
+  Log::write( var_export( $aktuelleDaten, 1 ), "   ", 8 );
 
   /****************************************************************************
   //  Die Daten werden für die Speicherung vorbereitet.
@@ -396,13 +385,13 @@ do {
   $aktuelleDaten["Produkt"] = $aktuelleDaten["Product"];
   $aktuelleDaten["WattstundenGesamtHeute"] = ($aktuelleDaten["E pres"] / 10);
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"] + 10);
-  $funktionen->log_schreiben( print_r( $aktuelleDaten, 1 ), "*- ", 9 );
+  Log::write( print_r( $aktuelleDaten, 1 ), "*- ", 9 );
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( "/var/www/html/keba_wallbox_math.php" )) {
-    include 'keba_wallbox_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists($basedir."/custom/keba_wallbox_math.php" )) {
+    include $basedir.'/custom/keba_wallbox_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -411,8 +400,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+    require($basedir."/services/mqtt_senden.php");
   }
 
   /****************************************************************************
@@ -447,9 +436,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test( );
+      $rc = InfluxDB::influx_remote_test( );
       if ($rc) {
-        $rc = $funktionen->influx_remote( $aktuelleDaten );
+        $rc = InfluxDB::influx_remote( $aktuelleDaten );
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -459,27 +448,27 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
   }
   else {
-    $rc = $funktionen->influx_local( $aktuelleDaten );
+    $rc = InfluxDB::influx_local( $aktuelleDaten );
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time( ) - $Start));
-    $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+    Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
     if ($Zeitspanne > 0) {
       sleep( $Zeitspanne );
     }
     break;
   }
   else {
-    $funktionen->log_schreiben( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
+    Log::write( "Schleife: ".($i)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1))), "   ", 9 );
     sleep( floor( (56 - (time( ) - $Start)) / ($Wiederholungen - $i + 1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben( "Schleife ".$i." Ausgang...", "   ", 5 );
+    Log::write( "Schleife ".$i." Ausgang...", "   ", 5 );
     break;
   }
   $i++;
@@ -492,8 +481,8 @@ if (1 == 1) {
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
     $aktuelleDaten["Solarspannung"] = $aktuelleDaten["Solarspannung1"];
-    $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-    require ($Pfad."/homematic.php");
+    Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -502,14 +491,14 @@ if (1 == 1) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-    require ($Pfad."/meldungen_senden.php");
+    Log::write( "Nachrichten versenden...", "   ", 8 );
+    require($basedir."/services/meldungen_senden.php");
   }
-  $funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+  Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 }
 else {
-  $funktionen->log_schreiben( "Keine gültigen Daten empfangen.", "!! ", 6 );
+  Log::write( "Keine gültigen Daten empfangen.", "!! ", 6 );
 }
-Ausgang:$funktionen->log_schreiben( "-------------   Stop   keba_wallbox.php   --------------------- ", "|--", 6 );
+Ausgang:Log::write( "-------------   Stop   keba_wallbox.php   --------------------- ", "|--", 6 );
 return;
 ?>

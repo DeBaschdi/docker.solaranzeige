@@ -4,23 +4,20 @@
 //  Bitte nur Änderungen vornehmen, wenn man sich auskennt.
 //  Version 16.8.2018
 ******************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-require($Pfad."/user.config.php");
-require($Pfad."/phpinc/funktionen.inc.php");
-$Tracelevel = 10; //  1 bis 10  10 = Debug
+$basedir = dirname(__FILE__,2);
+require($basedir."/library/base.inc.php");
 
-$funktionen = new funktionen();
+$Tracelevel = 10; //  1 bis 10  10 = Debug
 
 /******************************************************************************
 //  Zuerst prüfen, ob der Regler bekannt ist.
 //
 ******************************************************************************/
 if (isset($USBDevice) and !empty($USBDevice)) {
-  $funktionen->log_schreiben("Device: ".$USBDevice." wurde in der user.config angegeben.","   ",6);
+  Log::write("Device: ".$USBDevice." wurde in der user.config angegeben.","   ",6);
 }
 $USB_Ausgabe = shell_exec ( "usb-devices");
-$funktionen->log_schreiben($USB_Ausgabe,"   ",8);
+Log::write($USB_Ausgabe,"   ",8);
 $USB_Ausgabe = explode("\n\n",shell_exec ( "hwinfo --usb --partition"));
 
 $m = 1;
@@ -57,12 +54,12 @@ for ($i=0; $i < count($USB_Ausgabe); $i++) {
           if (substr($USB_Devices[$m]["Serial ID"],0,2) == "HQ") {
 	        // MK3 MultiPlus Adapter
             $USB_WR = $USB_Devices[$m]["File"];
-            $funktionen->log_schreiben("MK3 MultiPlus Adapter erkannt.","   ",5);
+            Log::write("MK3 MultiPlus Adapter erkannt.","   ",5);
           }
           if (substr($USB_Devices[$m]["Serial ID"],0,2) == "VE" ) {
             //  VE.direct Kabel
             $USB_Regler = $USB_Devices[$m]["File"];
-            $funktionen->log_schreiben("VE.Direct Adapterkabel erkannt.","   ",5);
+            Log::write("VE.Direct Adapterkabel erkannt.","   ",5);
           }
         }
         elseif ($Device[1] == "0x6001") {
@@ -116,31 +113,31 @@ for ($i=0; $i < count($USB_Ausgabe); $i++) {
         if ($Device[1] == "0x5161") {
           // Solarix PLI 5000-48 von Steca
           $USB_hidraw = explode("\n",shell_exec ("cat /sys/class/hidraw/hidraw".$n."/device/uevent"));
-          $funktionen->log_schreiben("USB HIDRAW:   /dev/hidraw".$n."   ".$USB_hidraw[2],"   ",5);
+          Log::write("USB HIDRAW:   /dev/hidraw".$n."   ".$USB_hidraw[2],"   ",5);
           if (substr(trim($USB_hidraw[2]),-9) == "0665:5161") {
             $USB_Regler = "/dev/hidraw".$n;
-            $funktionen->log_schreiben("OK. Das ist er:   /dev/hidraw".$n."   ".$USB_hidraw[2],"   ",5);
+            Log::write("OK. Das ist er:   /dev/hidraw".$n."   ".$USB_hidraw[2],"   ",5);
           }
           $n++;
         }
       }
     }
   }
-  $funktionen->log_schreiben("Daten:\n".var_export($Daten[$i],1),"   ",6);
+  Log::write("Daten:\n".var_export($Daten[$i],1),"   ",6);
 }
-$funktionen->log_schreiben("USB Devices: \n".var_export($USB_Devices,1),"   ",6);
+Log::write("USB Devices: \n".var_export($USB_Devices,1),"   ",6);
 
-$funktionen->log_schreiben("Regler: ".$Regler,"   ",6);
+Log::write("Regler: ".$Regler,"   ",6);
 
 if (isset($USB_WR)) {
-  $funktionen->log_schreiben("Wechselrichter erkannt: ".$USB_WR,"   ",6);
+  Log::write("Wechselrichter erkannt: ".$USB_WR,"   ",6);
 }
 
 switch ($Regler) {
   case 1:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyACM0";
@@ -152,7 +149,7 @@ switch ($Regler) {
 
   case 2:
     if (isset($USB_Regler)) {
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
       $USBDevice = $USB_Regler;
     }
     elseif (!isset($USBDevice) or empty($USBDevice)) {
@@ -164,7 +161,7 @@ switch ($Regler) {
   case 3:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice)) {
       $USBDevice = "/dev/ttyUSB0";
@@ -176,12 +173,12 @@ switch ($Regler) {
     else {
       $rc = exec("stty -F  ".$USBDevice."  raw speed 115200 cs8  -iexten -echo -echoe -echok -onlcr -hupcl ignbrk time 5");
     }
-    $funktionen->log_schreiben("Device: ".$USBDevice,"   ",6);
+    Log::write("Device: ".$USBDevice,"   ",6);
   break;
   case 4:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice)) {
       $USBDevice = "/dev/ttyUSB0";
@@ -192,7 +189,7 @@ switch ($Regler) {
   case 5:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice)) {
       $USBDevice = "/dev/ttyUSB0";
@@ -207,13 +204,13 @@ switch ($Regler) {
       }
     }
     else {
-      $funktionen->log_schreiben("Device: ".$USBDevice." Keine USB / Serielle Schnittstelle.","   ",6);
+      Log::write("Device: ".$USBDevice." Keine USB / Serielle Schnittstelle.","   ",6);
     }
   break;
   case 6:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice)) {
       $USBDevice = "/dev/ttyUSB0";
@@ -224,7 +221,7 @@ switch ($Regler) {
   case 7:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice)) {
       $USBDevice = "/dev/hidraw0";
@@ -243,7 +240,7 @@ switch ($Regler) {
   case 8:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice)) {
       $USBDevice = "/dev/hidraw0";
@@ -253,7 +250,7 @@ switch ($Regler) {
   case 9:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice)) {
       $USBDevice = "/dev/hidraw0";
@@ -277,7 +274,7 @@ switch ($Regler) {
   case 11:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice)) {
       $USBDevice = "/dev/ttyUSB0";
@@ -293,7 +290,7 @@ switch ($Regler) {
   case 13:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -304,7 +301,7 @@ switch ($Regler) {
   case 14:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -316,7 +313,7 @@ switch ($Regler) {
   case 15:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -324,11 +321,11 @@ switch ($Regler) {
     // Pylontech US20000B
     if (isset($SerielleGeschwindigkeit)) {
       $rc = exec("stty -F  ".$USBDevice."  raw speed ".$SerielleGeschwindigkeit." cs8 -iexten -echo -echoe -echok -onlcr -hupcl ignbrk time 5");
-      $funktionen->log_schreiben("Device: ".$USBDevice." Geschwindigkeit: ".$SerielleGeschwindigkeit,"   ",6);
+      Log::write("Device: ".$USBDevice." Geschwindigkeit: ".$SerielleGeschwindigkeit,"   ",6);
     }
     else {
       $rc = exec("stty -F  ".$USBDevice."  raw speed 1200 cs8 -iexten -echo -echoe -echok -onlcr -hupcl ignbrk time 5");
-      $funktionen->log_schreiben("Device: ".$USBDevice." Geschwindigkeit: 1200","   ",6);
+      Log::write("Device: ".$USBDevice." Geschwindigkeit: 1200","   ",6);
     }
   break;
   case 16:
@@ -349,7 +346,7 @@ switch ($Regler) {
   case 19:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice)) {
       $USBDevice = "/dev/ttyUSB0";
@@ -368,7 +365,7 @@ switch ($Regler) {
   case 21:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice)) {
       $USBDevice = "/dev/ttyUSB0";
@@ -398,7 +395,7 @@ switch ($Regler) {
   case 24:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice)) {
       $USBDevice = "/dev/hidraw0";
@@ -413,7 +410,7 @@ switch ($Regler) {
   case 26:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice)) {
       $USBDevice = "/dev/hidraw0";
@@ -437,7 +434,7 @@ switch ($Regler) {
   case 28:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -468,7 +465,7 @@ switch ($Regler) {
   case 33:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -479,7 +476,7 @@ switch ($Regler) {
   case 34:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -495,7 +492,7 @@ switch ($Regler) {
   case 36:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -511,7 +508,7 @@ switch ($Regler) {
   case 38:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -529,7 +526,7 @@ switch ($Regler) {
   case 40:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -541,7 +538,7 @@ switch ($Regler) {
   case 41:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -549,18 +546,18 @@ switch ($Regler) {
     // Pylontech US3000A
     if (isset($SerielleGeschwindigkeit)) {
       $rc = exec("stty -F  ".$USBDevice."  raw speed ".$SerielleGeschwindigkeit." cs8 -iexten -echo -echoe -echok -onlcr -hupcl ignbrk time 5");
-      $funktionen->log_schreiben("Device: ".$USBDevice." Geschwindigkeit: ".$SerielleGeschwindigkeit,"   ",6);
+      Log::write("Device: ".$USBDevice." Geschwindigkeit: ".$SerielleGeschwindigkeit,"   ",6);
     }
     else {
       $rc = exec("stty -F  ".$USBDevice."  raw speed 115200 cs8 -iexten -echo -echoe -echok -onlcr -hupcl ignbrk time 5");
-      $funktionen->log_schreiben("Device: ".$USBDevice." Geschwindigkeit: 115200","   ",6);
+      Log::write("Device: ".$USBDevice." Geschwindigkeit: 115200","   ",6);
     }
   break;
 
   case 42:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -584,7 +581,7 @@ switch ($Regler) {
   case 45:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -602,7 +599,7 @@ switch ($Regler) {
   case 46:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -620,7 +617,7 @@ switch ($Regler) {
   case 48:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -638,7 +635,7 @@ switch ($Regler) {
   case 50:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -656,7 +653,7 @@ switch ($Regler) {
   case 52:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -668,7 +665,7 @@ switch ($Regler) {
   case 53:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -686,7 +683,7 @@ switch ($Regler) {
   case 55:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -698,7 +695,7 @@ switch ($Regler) {
   case 56:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -710,7 +707,7 @@ switch ($Regler) {
   case 57:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -722,7 +719,7 @@ switch ($Regler) {
   case 58: // Solaredge WND-3Y-400-MB
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -734,14 +731,14 @@ switch ($Regler) {
   case 59:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
     }
     // EASUN POWER Wechselrichter
     $rc = exec("stty -F  ".$USBDevice."  raw speed 2400 cs8  -iexten -echo -echoe -echok -onlcr -hupcl ignbrk time 5");
-    $funktionen->log_schreiben("Device: ".$USBDevice." Geschwindigkeit: ".$rc,"   ",6);
+    Log::write("Device: ".$USBDevice." Geschwindigkeit: ".$rc,"   ",6);
   break;
 
   case 60:
@@ -771,7 +768,7 @@ switch ($Regler) {
   case 64:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -795,7 +792,7 @@ switch ($Regler) {
   case 67:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -825,7 +822,7 @@ switch ($Regler) {
   case 71:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -843,7 +840,7 @@ switch ($Regler) {
   case 73:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -861,7 +858,7 @@ switch ($Regler) {
   case 75:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -879,7 +876,7 @@ switch ($Regler) {
   case 77:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -903,7 +900,7 @@ switch ($Regler) {
   case 80:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -926,7 +923,7 @@ switch ($Regler) {
   case 82:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -938,7 +935,7 @@ switch ($Regler) {
   case 83:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -950,7 +947,7 @@ switch ($Regler) {
   case 84:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -974,7 +971,7 @@ switch ($Regler) {
   case 87:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -998,7 +995,7 @@ switch ($Regler) {
   case 90:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -1010,7 +1007,7 @@ switch ($Regler) {
   case 91:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
@@ -1022,18 +1019,18 @@ switch ($Regler) {
   case 92:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
     }
     if (isset($SerielleGeschwindigkeit)) {
       $rc = exec("stty -F  ".$USBDevice."  raw speed ".$SerielleGeschwindigkeit." cs8 -iexten -echo -echoe -echok -onlcr -hupcl ignbrk time 5");
-      $funktionen->log_schreiben("Device: ".$USBDevice." Geschwindigkeit: ".$SerielleGeschwindigkeit,"   ",6);
+      Log::write("Device: ".$USBDevice." Geschwindigkeit: ".$SerielleGeschwindigkeit,"   ",6);
     }
     else {
       $rc = exec("stty -F  ".$USBDevice."  raw speed 9600 cs8 -iexten -echo -echoe -echok -onlcr -hupcl ignbrk time 5");
-      $funktionen->log_schreiben("Device: ".$USBDevice." Geschwindigkeit: 9600","   ",6);
+      Log::write("Device: ".$USBDevice." Geschwindigkeit: 9600","   ",6);
     }
     // FSE EMS BMS
   break;
@@ -1041,18 +1038,18 @@ switch ($Regler) {
   case 93:
     if (isset($USB_Regler)) {
       $USBDevice = $USB_Regler;
-      $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+      Log::write("Regler erkannt: ".$USB_Regler,"   ",6);
     }
     elseif (!isset($USBDevice) or empty($USBDevice) ) {
       $USBDevice = "/dev/ttyUSB0";
     }
     if (isset($SerielleGeschwindigkeit)) {
       $rc = exec("stty -F  ".$USBDevice."  speed ".$SerielleGeschwindigkeit." raw cs8 -iexten -echo -echoe -echok -onlcr -hupcl ignbrk -cstopb -parity time 5");
-      $funktionen->log_schreiben("Device: ".$USBDevice." Geschwindigkeit: ".$SerielleGeschwindigkeit,"   ",6);
+      Log::write("Device: ".$USBDevice." Geschwindigkeit: ".$SerielleGeschwindigkeit,"   ",6);
     }
     else {
       $rc = exec("stty -F  ".$USBDevice." raw speed 9600 cs8 -iexten -echo -echoe -echok -onlcr -hupcl ignbrk -cstopb -parity time 5");
-      $funktionen->log_schreiben("Device: ".$USBDevice." Geschwindigkeit: 9600","   ",6);
+      Log::write("Device: ".$USBDevice." Geschwindigkeit: 9600","   ",6);
     }
     // Deye Wechselrichter
   break;
@@ -1061,12 +1058,12 @@ switch ($Regler) {
     /************************************************************************
     //  User PHP Script, falls gewünscht oder nötig
     ************************************************************************/
-    if ( file_exists ("/var/www/html/user_init.php")) {
-      $funktionen->log_schreiben("Datei 'user_init.php' gefunden.","   ",7);
-      include 'user_init.php';  // Vom Benutzer selber geschriebene Datei.
+    if ( file_exists($basedir."/custom/user_init.php")) {
+      Log::write("Datei 'user_init.php' gefunden.","   ",7);
+      include $basedir.'/custom/user_init.php';  // Vom Benutzer selber geschriebene Datei.
     }
     else {
-      $funktionen->log_schreiben("Angegebener Regler ungültig. ".$Regler,"   ",2);
+      Log::write("Angegebener Regler ungültig. ".$Regler,"   ",2);
     }
   break;
 }
@@ -1077,21 +1074,21 @@ $Platine = "Docker Image 0.2.0";
 
 if (!empty($USBDevice)) {
 
-  $funktionen->log_schreiben("Device: ".$USBDevice." wird in die user.config.php eingetragen.","   ",6);
+  Log::write("Device: ".$USBDevice." wird in die user.config.php eingetragen.","   ",6);
 
-  $INI = file($Pfad."/user.config.php");
+  $INI = file($basedir."/config/user.config.php");
 
   foreach($INI as $index => $item){
     if(strpos($item,'$USBRegler')!== false){
-      $funktionen->log_schreiben("Zeile gefunden. USB Device kann ausgetauscht werden. Index: ".$index."   ".$INI[$index],"   ",5);
+      Log::write("Zeile gefunden. USB Device kann ausgetauscht werden. Index: ".$index."   ".$INI[$index],"   ",5);
       $Zeile1 = $index;
     }
     elseif(strpos($item,'$USBWechselrichter')!== false){
-      $funktionen->log_schreiben("Zeile gefunden. USB Device kann ausgetauscht werden. Index: ".$index."   ".$INI[$index],"   ",5);
+      Log::write("Zeile gefunden. USB Device kann ausgetauscht werden. Index: ".$index."   ".$INI[$index],"   ",5);
       $Zeile2 = $index;
     }
     elseif(strpos($item,'$Platine')!== false){
-      $funktionen->log_schreiben("Zeile gefunden. Containerversion kann eingetragen werden. Index: ".$index."   ".$INI[$index],"   ",5);
+      Log::write("Zeile gefunden. Containerversion kann eingetragen werden. Index: ".$index."   ".$INI[$index],"   ",5);
       $Zeile3 = $index;
     }
   }
@@ -1109,9 +1106,9 @@ if (!empty($USBDevice)) {
 }
 
 if(PHP_INT_SIZE>4)
-  $funktionen->log_schreiben("Es handelt sich um ein 64 Bit System.","   ",5);
+  Log::write("Es handelt sich um ein 64 Bit System.","   ",5);
 else
-  $funktionen->log_schreiben("Es handelt sich um ein 32 Bit System.","   ",5);
+  Log::write("Es handelt sich um ein 32 Bit System.","   ",5);
 
 
 exit;

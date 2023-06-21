@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*************************************************************
@@ -13,23 +12,14 @@
 //
 *************************************************************/
 setlocale( LC_TIME, NULL ); // Damit der Wochentag in Deutsch geschrieben wird.
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/1.user.config.php");
-}
-else {
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
+
+$basedir = dirname(__FILE__,2);
+require($basedir."/library/base.inc.php");
+
 $Tracelevel = 9; //  1 bis 10  10 = Debug
 $Ergebnis = array();
 $funktionen = new funktionen( );
-$funktionen->log_schreiben( "-------------------- Start awattar.php --------------------", "|--", 6 );
+Log::write( "-------------------- Start awattar.php --------------------", "|--", 6 );
 
 /*********************************************************************
 //  aWATTar Preise holen   aWATTar Preise holen   aWATTar Preise holen
@@ -56,12 +46,12 @@ if ($aWATTar === true) {
     if ($rc_info["http_code"] == 200) {
       break;
     }
-    $funktionen->log_schreiben( "Verbindung zum aWATTar Server zur Zeit gestört. 6 Sekunden warten. i: ".$i, 6 );
-    $funktionen->log_schreiben( var_export( $rc_info, 1 ), 6 );
+    Log::write( "Verbindung zum aWATTar Server zur Zeit gestört. 6 Sekunden warten. i: ".$i, 6 );
+    Log::write( var_export( $rc_info, 1 ), 6 );
     sleep( 6 );
   }
   if ($i >= 4) {
-    $funktionen->log_schreiben( "-------------------- Exit 1 aWATTar.php -------------------", "|--", 6 );
+    Log::write( "-------------------- Exit 1 aWATTar.php -------------------", "|--", 6 );
     exit;
   }
   $Ergebnis = json_decode( $result, true );
@@ -98,13 +88,13 @@ if ($aWATTar === true) {
     }
     $Daten = sort_col( $DatenSort, "Stunde" );
   }
-  $funktionen->log_schreiben( "Anzahl: ".$Anzahl, "   ", 6 );
+  Log::write( "Anzahl: ".$Anzahl, "   ", 6 );
   for ($i = 0; $i < $Anzahl; $i++) {
     $aktuelleDaten["Query"] = $Daten[$i]["Query"];
     if (empty($aktuelleDaten["Query"])) {
       continue;
     }
-    $funktionen->log_schreiben( $aktuelleDaten["Query"], "   ", 6 );
+    Log::write( $aktuelleDaten["Query"], "   ", 6 );
 
     /************************************************************************
     //  InfluxDB  Zugangsdaten ...stehen in der user.config.php
@@ -125,14 +115,14 @@ if ($aWATTar === true) {
     ***************************************************************/
     if ($InfluxDB_remote) {
       $rc = daten_speichern( $aktuelleDaten );
-      $funktionen->log_schreiben( "Remote: ".$rc, "|  ", 7 );
+      Log::write( "Remote: ".$rc, "|  ", 7 );
       if ($InfluxDB_local) {
         $aktuelleDaten["InfluxAdresse"] = "localhost";
         $aktuelleDaten["InfluxPort"] = "8086";
         $aktuelleDaten["InfluxDBName"] = $InfluxDBLokal;
         $aktuelleDaten["InfluxSSL"] = false;
         $rc = daten_speichern( $aktuelleDaten );
-        $funktionen->log_schreiben( "Lokal: ".$rc, "|* ", 7 );
+        Log::write( "Lokal: ".$rc, "|* ", 7 );
       }
     }
     else {
@@ -141,16 +131,16 @@ if ($aWATTar === true) {
       $aktuelleDaten["InfluxDBName"] = $InfluxDBLokal;
       $aktuelleDaten["InfluxSSL"] = false;
       $rc = daten_speichern( $aktuelleDaten );
-      $funktionen->log_schreiben( "Lokal: ".$rc, "|**", 7 );
+      Log::write( "Lokal: ".$rc, "|**", 7 );
     }
   }
   $aktuelleDaten = array();
   Ausgang:
 }
 else {
-  $funktionen->log_schreiben( "aWATTar Preise ausgeschaltet.", "o--", 6 );
+  Log::write( "aWATTar Preise ausgeschaltet.", "o--", 6 );
 }
-$funktionen->log_schreiben( "-------------------- Stop  awattar.php ---------------------", "|--", 6 );
+Log::write( "-------------------- Stop  awattar.php ---------------------", "|--", 6 );
 function daten_speichern( $daten ) {
   if (isset($daten["InfluxSSL"]) and $daten["InfluxSSL"] == true) {
     $ch = curl_init( 'https://'.$daten["InfluxAdresse"].'/write?db='.$daten["InfluxDBName"].'&precision=s' );

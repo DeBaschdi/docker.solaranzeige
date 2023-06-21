@@ -46,7 +46,7 @@ if (!empty($MQTTBenutzer) and !empty($MQTTKennwort)) {
   $client->setCredentials($MQTTBenutzer, $MQTTKennwort);
 }
 if ($MQTTSSL) {
-  $client->setTlsCertificates($Pfad."/ca.cert");
+  $client->setTlsCertificates($basedir."/ca.cert");
   $client->setTlsInsecure(SSL_VERIFY_NONE);
 }
 

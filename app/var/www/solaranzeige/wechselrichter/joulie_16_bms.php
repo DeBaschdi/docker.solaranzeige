@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 /*****************************************************************************
 //  Solaranzeige Projekt             Copyright (C) [2015-2020]  [Ulrich Kunz]
@@ -25,25 +24,13 @@
 //  Achtung! Der Regler sendet zwischendurch immer wieder asynchrone Daten!
 //
 *****************************************************************************/
-$path_parts = pathinfo($argv[0]);
-$Pfad = $path_parts['dirname'];
-if (!is_file($Pfad."/1.user.config.php")) {
-  // Handelt es sich um ein Multi Regler System?
-  require($Pfad."/user.config.php");
-}
-require_once($Pfad."/phpinc/funktionen.inc.php");
-
-if (!isset($funktionen)) {
-  $funktionen = new funktionen();
-}
-
 $Tracelevel = 7;  //  1 bis 10  10 = Debug
 $Device = "BMS"; // BMS = Batteriemanagementsystem
 $Version = ""; 
 $Start = time();  // Timestamp festhalten
-$funktionen->log_schreiben("---------   Start  joulie_16_bms.php   ----------------- ","|--",6);
+Log::write("---------   Start  joulie_16_bms.php   ----------------- ","|--",6);
 
-$funktionen->log_schreiben("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
+Log::write("Zentraler Timestamp: ".$zentralerTimestamp,"   ",8);
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 
@@ -62,7 +49,7 @@ if ($Teile[1] == "Pi") {
     }
   }
 }
-$funktionen->log_schreiben("Hardware Version: ".$Version,"o  ",9);
+Log::write("Hardware Version: ".$Version,"o  ",9);
 
 switch($Version) {
   case "2B":
@@ -80,10 +67,10 @@ switch($Version) {
 
 //  Nach em Öffnen des Port muss sofort der Regler ausgelesen werden, sonst
 //  sendet er asynchrone Daten!
-$USB1 = $funktionen->openUSB($USBRegler);
+$USB1 = USB::openUSB($USBRegler);
 if (!is_resource($USB1)) {
-  $funktionen->log_schreiben("USB Port kann nicht geöffnet werden. [1]","XX ",7);
-  $funktionen->log_schreiben("Exit.... ","XX ",7);
+  Log::write("USB Port kann nicht geöffnet werden. [1]","XX ",7);
+  Log::write("Exit.... ","XX ",7);
   goto Ausgang;
 }
 
@@ -92,12 +79,12 @@ if (!is_resource($USB1)) {
 //  Sollen Befehle an den Wechselrichter gesendet werden?
 //
 ************************************************************************************/
-if (file_exists($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung")) {
+if (file_exists("/var/www/pipe/".$GeraeteNummer.".befehl.steuerung")) {
 
-    $funktionen->log_schreiben("Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----","|- ",5);
-    $Inhalt = file_get_contents($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung");
+    Log::write("Steuerdatei '".$GeraeteNummer.".befehl.steuerung' vorhanden----","|- ",5);
+    $Inhalt = file_get_contents("/var/www/pipe/".$GeraeteNummer.".befehl.steuerung");
     $Befehle = explode("\n",trim($Inhalt));
-    $funktionen->log_schreiben("Befehle: ".print_r($Befehle,1),"|- ",9);
+    Log::write("Befehle: ".print_r($Befehle,1),"|- ",9);
 
     for ($i = 0; $i < count($Befehle); $i++) {
 
@@ -112,12 +99,12 @@ if (file_exists($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung")) {
       //  damit das Gerät keinen Schaden nimmt.
       //  Siehe Dokument:  Befehle_senden.pdf
       *********************************************************************************/
-      if (file_exists($Pfad."/befehle.ini.php")) {
+      if (file_exists($basedir."/config/befehle.ini")) {
 
-        $funktionen->log_schreiben("Die Befehlsliste 'befehle.ini.php' ist vorhanden----","|- ",9);
-        $INI_File =  parse_ini_file($Pfad.'/befehle.ini.php', true);
+        Log::write("Die Befehlsliste 'befehle.ini.php' ist vorhanden----","|- ",9);
+        $INI_File =  parse_ini_file($basedir."/config/befehle.ini", true);
         $Regler13 = $INI_File["Regler13"];
-        $funktionen->log_schreiben("Befehlsliste: ".print_r($Regler13,1),"|- ",10);
+        Log::write("Befehlsliste: ".print_r($Regler13,1),"|- ",10);
         $Subst = $Befehle[$i];
 
         foreach ($Regler13 as $Template) {
@@ -133,13 +120,13 @@ if (file_exists($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung")) {
           }
         }
         if ($Template != $Subst) {
-          $funktionen->log_schreiben("Dieser Befehl ist nicht zugelassen. ".$Befehle[$i],"|o ",3);
-          $funktionen->log_schreiben("Die Verarbeitung der Befehle wird abgebrochen.","|o ",3);
+          Log::write("Dieser Befehl ist nicht zugelassen. ".$Befehle[$i],"|o ",3);
+          Log::write("Die Verarbeitung der Befehle wird abgebrochen.","|o ",3);
           break;
         }
       }
       else {
-        $funktionen->log_schreiben("Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----","|- ",3);
+        Log::write("Die Befehlsliste 'befehle.ini.php' ist nicht vorhanden----","|- ",3);
         break;
       }
 
@@ -148,69 +135,69 @@ if (file_exists($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung")) {
       /************************************************************************
       //  Ab hier wird der Befehl gesendet.
       ************************************************************************/
-      $funktionen->log_schreiben("Befehl zur Ausführung: ".strtoupper($Befehle[$i]),"|- ",3);
+      Log::write("Befehl zur Ausführung: ".strtoupper($Befehle[$i]),"|- ",3);
 
       if (strtoupper($Befehle[$i]) == "RELAY_ON") {
-        $rc = $funktionen->joulie_auslesen($USB1,"login LORY27BA");
+        $rc = Joulie::joulie_auslesen($USB1,"login LORY27BA");
         if (!empty($rc[0])) {
-          $funktionen->log_schreiben($rc[0],"|- ",3);
+          Log::write($rc[0],"|- ",3);
         }
-        $rc = $funktionen->joulie_auslesen($USB1,"stopb");
-        $funktionen->log_schreiben($rc[0],"|- ",3);
-        $rc = $funktionen->joulie_auslesen($USB1,"unlock MAS184CU");
-        $funktionen->log_schreiben($rc[0],"|- ",3);
-        $rc = $funktionen->joulie_auslesen($USB1,"relay on");
-        $funktionen->log_schreiben($rc[0],"|- ",3);
-        $rc = $funktionen->joulie_auslesen($USB1,"startb");
-        $funktionen->log_schreiben($rc[0],"|- ",3);
+        $rc = Joulie::joulie_auslesen($USB1,"stopb");
+        Log::write($rc[0],"|- ",3);
+        $rc = Joulie::joulie_auslesen($USB1,"unlock MAS184CU");
+        Log::write($rc[0],"|- ",3);
+        $rc = Joulie::joulie_auslesen($USB1,"relay on");
+        Log::write($rc[0],"|- ",3);
+        $rc = Joulie::joulie_auslesen($USB1,"startb");
+        Log::write($rc[0],"|- ",3);
         sleep(1);
       }
 
 
       if (strtoupper($Befehle[$i]) == "RELAY_OFF") {
-        $rc = $funktionen->joulie_auslesen($USB1,"login LORY27BA");
+        $rc = Joulie::joulie_auslesen($USB1,"login LORY27BA");
         if (!empty($rc[0])) {
-          $funktionen->log_schreiben($rc[0],"|- ",3);
+          Log::write($rc[0],"|- ",3);
         }
-        $rc = $funktionen->joulie_auslesen($USB1,"stopb");
-        $funktionen->log_schreiben($rc[0],"|- ",3);
-        $rc = $funktionen->joulie_auslesen($USB1,"unlock MAS184CU");
-        $funktionen->log_schreiben($rc[0],"|- ",3);
-        $rc = $funktionen->joulie_auslesen($USB1,"relay off");
-        $funktionen->log_schreiben($rc[0],"|- ",3);
-        // $rc = $funktionen->joulie_auslesen($USB1,"startb");
-        // $funktionen->log_schreiben($rc[0],"|- ",3);
+        $rc = Joulie::joulie_auslesen($USB1,"stopb");
+        Log::write($rc[0],"|- ",3);
+        $rc = Joulie::joulie_auslesen($USB1,"unlock MAS184CU");
+        Log::write($rc[0],"|- ",3);
+        $rc = Joulie::joulie_auslesen($USB1,"relay off");
+        Log::write($rc[0],"|- ",3);
+        // $rc = Joulie::joulie_auslesen($USB1,"startb");
+        // Log::write($rc[0],"|- ",3);
         sleep(1);
       }
 
       if (strtoupper($Befehle[$i]) == "START_BALANCING") {
-        $rc = $funktionen->joulie_auslesen($USB1,"login LORY27BA");
+        $rc = Joulie::joulie_auslesen($USB1,"login LORY27BA");
         if (!empty($rc[0])) {
-          $funktionen->log_schreiben($rc[0],"|- ",3);
+          Log::write($rc[0],"|- ",3);
         }
-        $rc = $funktionen->joulie_auslesen($USB1,"startb");
-        $funktionen->log_schreiben($rc[0],"|- ",3);
+        $rc = Joulie::joulie_auslesen($USB1,"startb");
+        Log::write($rc[0],"|- ",3);
         sleep(1);
       }
 
       if (strtoupper($Befehle[$i]) == "STOP_BALANCING") {
-        $rc = $funktionen->joulie_auslesen($USB1,"login LORY27BA");
+        $rc = Joulie::joulie_auslesen($USB1,"login LORY27BA");
         if (!empty($rc[0])) {
-          $funktionen->log_schreiben($rc[0],"|- ",3);
+          Log::write($rc[0],"|- ",3);
         }
-        $rc = $funktionen->joulie_auslesen($USB1,"stopb");
-        $funktionen->log_schreiben($rc[0],"|- ",3);
+        $rc = Joulie::joulie_auslesen($USB1,"stopb");
+        Log::write($rc[0],"|- ",3);
         sleep(1);
       }
 
     }
-    $rc = unlink($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung");
+    $rc = unlink("/var/www/pipe/".$GeraeteNummer.".befehl.steuerung");
     if ($rc) {
-      $funktionen->log_schreiben("Datei  /pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.","    ",8);
+      Log::write("Datei  /pipe/".$GeraeteNummer.".befehl.steuerung  gelöscht.","    ",8);
     }
 }
 else {
-  $funktionen->log_schreiben("Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----","|- ",9);
+  Log::write("Steuerdatei '".$GeraeteNummer.".befehl.steuerung' nicht vorhanden----","|- ",9);
 }
 /*******************************************************************************
 //
@@ -222,7 +209,7 @@ else {
 
 $i = 1;
 do {
-  $funktionen->log_schreiben("Die Daten werden ausgelesen...","+  ",9);
+  Log::write("Die Daten werden ausgelesen...","+  ",9);
 
   /****************************************************************************
   //  Ab hier wird der Regler ausgelesen.
@@ -242,25 +229,25 @@ do {
   ****************************************************************************/
   $aktuelleDaten["Firmware"] = "unbekannt";
   $aktuelleDaten["Balancing"] = 1;
-  $rc =  $funktionen->joulie_auslesen($USB1,"trace");
+  $rc =  Joulie::joulie_auslesen($USB1,"trace");
   if (empty($rc)) {
     $aktuelleDaten["Balancing"] = 0;
-    $rc =  $funktionen->joulie_auslesen($USB1,"login LORY27BA");
+    $rc =  Joulie::joulie_auslesen($USB1,"login LORY27BA");
     if (isset($rc[99])) {
-      $funktionen->log_schreiben($rc[3],"+  ",3);
+      Log::write($rc[3],"+  ",3);
     }
-    $rc =  $funktionen->joulie_auslesen($USB1,"fwtrace on");
+    $rc =  Joulie::joulie_auslesen($USB1,"fwtrace on");
     if (isset($rc[99])) {
-      $funktionen->log_schreiben($rc[3],"+  ",3);
+      Log::write($rc[3],"+  ",3);
     }
-    $funktionen->log_schreiben($rc[0],"+  ",3);
-    $rc =  $funktionen->joulie_auslesen($USB1,"outb");
+    Log::write($rc[0],"+  ",3);
+    $rc =  Joulie::joulie_auslesen($USB1,"outb");
     if (isset($rc[99])) {
-      $funktionen->log_schreiben($rc[3],"+  ",3);
+      Log::write($rc[3],"+  ",3);
     }
-    $funktionen->log_schreiben($rc[0],"+  ",3);
+    Log::write($rc[0],"+  ",3);
 
-    $rc = $funktionen->joulie_outb($rc[1]);
+    $rc = Joulie::joulie_outb($rc[1]);
 
     // print_r($rc);
 
@@ -278,10 +265,10 @@ do {
     break;
   }
   // Es kommen normale Trace Daten...  In die Datenbank abspeichern..
-  $funktionen->log_schreiben(print_r($rc,1),"   ",9);
+  Log::write(print_r($rc,1),"   ",9);
 
   if (isset($rc[99])) {
-    $funktionen->log_schreiben($rc[3],"+  ",3);
+    Log::write($rc[3],"+  ",3);
   }
 
 
@@ -289,37 +276,37 @@ do {
 
 
   $aktuelleDaten["Zelle1Volt"] = round(($rc[1]/1000),2);
-  $aktuelleDaten["Zelle1Status"] = $funktionen->joulie_zahl($rc[2]);
+  $aktuelleDaten["Zelle1Status"] = Joulie::joulie_zahl($rc[2]);
   $aktuelleDaten["Zelle2Volt"] = round(($rc[3]/1000),2);
-  $aktuelleDaten["Zelle2Status"] = $funktionen->joulie_zahl($rc[4]);
+  $aktuelleDaten["Zelle2Status"] = Joulie::joulie_zahl($rc[4]);
   $aktuelleDaten["Zelle3Volt"] = round(($rc[5]/1000),2);
-  $aktuelleDaten["Zelle3Status"] = $funktionen->joulie_zahl($rc[6]);
+  $aktuelleDaten["Zelle3Status"] = Joulie::joulie_zahl($rc[6]);
   $aktuelleDaten["Zelle4Volt"] = round(($rc[7]/1000),2);
-  $aktuelleDaten["Zelle4Status"] = $funktionen->joulie_zahl($rc[8]);
+  $aktuelleDaten["Zelle4Status"] = Joulie::joulie_zahl($rc[8]);
   $aktuelleDaten["Zelle5Volt"] = round(($rc[9]/1000),2);
-  $aktuelleDaten["Zelle5Status"] = $funktionen->joulie_zahl($rc[10]);
+  $aktuelleDaten["Zelle5Status"] = Joulie::joulie_zahl($rc[10]);
   $aktuelleDaten["Zelle6Volt"] = round(($rc[11]/1000),2);
-  $aktuelleDaten["Zelle6Status"] = $funktionen->joulie_zahl($rc[12]);
+  $aktuelleDaten["Zelle6Status"] = Joulie::joulie_zahl($rc[12]);
   $aktuelleDaten["Zelle7Volt"] = round(($rc[13]/1000),2);
-  $aktuelleDaten["Zelle7Status"] = $funktionen->joulie_zahl($rc[14]);
+  $aktuelleDaten["Zelle7Status"] = Joulie::joulie_zahl($rc[14]);
   $aktuelleDaten["Zelle8Volt"] = round(($rc[15]/1000),2);
-  $aktuelleDaten["Zelle8Status"] = $funktionen->joulie_zahl($rc[16]);
+  $aktuelleDaten["Zelle8Status"] = Joulie::joulie_zahl($rc[16]);
   $aktuelleDaten["Zelle9Volt"] = round(($rc[17]/1000),2);
-  $aktuelleDaten["Zelle9Status"] = $funktionen->joulie_zahl($rc[18]);
+  $aktuelleDaten["Zelle9Status"] = Joulie::joulie_zahl($rc[18]);
   $aktuelleDaten["Zelle10Volt"] = round(($rc[19]/1000),2);
-  $aktuelleDaten["Zelle10Status"] = $funktionen->joulie_zahl($rc[20]);
+  $aktuelleDaten["Zelle10Status"] = Joulie::joulie_zahl($rc[20]);
   $aktuelleDaten["Zelle11Volt"] = round(($rc[21]/1000),2);
-  $aktuelleDaten["Zelle11Status"] = $funktionen->joulie_zahl($rc[22]);
+  $aktuelleDaten["Zelle11Status"] = Joulie::joulie_zahl($rc[22]);
   $aktuelleDaten["Zelle12Volt"] = round(($rc[23]/1000),2);
-  $aktuelleDaten["Zelle12Status"] = $funktionen->joulie_zahl($rc[24]);
+  $aktuelleDaten["Zelle12Status"] = Joulie::joulie_zahl($rc[24]);
   $aktuelleDaten["Zelle13Volt"] = round(($rc[25]/1000),2);
-  $aktuelleDaten["Zelle13Status"] = $funktionen->joulie_zahl($rc[26]);
+  $aktuelleDaten["Zelle13Status"] = Joulie::joulie_zahl($rc[26]);
   $aktuelleDaten["Zelle14Volt"] = round(($rc[27]/1000),2);
-  $aktuelleDaten["Zelle14Status"] = $funktionen->joulie_zahl($rc[28]);
+  $aktuelleDaten["Zelle14Status"] = Joulie::joulie_zahl($rc[28]);
   $aktuelleDaten["Zelle15Volt"] = round(($rc[29]/1000),2);
-  $aktuelleDaten["Zelle15Status"] = $funktionen->joulie_zahl($rc[30]);
+  $aktuelleDaten["Zelle15Status"] = Joulie::joulie_zahl($rc[30]);
   $aktuelleDaten["Zelle16Volt"] = round(($rc[31]/1000),2);
-  $aktuelleDaten["Zelle16Status"] = $funktionen->joulie_zahl($rc[32]);
+  $aktuelleDaten["Zelle16Status"] = Joulie::joulie_zahl($rc[32]);
   $aktuelleDaten["Strom"] = round(($rc[33]/1000),2);
   $aktuelleDaten["Kapazitaet"] = round($rc[34],2);
   $aktuelleDaten["SOC"] = round(($rc[35]/1000),1);
@@ -352,14 +339,14 @@ do {
 
 
 
-  $funktionen->log_schreiben(var_export($aktuelleDaten,1),"   ",8);
+  Log::write(var_export($aktuelleDaten,1),"   ",8);
 
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if ( file_exists ("/var/www/html/joulie_16_bms_math.php")) {
-    include 'joulie_16_bms_math.php';  // Falls etwas neu berechnet werden muss.
+  if ( file_exists($basedir."/custom/joulie_16_bms_math.php")) {
+    include $basedir.'/custom/joulie_16_bms_math.php';  // Falls etwas neu berechnet werden muss.
   }
 
 
@@ -369,8 +356,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
-    require($Pfad."/mqtt_senden.php");
+    Log::write("MQTT Daten zum [ $MQTTBroker ] senden.","   ",1);
+    require($basedir."/services/mqtt_senden.php");
   }
 
 
@@ -402,7 +389,7 @@ do {
   $aktuelleDaten["InfluxSSL"] = $InfluxSSL;
   $aktuelleDaten["Demodaten"] = false;
 
-  $funktionen->log_schreiben(print_r($aktuelleDaten,1),"** ",8);
+  Log::write(print_r($aktuelleDaten,1),"** ",8);
 
 
 
@@ -413,9 +400,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test();
+      $rc = InfluxDB::influx_remote_test();
       if ($rc) {
-        $rc = $funktionen->influx_remote($aktuelleDaten);
+        $rc = InfluxDB::influx_remote($aktuelleDaten);
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -425,31 +412,31 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local($aktuelleDaten);
+      $rc = InfluxDB::influx_local($aktuelleDaten);
     }
   }
   else {
-    $rc = $funktionen->influx_local($aktuelleDaten);
+    $rc = InfluxDB::influx_local($aktuelleDaten);
   }
 
 
 
-  if (is_file($Pfad."/1.user.config.php")) {
+  if (is_file($basedir."/config/1.user.config.php")) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time() - $Start));
-    $funktionen->log_schreiben("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
+    Log::write("Multi-Regler-Ausgang. ".$Zeitspanne,"   ",2);
     if ($Zeitspanne > 0) {
       sleep($Zeitspanne);
     }
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+    Log::write("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
     sleep(floor((55 - (time() - $Start))/($Wiederholungen-$i+1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
-    $funktionen->log_schreiben("OK. Daten gelesen.","   ",9);
-    $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",8);
+    Log::write("OK. Daten gelesen.","   ",9);
+    Log::write("Schleife ".$i." Ausgang...","   ",8);
     break;
   }
   
@@ -467,8 +454,8 @@ if (isset($aktuelleDaten["Zelle1Status"]) and isset($aktuelleDaten["Regler"])) {
   //  übertragen.
   *********************************************************************/
   if (isset($Homematic) and $Homematic == true) {
-    $funktionen->log_schreiben("Daten werden zur HomeMatic übertragen...","   ",8);
-    require($Pfad."/homematic.php");
+    Log::write("Daten werden zur HomeMatic übertragen...","   ",8);
+    require($basedir."/services/homematic.php");
   }
 
   /*********************************************************************
@@ -477,21 +464,21 @@ if (isset($aktuelleDaten["Zelle1Status"]) and isset($aktuelleDaten["Regler"])) {
   //  Gerät aktiviert sein.
   *********************************************************************/
   if (isset($Messenger) and $Messenger == true) {
-    $funktionen->log_schreiben("Nachrichten versenden...","   ",8);
-    require($Pfad."/meldungen_senden.php");
+    Log::write("Nachrichten versenden...","   ",8);
+    require($basedir."/services/meldungen_senden.php");
   }
 
-  $funktionen->log_schreiben("OK. Datenübertragung erfolgreich.","   ",7);
+  Log::write("OK. Datenübertragung erfolgreich.","   ",7);
 
 }
 else {
-  $funktionen->log_schreiben("Keine gültigen Daten empfangen.","!! ",6);
+  Log::write("Keine gültigen Daten empfangen.","!! ",6);
 }
 
 
 Ausgang:
 
-$funktionen->log_schreiben("---------   Stop   joulie_16_bms.php   ----------------- ","|--",6);
+Log::write("---------   Stop   joulie_16_bms.php   ----------------- ","|--",6);
 
 return;
 

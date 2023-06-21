@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 /*****************************************************************************
@@ -27,16 +26,6 @@
 //
 //
 *****************************************************************************/
-$path_parts = pathinfo( $argv[0] );
-$Pfad = $path_parts['dirname'];
-if (!is_file( $Pfad."/1.user.config.php" )) {
-  // Handelt es sich um ein Multi Regler System?
-  require ($Pfad."/user.config.php");
-}
-require_once ($Pfad."/phpinc/funktionen.inc.php");
-if (!isset($funktionen)) {
-  $funktionen = new funktionen( );
-}
 // Im Fall, dass man die Device manuell eingeben muss
 if (isset($USBDevice) and !empty($USBDevice)) {
   $USBRegler = $USBDevice;
@@ -49,15 +38,15 @@ $Timebase = 60000;
 $Start = time( ); // Timestamp festhalten
 $Unit_IDs = str_replace( " ", "", $WR_Adresse );
 $UnitID = explode( ",", $Unit_IDs );
-$funktionen->log_schreiben( "-------------   Start  venus_gx.php    -------------------------- ", "|--", 6 );
-$funktionen->log_schreiben( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
+Log::write( "-------------   Start  venus_gx.php    -------------------------- ", "|--", 6 );
+Log::write( "Zentraler Timestamp: ".$zentralerTimestamp, "   ", 8 );
 $aktuelleDaten = array();
 $aktuelleDaten["zentralerTimestamp"] = $zentralerTimestamp;
 setlocale( LC_TIME, "de_DE.utf8" );
 //  Hardware Version ermitteln.
 $Teile = explode( " ", $Platine );
 if ($Teile[1] == "Pi") {
-  $funktionen->log_schreiben( "Hardware Version: ".$Platine, "o  ", 8 );
+  Log::write( "Hardware Version: ".$Platine, "o  ", 8 );
   $Version = trim( $Teile[2] );
   if ($Teile[3] == "Model") {
     $Version .= trim( $Teile[4] );
@@ -84,18 +73,18 @@ switch ($Version) {
     break;
 }
 
-$funktionen->log_schreiben( "folgende Geräte-ID's sollen ausgelesen werden: ".$WR_Adresse, "   ", 6 );
+Log::write( "folgende Geräte-ID's sollen ausgelesen werden: ".$WR_Adresse, "   ", 6 );
 $UID = explode( ",", $WR_Adresse );
 
 $COM1 = fsockopen( $WR_IP, $WR_Port, $errno, $errstr, 10 ); // 10 = Timeout in Sekunden
 if (!is_resource( $COM1 )) {
-  $funktionen->log_schreiben( "Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
-  $funktionen->log_schreiben( "Exit.... ", "XX ", 9 );
+  Log::write( "Kein Kontakt zum Wechselrichter ".$WR_IP."  Port: ".$WR_Port, "XX ", 3 );
+  Log::write( "Exit.... ", "XX ", 9 );
   goto Ausgang;
 }
 $k = 1;
 do {
-  $funktionen->log_schreiben( "Die Daten werden ausgelesen...", "+  ", 7 );
+  Log::write( "Die Daten werden ausgelesen...", "+  ", 7 );
 
   /****************************************************************************
   //  Ab hier wird der Venus GX ausgelesen.
@@ -138,19 +127,19 @@ do {
   $RegisterAdresse = 800; // Dezimal
   $RegisterAnzahl = "0006"; // Hex
   $DatenTyp = "Zeichenkette";
-  $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+  $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
   if (is_array( $Ergebnis )) {
     if ($Ergebnis["Befehl"] == "83") {
-      $funktionen->log_schreiben( "Dieses Register gibt es nicht. [No. 800]", "   ", 5 );
+      Log::write( "Dieses Register gibt es nicht. [No. 800]", "   ", 5 );
       $aktuelleDaten["Unit_100"]["Firmware.Text"] = "0";
     }
     else {
-      $funktionen->log_schreiben( "Seriennummer: ".strtoupper( $Ergebnis["Wert"] ), "   ", 5 );
+      Log::write( "Seriennummer: ".strtoupper( $Ergebnis["Wert"] ), "   ", 5 );
       $aktuelleDaten["Unit_100"]["Firmware.Text"] = strtoupper( $Ergebnis["Wert"] );
     }
   }
   else {
-    $funktionen->log_schreiben( "Lesefehler => Ausgang.", "   ", 5 );
+    Log::write( "Lesefehler => Ausgang.", "   ", 5 );
     goto Ausgang;
   }
   for ($i = 0; $i < count( $UnitID ); $i++) {
@@ -161,7 +150,7 @@ do {
       $RegisterAdresse = 808; // Dezimal
       $RegisterAnzahl = "0010"; // Hex
       $DatenTyp = "Hex";
-      $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+      $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
       $venus["PV-AC coupled on output L1"] = hexdec( substr( $Ergebnis["Wert"], 0, 4 ));
       $venus["PV-AC coupled on output L2"] = hexdec( substr( $Ergebnis["Wert"], 4, 4 ));
       $venus["PV-AC coupled on output L3"] = hexdec( substr( $Ergebnis["Wert"], 8, 4 ));
@@ -174,18 +163,18 @@ do {
       $venus["AC_Consumption_L1"] = hexdec( substr( $Ergebnis["Wert"], 36, 4 ));
       $venus["AC_Consumption_L2"] = hexdec( substr( $Ergebnis["Wert"], 40, 4 ));
       $venus["AC_Consumption_L3"] = hexdec( substr( $Ergebnis["Wert"], 44, 4 ));
-      $venus["Grid_L1"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 48, 4 ));
-      $venus["Grid_L2"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 52, 4 ));
-      $venus["Grid_L3"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 56, 4 ));
+      $venus["Grid_L1"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 48, 4 ));
+      $venus["Grid_L2"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 52, 4 ));
+      $venus["Grid_L3"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 56, 4 ));
       $venus["Active_input_source"] = substr( $Ergebnis["Wert"], 60, 4 );
       $GeraeteAdresse = "64"; // UnitID = 100
       $RegisterAdresse = 840; // Dezimal
       $RegisterAnzahl = "0007"; // Hex
       $DatenTyp = "Hex";
-      $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+      $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
       $venus["Battery-Voltage"] = hexdec( substr( $Ergebnis["Wert"], 0, 4 )) / 10;
-      $venus["Battery-Current"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 4, 4 )) / 10;
-      $venus["Battery-Power"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 8, 4 ));
+      $venus["Battery-Current"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 4, 4 )) / 10;
+      $venus["Battery-Power"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 8, 4 ));
       $venus["Battery-State_of_charge"] = hexdec( substr( $Ergebnis["Wert"], 12, 4 ));
       $venus["Battery-State"] = hexdec( substr( $Ergebnis["Wert"], 16, 4 ));
       $venus["Battery-Consumed-Amphours"] = hexdec( substr( $Ergebnis["Wert"], 20, 4 )) * 10;
@@ -204,7 +193,7 @@ do {
       $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["AC_Verbrauch_R"] = $venus["AC_Consumption_L1"];
       $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["AC_Verbrauch_S"] = $venus["AC_Consumption_L2"];
       $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["AC_Verbrauch_T"] = $venus["AC_Consumption_L3"];
-      $funktionen->log_schreiben( var_export( $venus, 1 ), "   ", 10 );
+      Log::write( var_export( $venus, 1 ), "   ", 10 );
       continue;
     }
     if ($UnitID[$i] == "227" or $UnitID[$i] == "228" or $UnitID[$i] == "229" or $UnitID[$i] == "239" or $UnitID[$i] == "239") { // 12.4.2023
@@ -214,36 +203,36 @@ do {
       $RegisterAdresse = 3; // Dezimal 3
       $RegisterAnzahl = "0042"; // Hex 42
       $DatenTyp = "Hex";
-      $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+      $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
       if ($Ergebnis["Befehl"] == "83") {
-        $funktionen->log_schreiben( "Info: Geräte-ID: ".$UnitID[$i].", Speicherstelle: ".$RegisterAdresse, "   ", 1 );
+        Log::write( "Info: Geräte-ID: ".$UnitID[$i].", Speicherstelle: ".$RegisterAdresse, "   ", 1 );
       }
       else {
         $venus["Input_Voltage_Phase1"] = hexdec( substr( $Ergebnis["Wert"], 0, 4 )) / 10;
         $venus["Input_Voltage_Phase2"] = hexdec( substr( $Ergebnis["Wert"], 4, 4 )) / 10;
         $venus["Input_Voltage_Phase3"] = hexdec( substr( $Ergebnis["Wert"], 8, 4 )) / 10;
-        $venus["Input_Current_Phase1"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 12, 4 )) / 10;
-        $venus["Input_Current_Phase2"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 16, 4 )) / 10;
-        $venus["Input_Current_Phase3"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 20, 4 )) / 10;
-        $venus["Input_Frequency1"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 24, 4 )) / 100;
-        $venus["Input_Frequency2"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 28, 4 )) / 100;
-        $venus["Input_Frequency3"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 32, 4 )) / 100;
-        $venus["Input_Power1"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 36, 4 )) * 10;
-        $venus["Input_Power2"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 40, 4 )) * 10;
-        $venus["Input_Power3"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 44, 4 )) * 10;
+        $venus["Input_Current_Phase1"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 12, 4 )) / 10;
+        $venus["Input_Current_Phase2"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 16, 4 )) / 10;
+        $venus["Input_Current_Phase3"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 20, 4 )) / 10;
+        $venus["Input_Frequency1"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 24, 4 )) / 100;
+        $venus["Input_Frequency2"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 28, 4 )) / 100;
+        $venus["Input_Frequency3"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 32, 4 )) / 100;
+        $venus["Input_Power1"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 36, 4 )) * 10;
+        $venus["Input_Power2"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 40, 4 )) * 10;
+        $venus["Input_Power3"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 44, 4 )) * 10;
         $venus["Output_Voltage_Phase1"] = hexdec( substr( $Ergebnis["Wert"], 48, 4 )) / 10;
         $venus["Output_Voltage_Phase2"] = hexdec( substr( $Ergebnis["Wert"], 52, 4 )) / 10;
         $venus["Output_Voltage_Phase3"] = hexdec( substr( $Ergebnis["Wert"], 56, 4 )) / 10;
-        $venus["Output_Current_Phase1"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 60, 4 )) / 10;
-        $venus["Output_Current_Phase2"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 64, 4 )) / 10;
-        $venus["Output_Current_Phase3"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 68, 4 )) / 10;
-        $venus["Output_Frequency"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 72, 4 )) / 100;
-        $venus["Active_input_current_limit"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 76, 4 )) / 10;
-        $venus["Output_Power1"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 80, 4 )) * 10;
-        $venus["Output_Power2"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 84, 4 )) * 10;
-        $venus["Output_Power3"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 88, 4 )) * 10;
+        $venus["Output_Current_Phase1"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 60, 4 )) / 10;
+        $venus["Output_Current_Phase2"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 64, 4 )) / 10;
+        $venus["Output_Current_Phase3"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 68, 4 )) / 10;
+        $venus["Output_Frequency"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 72, 4 )) / 100;
+        $venus["Active_input_current_limit"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 76, 4 )) / 10;
+        $venus["Output_Power1"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 80, 4 )) * 10;
+        $venus["Output_Power2"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 84, 4 )) * 10;
+        $venus["Output_Power3"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 88, 4 )) * 10;
         $venus["Battery_Voltage"] = hexdec( substr( $Ergebnis["Wert"], 92, 4 )) / 100;
-        $venus["Battery_Current"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 96, 4 )) / 10;
+        $venus["Battery_Current"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 96, 4 )) / 10;
         $venus["Phase_Count"] = hexdec( substr( $Ergebnis["Wert"], 100, 4 ));
         $venus["Active_Input"] = hexdec( substr( $Ergebnis["Wert"], 104, 4 ));
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Anz_Phasen"] = $venus["Phase_Count"];
@@ -267,7 +256,7 @@ do {
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["AC_IN_Leistung_T"] = $venus["Input_Power3"];
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Batt_Spannung"] = $venus["Battery_Voltage"];
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Batt_Strom"] = $venus["Battery_Current"];
-        $funktionen->log_schreiben( var_export( $venus, 1 ), "   ", 10 );
+        Log::write( var_export( $venus, 1 ), "   ", 10 );
         continue;
       }
     }
@@ -278,18 +267,18 @@ do {
       $RegisterAdresse = 771; // Dezimal 3
       $RegisterAnzahl = "0015"; // Hex 42
       $DatenTyp = "Hex";
-      $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+      $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
       if ($Ergebnis["Befehl"] == "83") {
-        $funktionen->log_schreiben( "Info: Geräte-ID: ".$UnitID[$i].", Speicherstelle: ".$RegisterAdresse, "   ", 1 );
+        Log::write( "Info: Geräte-ID: ".$UnitID[$i].", Speicherstelle: ".$RegisterAdresse, "   ", 1 );
       }
       else {
         $venus["Battery_Voltage_"] = hexdec( substr( $Ergebnis["Wert"], 0, 4 )) / 100;
-        $venus["Battery_Current_"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 4, 4 )) / 10;
-        $venus["Battery_Temperature_"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 8, 4 )) / 10;
+        $venus["Battery_Current_"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 4, 4 )) / 10;
+        $venus["Battery_Temperature_"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 8, 4 )) / 10;
         $venus["Charger_ON_OFF"] = hexdec( substr( $Ergebnis["Wert"], 12, 4 ));
         $venus["Charger_State"] = hexdec( substr( $Ergebnis["Wert"], 16, 4 ));
         $venus["PV_Voltage"] = hexdec( substr( $Ergebnis["Wert"], 20, 4 )) / 100;
-        $venus["PV_Current"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 24, 4 )) / 10;
+        $venus["PV_Current"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 24, 4 )) / 10;
         $venus["Equalization_pending"] = hexdec( substr( $Ergebnis["Wert"], 28, 4 ));
         $venus["Equalization_time_pending"] = hexdec( substr( $Ergebnis["Wert"], 32, 4 )) / 10;
         $venus["Yield_today"] = hexdec( substr( $Ergebnis["Wert"], 52, 4 )) / 10;
@@ -304,10 +293,10 @@ do {
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Bat_Spannung"] = $venus["Battery_Voltage_"];
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Bat_Strom"] = $venus["Battery_Current_"];
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Bat_temperatur"] = $venus["Battery_Temperature_"];
-        $funktionen->log_schreiben( var_export( $venus, 1 ), "   ", 10 );
+        Log::write( var_export( $venus, 1 ), "   ", 10 );
         continue;
       }
-      $funktionen->log_schreiben( var_export( $venus, 1 ), "   ", 10 );
+      Log::write( var_export( $venus, 1 ), "   ", 10 );
     }
     if ($UnitID[$i] == "30" or $UnitID[$i] == "31" or $UnitID[$i] == "32" or $UnitID[$i] == "33" or $UnitID[$i] == "34") {
       // Grid - Zähler
@@ -315,14 +304,14 @@ do {
       $RegisterAdresse = 2600; // Dezimal 2600
       $RegisterAnzahl = "0022"; // Hex 42
       $DatenTyp = "Hex";
-      $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+      $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
       if ($Ergebnis["Befehl"] == "83") {
-        $funktionen->log_schreiben( "Info: Geräte-ID: ".$UnitID[$i].", Speicherstelle: ".$RegisterAdresse, "   ", 1 );
+        Log::write( "Info: Geräte-ID: ".$UnitID[$i].", Speicherstelle: ".$RegisterAdresse, "   ", 1 );
       }
       else {
-        $venus["Grid-L1-Power"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 0, 4 ));
-        $venus["Grid-L2-Power"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 4, 4 ));
-        $venus["Grid-L3-Power"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 8, 4 ));
+        $venus["Grid-L1-Power"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 0, 4 ));
+        $venus["Grid-L2-Power"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 4, 4 ));
+        $venus["Grid-L3-Power"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 8, 4 ));
         $venus["Grid-L1-Energy_from_net"] = hexdec( substr( $Ergebnis["Wert"], 12, 4 )) * 10;
         $venus["Grid-L2-Energy_from_net"] = hexdec( substr( $Ergebnis["Wert"], 16, 4 )) * 10;
         $venus["Grid-L3-Energy_from_net"] = hexdec( substr( $Ergebnis["Wert"], 20, 4 )) * 10;
@@ -331,11 +320,11 @@ do {
         $venus["Grid-L3-Energy_to_net"] = hexdec( substr( $Ergebnis["Wert"], 32, 4 )) * 10;
         $venus["Seriennummer"] = (substr( $Ergebnis["Wert"], 36, 28 ));
         $venus["Grid-L1-Voltage"] = hexdec( substr( $Ergebnis["Wert"], 64, 4 )) / 10;
-        $venus["Grid-L1-Current"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 68, 4 )) / 10;
+        $venus["Grid-L1-Current"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 68, 4 )) / 10;
         $venus["Grid-L2-Voltage"] = hexdec( substr( $Ergebnis["Wert"], 72, 4 )) / 10;
-        $venus["Grid-L2-Current"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 76, 4 )) / 10;
+        $venus["Grid-L2-Current"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 76, 4 )) / 10;
         $venus["Grid-L3-Voltage"] = hexdec( substr( $Ergebnis["Wert"], 80, 4 )) / 10;
-        $venus["Grid-L3-Current"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 84, 4 )) / 10;
+        $venus["Grid-L3-Current"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 84, 4 )) / 10;
         $venus["Grid-L1-Energy_from_net-total"] = hexdec( substr( $Ergebnis["Wert"], 88, 8 )) * 10;
         $venus["Grid-L2-Energy_from_net-total"] = hexdec( substr( $Ergebnis["Wert"], 96, 8 )) * 10;
         $venus["Grid-L3-Energy_from_net-total"] = hexdec( substr( $Ergebnis["Wert"], 104, 8 )) * 10;
@@ -360,7 +349,7 @@ do {
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Netz_Leistung"] = ($venus["Grid-L1-Power"] + $venus["Grid-L2-Power"] + $venus["Grid-L3-Power"]);
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Netz_Bezug"] = ($venus["Grid-L1-Energy_from_net"] + $venus["Grid-L2-Energy_from_net"] + $venus["Grid-L3-Energy_from_net"]);
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Netz_Einspeisung"] = ($venus["Grid-L1-Energy_to_net"] + $venus["Grid-L2-Energy_to_net"] + $venus["Grid-L3-Energy_to_net"]);
-        $funktionen->log_schreiben( var_export( $venus, 1 ), "   ", 10 );
+        Log::write( var_export( $venus, 1 ), "   ", 10 );
         continue;
       }
     }
@@ -370,15 +359,15 @@ do {
       $RegisterAdresse = 259; // Dezimal 1282
       $RegisterAnzahl = "0012"; // Hex 42
       $DatenTyp = "Hex";
-      $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+      $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
       if ($Ergebnis["Befehl"] == "83") {
-        $funktionen->log_schreiben( "Info: Geräte-ID: ".$UnitID[$i].", Speicherstelle: ".$RegisterAdresse, "   ", 1 );
+        Log::write( "Info: Geräte-ID: ".$UnitID[$i].", Speicherstelle: ".$RegisterAdresse, "   ", 1 );
       }
       else {
         $venus["Battery_Voltage*"] = hexdec( substr( $Ergebnis["Wert"], 0, 4 )) / 100;
         $venus["Starterbattery_Voltage"] = hexdec( substr( $Ergebnis["Wert"], 4, 4 )) / 100;
-        $venus["Battery_Current*"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 8, 4 )) / 10;
-        $venus["Battery_Temperature*"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 12, 4 )) / 10;
+        $venus["Battery_Current*"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 8, 4 )) / 10;
+        $venus["Battery_Temperature*"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 12, 4 )) / 10;
         //16
         //20
         //24
@@ -390,17 +379,17 @@ do {
         $RegisterAdresse = 300; // Dezimal 1282
         $RegisterAnzahl = "0012"; // Hex 42
         $DatenTyp = "Hex";
-        $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+        $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
         // 0
         // 4
         // 8
         // 12
-        $venus["State_of_health"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 16, 4 )) / 10;
+        $venus["State_of_health"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 16, 4 )) / 10;
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Bat_SOH"] = $venus["State_of_health"];
         $RegisterAdresse = 1282; // Dezimal 1282
         $RegisterAnzahl = "0012"; // Hex 42
         $DatenTyp = "Hex";
-        $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+        $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
         $venus["State"] = hexdec( substr( $Ergebnis["Wert"], 0, 4 ));
         $venus["Error"] = hexdec( substr( $Ergebnis["Wert"], 4, 4 ));
         $venus["System_switch"] = hexdec( substr( $Ergebnis["Wert"], 8, 4 ));
@@ -416,8 +405,8 @@ do {
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Balancing"] = $venus["Balancing"];
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Max_Zellen_Spannung"] = $venus["Maximum_cell_voltage"];
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Min_Zellen_Spannung"] = $venus["Minimum_cell_voltage"];
-        $funktionen->log_schreiben( var_export( $Ergebnis, 1 ), "   ", 10 );
-        $funktionen->log_schreiben( var_export( $venus, 1 ), "   ", 10 );
+        Log::write( var_export( $Ergebnis, 1 ), "   ", 10 );
+        Log::write( var_export( $venus, 1 ), "   ", 10 );
         continue;
       }
     }
@@ -428,9 +417,9 @@ do {
       $RegisterAdresse = 3300; // Dezimal 3300
       $RegisterAnzahl = "0009"; // Hex 9
       $DatenTyp = "Hex";
-      $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+      $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
       if ($Ergebnis["Befehl"] == "83") {
-        $funktionen->log_schreiben( "Info: Geräte-ID: ".$UnitID[$i].", Speicherstelle: ".$RegisterAdresse, "   ", 1 );
+        Log::write( "Info: Geräte-ID: ".$UnitID[$i].", Speicherstelle: ".$RegisterAdresse, "   ", 1 );
       }
       else {
         $venus["ProductID"] = hexdec( substr( $Ergebnis["Wert"], 0, 4 ));
@@ -447,8 +436,8 @@ do {
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Temperatur_Typ"] = $venus["Temperature_Type"];
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["Temperatur"] = $venus["Temperature"];
 
-        $funktionen->log_schreiben( var_export( $Ergebnis, 1 ), "   ", 10 );
-        $funktionen->log_schreiben( var_export( $venus, 1 ), "   ", 10 );
+        Log::write( var_export( $Ergebnis, 1 ), "   ", 10 );
+        Log::write( var_export( $venus, 1 ), "   ", 10 );
         continue;
       }
     }
@@ -459,22 +448,22 @@ do {
       $RegisterAdresse = 1026; // Dezimal 1026
       $RegisterAnzahl = "0019"; // Hex 9
       $DatenTyp = "Hex";
-      $Ergebnis = $funktionen->modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
+      $Ergebnis = ModBus::modbus_tcp_lesen( $COM1, $GeraeteAdresse, $FunktionsCode, $RegisterAdresse, $RegisterAnzahl, $DatenTyp, $Timebase );
       if ($Ergebnis["Befehl"] == "83") {
-        $funktionen->log_schreiben( "Info: Geräte-ID: ".$UnitID[$i].", Speicherstelle: ".$RegisterAdresse, "   ", 1 );
+        Log::write( "Info: Geräte-ID: ".$UnitID[$i].", Speicherstelle: ".$RegisterAdresse, "   ", 1 );
       }
       else {
         $venus["Position"] = hexdec( substr( $Ergebnis["Wert"], 0, 4 ));
         $venus["L1 Voltage"] = hexdec( substr( $Ergebnis["Wert"], 4, 4 ))/ 10;
-        $venus["L1 Current"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 8, 4 ))/ 10;
+        $venus["L1 Current"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 8, 4 ))/ 10;
         $venus["L1 Power"] = hexdec( substr( $Ergebnis["Wert"], 12, 4 ));
         $venus["L1 Energy"] = hexdec( substr( $Ergebnis["Wert"], 16, 4 ))*10;
         $venus["L2 Voltage"] = hexdec( substr( $Ergebnis["Wert"], 20, 4 ))/10;
-        $venus["L2 Current"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 24, 4 ))/10;
+        $venus["L2 Current"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 24, 4 ))/10;
         $venus["L2 Power"] = hexdec( substr( $Ergebnis["Wert"], 28, 4 ));
         $venus["L2 Energy"] = hexdec( substr( $Ergebnis["Wert"], 32, 4 ))*10;
         $venus["L3 Voltage"] = hexdec( substr( $Ergebnis["Wert"], 36, 4 ))/10;
-        $venus["L3 Current"] = $funktionen->hexdecs( substr( $Ergebnis["Wert"], 40, 4 ))/10;
+        $venus["L3 Current"] = Utils::hexdecs( substr( $Ergebnis["Wert"], 40, 4 ))/10;
         $venus["L3 Power"] = hexdec( substr( $Ergebnis["Wert"], 44, 4 ));
         $venus["L3 Energy"] = hexdec( substr( $Ergebnis["Wert"], 48, 4 ))*10;
         $venus["Serial"] = (substr( $Ergebnis["Wert"], 52, 28 ));
@@ -501,15 +490,15 @@ do {
         $aktuelleDaten["Unit_".trim( $UnitID[$i] )]["EnergieTotal_T"] = $venus["L3 EnergyTotal"];
 
 
-        $funktionen->log_schreiben( var_export( $Ergebnis, 1 ), "   ", 10 );
-        $funktionen->log_schreiben( var_export( $venus, 1 ), "   ", 10 );
+        Log::write( var_export( $Ergebnis, 1 ), "   ", 10 );
+        Log::write( var_export( $venus, 1 ), "   ", 10 );
         continue;
       }
     }
     else {
       if (isset($UnitID[$i])) {
-        $funktionen->log_schreiben( "eMail an: support@solaranzeige.de  Fehlende Geräte-ID ist: ".$UnitID[$i], "ERR", 5 );
-        $funktionen->log_schreiben( "Die Geräte-ID ist noch nicht implementiert. Bitte melden Sie sich:", "ERR", 5 );
+        Log::write( "eMail an: support@solaranzeige.de  Fehlende Geräte-ID ist: ".$UnitID[$i], "ERR", 5 );
+        Log::write( "Die Geräte-ID ist noch nicht implementiert. Bitte melden Sie sich:", "ERR", 5 );
       }
     }
   }
@@ -536,13 +525,13 @@ do {
   $aktuelleDaten["Info"]["Produkt.Text"] = "Cerbo GX";
   $aktuelleDaten["zentralerTimestamp"] = ($aktuelleDaten["zentralerTimestamp"] + 10);
 
-  $funktionen->log_schreiben( var_export( $aktuelleDaten, 1 ), "   ", 8 );
+  Log::write( var_export( $aktuelleDaten, 1 ), "   ", 8 );
 
   /****************************************************************************
   //  User PHP Script, falls gewünscht oder nötig
   ****************************************************************************/
-  if (file_exists( "/var/www/html/venus_gx_math.php" )) {
-    include 'venus_gx_math.php'; // Falls etwas neu berechnet werden muss.
+  if (file_exists($basedir."/custom/venus_gx_math.php" )) {
+    include $basedir.'/custom/venus_gx_math.php'; // Falls etwas neu berechnet werden muss.
   }
 
   /**************************************************************************
@@ -551,8 +540,8 @@ do {
   //  Achtung! Die Übertragung dauert ca. 30 Sekunden!
   **************************************************************************/
   if ($MQTT) {
-    $funktionen->log_schreiben( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
-    require ($Pfad."/mqtt_senden.php");
+    Log::write( "MQTT Daten zum [ $MQTTBroker ] senden.", "   ", 1 );
+    require($basedir."/services/mqtt_senden.php");
   }
 
 
@@ -577,9 +566,9 @@ do {
   if ($InfluxDB_remote) {
     // Test ob die Remote Verbindung zur Verfügung steht.
     if ($RemoteDaten) {
-      $rc = $funktionen->influx_remote_test( );
+      $rc = InfluxDB::influx_remote_test( );
       if ($rc) {
-        $rc = $funktionen->influx_remote( $aktuelleDaten );
+        $rc = InfluxDB::influx_remote( $aktuelleDaten );
         if ($rc) {
           $RemoteDaten = false;
         }
@@ -589,28 +578,28 @@ do {
       }
     }
     if ($InfluxDB_local) {
-      $rc = $funktionen->influx_local( $aktuelleDaten );
+      $rc = InfluxDB::influx_local( $aktuelleDaten );
     }
   }
   else {
-    $rc = $funktionen->influx_local( $aktuelleDaten );
+    $rc = InfluxDB::influx_local( $aktuelleDaten );
   }
-  if (is_file( $Pfad."/1.user.config.php" )) {
+  if (is_file( $basedir."/config/1.user.config.php" )) {
     // Ausgang Multi-Regler-Version
     $Zeitspanne = (7 - (time( ) - $Start));
-    $funktionen->log_schreiben( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
+    Log::write( "Multi-Regler-Ausgang. ".$Zeitspanne, "   ", 2 );
     if ($Zeitspanne > 0) {
       sleep( $Zeitspanne );
     }
     break;
   }
   else {
-    $funktionen->log_schreiben( "Schleife: ".($k)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)))), "   ", 9 );
+    Log::write( "Schleife: ".($k)." Zeitspanne: ".(floor( (56 - (time( ) - $Start)))), "   ", 9 );
     sleep( floor( (56 - (time( ) - $Start))));
   }
   if ($Wiederholungen <= $k or $k >= 1) {
     //  Die RCT Wechselrichter dürfen nur einmal pro Minute ausgelesen werden!
-    $funktionen->log_schreiben( "Schleife ".$k." Ausgang...", "   ", 5 );
+    Log::write( "Schleife ".$k." Ausgang...", "   ", 5 );
     break;
   }
   $k++;
@@ -621,8 +610,8 @@ do {
 //  übertragen.
 *********************************************************************/
 if (isset($Homematic) and $Homematic == true) {
-  $funktionen->log_schreiben( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
-  require ($Pfad."/homematic.php");
+  Log::write( "Daten werden zur HomeMatic übertragen...", "   ", 8 );
+  require($basedir."/services/homematic.php");
 }
 
 /*********************************************************************
@@ -631,17 +620,17 @@ if (isset($Homematic) and $Homematic == true) {
 //  Gerät aktiviert sein.
 *********************************************************************/
 if (isset($Messenger) and $Messenger == true) {
-  $funktionen->log_schreiben( "Nachrichten versenden...", "   ", 8 );
-  require ($Pfad."/meldungen_senden.php");
+  Log::write( "Nachrichten versenden...", "   ", 8 );
+  require($basedir."/services/meldungen_senden.php");
 }
-$funktionen->log_schreiben( "OK. Datenübertragung erfolgreich.", "   ", 7 );
+Log::write( "OK. Datenübertragung erfolgreich.", "   ", 7 );
 
 /*******/
 Ausgang:
 
 /*******/
 fclose( $COM1 );
-$funktionen->log_schreiben( "-------------   Stop   venus_gx.php    -------------------------- ", "|--", 6 );
+Log::write( "-------------   Stop   venus_gx.php    -------------------------- ", "|--", 6 );
 return;
 ?>
 
