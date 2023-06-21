@@ -114,7 +114,6 @@ RUN chmod +x /usr/local/bin/entrypoint && \
 
 ENTRYPOINT [ "/usr/local/bin/entrypoint" ]
 
-EXPOSE 3000
 EXPOSE 80
 EXPOSE 1883
 
