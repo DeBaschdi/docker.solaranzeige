@@ -66,6 +66,22 @@ When passing volumes please replace the name including the surrounding curly bra
 > **Note:** `PVFORECAST_STORAGE` persist PVForecast data from https://github.com/StefaE/PVForecast
 >
 
+If you need to read your Inverter over RS485 or RS232 Interface, don't forget to give the Interface from Hardware Host to Docker Container.
+This works with following line:
+...
+--device='/dev/ttyUSB1' \
+...
+
+maybe between volumes and --name like
+
+...
+-v /opt/solar/www:/var/www \
+--device='/dev/ttyUSB1' \
+--name=Solaranzeige \
+...
+
+this gives the /dev/ttyUSB1 from Hardware Host as first USB to the docker container as /dev/ttyUSB0
+
 ## First Run / Initial Setup Solaranzeige
 Inside this Container you need to run /solaranzeige/setup 
 connect to the Container e.g 
