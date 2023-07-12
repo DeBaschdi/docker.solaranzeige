@@ -120,4 +120,8 @@ curl -s 'https://raw.githubusercontent.com/DeBaschdi/solar_config/master/solaran
 sed -i 's/file_get_contents("\/sys\/firmware\/devicetree\/base\/model")/"Docker Image 0.2.0"/g' /var/www/html/usb_init.php
 sed -i 's/Raspberry Modell kann eingetragen werden/Containerversion kann eingetragen werden/g' /var/www/html/usb_init.php
 
+# Hack regler_auslesen.php
+sed -i 's/$shell_befehl = "/$shell_befehl =  "echo 200"; \/\/++++Docker Hack++++ "/g' /var/www/html/multi_regler_auslesen.php
+sed -i 's/$shell_befehl = "/$shell_befehl =  "echo 200"; \/\/++++Docker Hack++++ "/g' /var/www/html/regler_auslesen.php
+
 su -s /bin/bash -c "TERM=xterm /usr/local/sbin/solaranzeige.process"
