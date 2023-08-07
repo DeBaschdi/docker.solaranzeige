@@ -72,6 +72,8 @@ RUN dpkg-reconfigure ca-certificates \
     && python3 -m pip install astral --upgrade \
     && python3 -m pip install siphon --upgrade \
     && python3 -m pip install pvlib \
+    && python3 -m pip install packaging \
+    && python3 -m pip install influxdb --upgrade \
     ### configure system
     && update-ca-certificates --fresh \
     && phpenmod mosquitto \
